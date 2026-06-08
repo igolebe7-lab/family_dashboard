@@ -105,11 +105,11 @@
 - Create: `apps/web/src/lib/components/app/Sidebar.svelte`
 - Create: `apps/web/src/lib/components/app/FloatingCreateButton.svelte`
 
-- [ ] Перенести CSS variables из `TECHNICAL_SPEC.md` в `tokens.css`.
-- [ ] Настроить Tailwind на CSS variables, не плодить случайные hex в компонентах.
-- [ ] Сделать responsive shell: mobile bottom nav, desktop sidebar + central + right slot.
-- [ ] Добавить focus-visible states, aria-label для icon buttons, крупные tap targets.
-- [ ] Импортировать из Lucide только используемые иконки.
+- [x] Перенести CSS variables из `TECHNICAL_SPEC.md` в `tokens.css`.
+- [x] Настроить Tailwind на CSS variables, не плодить случайные hex в компонентах.
+- [x] Сделать responsive shell: mobile bottom nav, desktop sidebar + central + right slot.
+- [x] Добавить focus-visible states, aria-label для icon buttons, крупные tap targets.
+- [x] Импортировать из Lucide только используемые иконки.
 
 **Automated checks:**
 

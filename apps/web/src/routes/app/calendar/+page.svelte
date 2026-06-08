@@ -1,7 +1,20 @@
 <script lang="ts">
   import Bell from '@lucide/svelte/icons/bell';
   import CalendarDays from '@lucide/svelte/icons/calendar-days';
-  import Plus from '@lucide/svelte/icons/plus';
+  import Button from '$lib/components/ui/Button.svelte';
+  import Card from '$lib/components/ui/Card.svelte';
+  import Chip from '$lib/components/ui/Chip.svelte';
+  import DesktopShell from '$lib/components/app/DesktopShell.svelte';
+  import FloatingCreateButton from '$lib/components/app/FloatingCreateButton.svelte';
+  import MobileShell from '$lib/components/app/MobileShell.svelte';
+  import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
+
+  const activeRoute = '/app/calendar';
+  const viewOptions = [
+    { label: 'День', value: 'day' },
+    { label: 'Неделя', value: 'week' },
+    { label: 'Месяц', value: 'month' }
+  ] as const;
 
   const week = [
     { day: 'Пн', date: '12', dots: ['lavender', 'blue'] },
@@ -22,25 +35,20 @@
   ];
 </script>
 
-<main class="app-screen app-screen--calendar" aria-labelledby="calendar-title">
-  <section class="mobile-shell">
+<MobileShell {activeRoute} labelledBy="calendar-title-mobile" calendar>
     <header class="top-row">
-      <h1 id="calendar-title">Календарь</h1>
+      <h1 id="calendar-title-mobile">Календарь</h1>
       <button class="icon-button" type="button" aria-label="Открыть уведомления">
         <Bell size={23} strokeWidth={2.2} aria-hidden="true" />
         <span class="notification-dot" aria-hidden="true"></span>
       </button>
     </header>
 
-    <div class="segmented" role="tablist" aria-label="Вид календаря">
-      <button type="button" role="tab">День</button>
-      <button class="segmented__active" type="button" role="tab" aria-selected="true">Неделя</button>
-      <button type="button" role="tab">Месяц</button>
-    </div>
+    <SegmentedControl label="Вид календаря" options={viewOptions} selected="week" />
 
     <section class="week-strip" aria-label="Неделя">
       {#each week as item}
-        <button class:week-day--active={item.active} class="week-day" type="button">
+        <button class:week-day--active={item.active === true} class="week-day" type="button">
           <span>{item.day}</span>
           <strong>{item.date}</strong>
           <span class="dot-row" aria-hidden="true">
@@ -52,17 +60,17 @@
       {/each}
     </section>
 
-    <section class="shell-card calendar-card" aria-labelledby="selected-day">
+    <Card labelledBy="selected-day" className="calendar-card">
       <div class="section-title-row">
         <h2 id="selected-day">Четверг, 15 мая</h2>
         <CalendarDays size={22} strokeWidth={2.1} aria-hidden="true" />
       </div>
 
       <div class="filter-row" aria-label="Фильтры категорий">
-        <button class="chip chip--active" type="button">Все</button>
-        <button class="chip" type="button">Семья</button>
-        <button class="chip" type="button">Дом</button>
-        <button class="chip" type="button">Школа</button>
+        <Chip active>Все</Chip>
+        <Chip>Семья</Chip>
+        <Chip>Дом</Chip>
+        <Chip>Школа</Chip>
       </div>
 
       <div class="day-agenda">
@@ -76,10 +84,58 @@
           </article>
         {/each}
       </div>
-    </section>
+    </Card>
+</MobileShell>
+
+<FloatingCreateButton />
+
+<DesktopShell {activeRoute} labelledBy="calendar-title-desktop">
+  <div class="desktop-header">
+    <div>
+      <h1 id="calendar-title-desktop">Календарь</h1>
+      <p class="offline-note">Неделя 12 — 18 мая. Данные пока демонстрационные до подключения PocketBase.</p>
+    </div>
+    <SegmentedControl label="Вид календаря на desktop" options={viewOptions} selected="week" />
+    <Button variant="primary">+ Создать</Button>
+  </div>
+
+  <section class="desktop-grid" aria-label="Недельная сетка">
+    {#each week as day, index}
+      <article class="desktop-day">
+        <div class="desktop-day__title">
+          <span>{day.day}</span>
+          <strong>{day.date} мая</strong>
+        </div>
+        {#each events.filter((_, eventIndex) => eventIndex % 3 === index % 3) as event}
+          <div class="desktop-event desktop-event--{event.color}">
+            <strong>{event.time}</strong>
+            <span>{event.title}</span>
+            <small>{event.person}</small>
+          </div>
+        {/each}
+      </article>
+    {/each}
   </section>
 
-  <button class="fab" type="button" aria-label="Создать событие, дело или поручение">
-    <Plus size={30} strokeWidth={2.4} aria-hidden="true" />
-  </button>
-</main>
+  <svelte:fragment slot="aside">
+    <section class="attention-grid" aria-labelledby="calendar-attention-title">
+      <h2 id="calendar-attention-title">Нужно внимание</h2>
+      <article class="attention-card attention-card--green">
+        <span class="mini-avatar">М</span>
+        <p>Миша ждёт подтверждения поручения</p>
+      </article>
+      <article class="attention-card attention-card--peach">
+        <span class="mini-avatar">А</span>
+        <p>Подготовить форму к тренировке</p>
+      </article>
+    </section>
+    <section aria-labelledby="calendar-actions-title">
+      <h2 id="calendar-actions-title">Быстрые действия</h2>
+      <div class="quick-actions">
+        <button class="quick-action quick-action--green" type="button">+ Дело</button>
+        <button class="quick-action quick-action--lavender" type="button">+ Поручение</button>
+        <button class="quick-action quick-action--peach" type="button">+ Событие</button>
+      </div>
+    </section>
+  </svelte:fragment>
+</DesktopShell>

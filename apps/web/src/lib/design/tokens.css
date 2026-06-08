@@ -1,0 +1,56 @@
+:root {
+  color-scheme: light;
+  font-family:
+    Inter, 'SF Pro Display', 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+
+  --color-bg: #fffaf3;
+  --color-surface: #ffffff;
+  --color-surface-soft: #fffdf8;
+  --color-text: #242936;
+  --color-text-muted: #747b8b;
+  --color-text-soft: #9aa1ad;
+  --color-border: #eee7dc;
+  --color-shadow: 28 24 18;
+
+  --color-green: #73b95f;
+  --color-green-soft: #edf7e8;
+  --color-green-ring: #dff0d8;
+
+  --color-lavender: #a883dd;
+  --color-lavender-soft: #f3eafa;
+  --color-lavender-ring: #eadcf8;
+
+  --color-blue: #7daee3;
+  --color-blue-soft: #eaf3fd;
+  --color-blue-ring: #dbeafb;
+
+  --color-peach: #ff8a63;
+  --color-peach-soft: #fff0e8;
+  --color-peach-ring: #ffe0d4;
+
+  --color-yellow: #e9a93f;
+  --color-yellow-soft: #fff5df;
+
+  --color-danger: #e35b5b;
+  --color-danger-soft: #fff0f0;
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
+
+  --shadow-card: 0 14px 40px rgb(var(--color-shadow) / 0.08);
+  --shadow-soft: 0 8px 24px rgb(var(--color-shadow) / 0.06);
+  --shadow-floating: 0 18px 45px rgb(var(--color-shadow) / 0.16);
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --font-size-3xl: 34px;
+}
