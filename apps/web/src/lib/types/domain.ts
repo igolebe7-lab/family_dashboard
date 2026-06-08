@@ -78,6 +78,7 @@ export type Item = {
   owner?: string;
   assignees: string[];
   participants: string[];
+  visibleTo: string[];
   category: ItemCategory;
   priority: ItemPriority;
   visibility: ItemVisibility;
@@ -106,6 +107,7 @@ export type ItemOccurrence = {
   id: string;
   family: string;
   item: string;
+  visibleTo: string[];
   kind: ItemKind;
   titleSnapshot: string;
   categorySnapshot: ItemCategory;

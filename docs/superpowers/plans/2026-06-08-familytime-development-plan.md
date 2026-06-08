@@ -164,12 +164,12 @@
 - Create: `pocketbase/pb_hooks/occurrences.pb.js`
 - Create: `docs/technical/data-model.md`
 
-- [ ] Создать collections из ТЗ: `families`, `family_members`, `items`, `item_occurrences`, `item_comments`, `item_activity`, `notifications`, `invitations`.
-- [ ] Добавить conservative API rules: пользователь видит только семьи, где он member.
-- [ ] Добавить hook validation для `items.kind = event`: title, start/end, `end_at >= start_at`, participants default.
-- [ ] Добавить hook validation для `assignment`: минимум один assignee, assignee не равен единственному author, child assignment permission.
-- [ ] Добавить hook materialization: каждый dated item создаёт минимум один `item_occurrences`.
-- [ ] Добавить activity records и notification creation в hooks.
+- [x] Создать collections из ТЗ: `families`, `family_members`, `items`, `item_occurrences`, `item_comments`, `item_activity`, `notifications`, `invitations`.
+- [x] Добавить conservative API rules: пользователь видит только семьи, где он member.
+- [x] Добавить hook validation для `items.kind = event`: title, start/end, `end_at >= start_at`, participants default.
+- [x] Добавить hook validation для `assignment`: минимум один assignee, assignee не равен единственному author, child assignment permission.
+- [x] Добавить hook materialization: каждый dated item создаёт минимум один `item_occurrences`.
+- [x] Добавить activity records и notification creation в hooks.
 
 **Automated checks:**
 

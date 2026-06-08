@@ -17,6 +17,7 @@ export type PocketBaseItemRecord = PocketBaseRecordBase & {
   owner?: string;
   assignees?: string[];
   participants?: string[];
+  visible_to?: string[];
   category: Item['category'];
   priority: Item['priority'];
   visibility: Item['visibility'];
@@ -38,6 +39,7 @@ export type PocketBaseItemRecord = PocketBaseRecordBase & {
 export type PocketBaseOccurrenceRecord = PocketBaseRecordBase & {
   family: string;
   item: string;
+  visible_to?: string[];
   kind: ItemOccurrence['kind'];
   title_snapshot: string;
   category_snapshot: ItemOccurrence['categorySnapshot'];

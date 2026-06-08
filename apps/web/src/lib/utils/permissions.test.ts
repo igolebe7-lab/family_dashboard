@@ -82,6 +82,7 @@ function baseItem(overrides: Partial<Item> = {}): Item {
     timezone: 'Europe/Amsterdam',
     approvalRequired: true,
     archived: false,
-    ...overrides
+    ...overrides,
+    visibleTo: overrides.visibleTo ?? []
   };
 }

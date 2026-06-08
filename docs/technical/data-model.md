@@ -20,9 +20,22 @@ Source of truth: `TECHNICAL_SPEC.md`.
 
 Every family-scoped collection has `family`. API rules and hooks must prevent cross-family access.
 
+`items` and `item_occurrences` additionally store `visible_to`, a materialized relation to
+`family_members`. Hooks derive it from item visibility:
+
+- `family` — every active family member;
+- `adults` — active `owner`, `parent`, `adult` members plus explicitly involved members;
+- `assignees` — creator, owner, assignees and participants;
+- `private` — creator and owner only.
+
+API rules for item reads use `visible_to.user ?= @request.auth.id`, so child accounts do not
+receive adult/private records through client-side filters.
+
 ## Calendar invariant
 
 Every dated `items` record creates at least one `item_occurrences` record. Calendar and Today query occurrences by visible date range instead of loading all items.
+
+Occurrences copy `visible_to` from their source item so calendar queries can enforce the same visibility rule without loading all logical items.
 
 ## Assignment invariant
 
