@@ -200,11 +200,11 @@
 - Create: `apps/web/src/lib/stores/session.store.ts`
 - Create: `apps/web/src/lib/stores/family.store.ts`
 
-- [ ] Configure PocketBase base URL via env.
-- [ ] Wrap auth login/register/logout/token refresh in `auth.api.ts`.
-- [ ] Implement active family/member state.
-- [ ] Implement loading/error states for all API calls.
-- [ ] Ensure API functions always require active family/member where needed.
+- [x] Configure PocketBase base URL via env.
+- [x] Wrap auth login/register/logout/token refresh in `auth.api.ts`.
+- [x] Implement active family/member state.
+- [x] Implement loading/error states for API-facing session/family state.
+- [x] Ensure API functions always require active family/member where needed.
 
 **Automated checks:**
 
