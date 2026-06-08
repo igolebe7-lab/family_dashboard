@@ -1,0 +1,20 @@
+{
+  "name": "familytime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "pnpm --filter @familytime/web dev",
+    "check": "pnpm --filter @familytime/web check",
+    "lint": "pnpm --filter @familytime/web lint",
+    "test": "pnpm --filter @familytime/web test",
+    "build": "pnpm --filter @familytime/web build",
+    "preview": "pnpm --filter @familytime/web preview"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^25.9.2",
+    "tailwindcss": "^4.0.0"
+  }
+}

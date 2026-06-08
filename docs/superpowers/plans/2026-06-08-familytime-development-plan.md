@@ -35,11 +35,11 @@
 - Copy: `docs/references/ui/image-2-mobile-calendar-week.png`
 - Copy: `docs/references/ui/image-3-desktop-week-dashboard.png`
 
-- [ ] Инициализировать git.
-- [ ] Добавить remote `origin https://github.com/igolebe7-lab/family_dashboard.git`.
-- [ ] Исключить `.serena/`, `.DS_Store`, build outputs, env files, `node_modules`, `pb_data`, PocketBase binary.
-- [ ] Сохранить анализ текущих файлов и целевую архитектуру.
-- [ ] Сделать initial planning commit.
+- [x] Инициализировать git.
+- [x] Добавить remote `origin https://github.com/igolebe7-lab/family_dashboard.git`.
+- [x] Исключить `.serena/`, `.DS_Store`, build outputs, env files, `node_modules`, `pb_data`, PocketBase binary.
+- [x] Сохранить анализ текущих файлов и целевую архитектуру.
+- [x] Сделать initial planning commit.
 
 **Manual test gate:**
 
@@ -65,12 +65,12 @@
 - Create: `apps/web/static/manifest.webmanifest`
 - Create: `apps/web/src/service-worker.ts` or selected SvelteKit-compatible PWA plugin config
 
-- [ ] Scaffold SvelteKit app in `apps/web` with TypeScript.
-- [ ] Configure root workspace scripts: `dev`, `check`, `lint`, `test`, `build`.
-- [ ] Configure `@sveltejs/adapter-static` with SPA fallback `200.html`.
-- [ ] Disable SSR at root layout with `export const ssr = false`.
-- [ ] Add warm background, base typography and initial app shell.
-- [ ] Add PWA manifest with Russian description and `start_url: /app/today`.
+- [x] Scaffold SvelteKit app in `apps/web` with TypeScript.
+- [x] Configure root workspace scripts: `dev`, `check`, `lint`, `test`, `build`.
+- [x] Configure `@sveltejs/adapter-static` with SPA fallback `200.html`.
+- [x] Disable SSR at root layout with `export const ssr = false`.
+- [x] Add warm background, base typography and initial app shell.
+- [x] Add PWA manifest with Russian description and `start_url: /app/today`.
 
 **Automated checks:**
 
