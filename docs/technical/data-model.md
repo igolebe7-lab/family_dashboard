@@ -1,0 +1,33 @@
+# Data Model
+
+Source of truth: `TECHNICAL_SPEC.md`.
+
+## Collections
+
+- `users` — PocketBase auth collection with display name, locale, timezone, onboarding flag.
+- `families` — isolated family workspace.
+- `family_members` — family profile linked to `users` or managed child profile.
+- `items` — logical object: event, task, assignment, routine.
+- `item_occurrences` — materialized calendar/status instances.
+- `item_comments` — comments and reactions.
+- `item_activity` — family feed records.
+- `notifications` — in-app notifications.
+- `push_subscriptions` — post-MVP push architecture.
+- `invitations` — family invite codes.
+- `chore_templates` — optional home routine templates.
+
+## Required invariant
+
+Every family-scoped collection has `family`. API rules and hooks must prevent cross-family access.
+
+## Calendar invariant
+
+Every dated `items` record creates at least one `item_occurrences` record. Calendar and Today query occurrences by visible date range instead of loading all items.
+
+## Assignment invariant
+
+Assignment must have at least one assignee. For a single assignee equal to creator, UI should suggest creating a personal task instead.
+
+## Event invariant
+
+Events require valid date order: `end_at >= start_at`.

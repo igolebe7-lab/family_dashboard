@@ -1,0 +1,30 @@
+.DS_Store
+
+# Local tool state
+.serena/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# SvelteKit / Vite outputs
+.svelte-kit/
+build/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Environment and local runtime data
+.env
+.env.*
+!.env.example
+pocketbase/pb_data/
+pocketbase/pb_logs/
+pocketbase/pocketbase
+
+# OS/editor noise
+*.swp
+*.swo
+.idea/
+.vscode/
