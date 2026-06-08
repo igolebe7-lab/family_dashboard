@@ -230,7 +230,48 @@ Caddy reverse proxy + static frontend
 
 ---
 
-## 9. Использование plugin/tool: gsap skills
+## 9. Использование plugin/tool: playwright
+
+Использовать `playwright` для браузерной проверки локального приложения, особенно после UI-задач, изменений роутинга, PWA shell, форм, realtime-потоков и deployment smoke test.
+
+### Когда использовать
+
+- проверить, что локальный dev server открывается и основные routes не падают;
+- сделать smoke test Today, Calendar, Composer, Notifications, Child mode;
+- проверить mobile и desktop viewport после UI-изменений;
+- проверить прямой заход/refresh на SPA routes после static build fallback;
+- проверить клики, keyboard navigation, focus states, modal/sheet close behavior;
+- снять screenshots для сравнения с UI-референсами;
+- проверить console errors и важные network requests.
+
+### Правила
+
+- Перед Playwright-проверкой запустить приложение штатной командой проекта, обычно `pnpm dev`.
+- Если доступен Browser plugin / in-app browser, использовать его для интерактивной проверки локального UI.
+- Для автоматизированных e2e после настройки использовать `npx playwright test` или project script, если он добавлен.
+- Проверять минимум два viewport:
+  - mobile: около `390x844`;
+  - desktop: около `1440x900`.
+- Скриншоты хранить только если они нужны для отчёта, regression или debugging; не коммитить случайные временные screenshots.
+- Не использовать Playwright как замену unit/type проверкам: `pnpm check`, `pnpm test`, `pnpm build` остаются обязательными, если доступны.
+- Если тест зависит от локального PocketBase, явно указать seed/test user assumptions.
+
+### Минимальный UI smoke checklist
+
+```txt
+/app/today opens
+/app/calendar opens
+bottom nav works on mobile
+desktop sidebar works on desktop
+composer opens and closes
+notification bell is focusable
+no console errors on initial load
+direct route refresh does not 404 after static fallback is configured
+```
+
+---
+
+## 10. Использование plugin/tool: gsap skills
 
 Использовать `gsap skills` только для анимаций, где GSAP действительно нужен.
 
@@ -291,7 +332,7 @@ onDestroy(() => cleanup?.());
 
 ---
 
-## 10. Coding standards
+## 11. Coding standards
 
 ### TypeScript
 
@@ -324,7 +365,7 @@ onDestroy(() => cleanup?.());
 
 ---
 
-## 11. Команды проекта
+## 12. Команды проекта
 
 Если scripts уже настроены, использовать их. Если нет — добавить стандартные.
 
@@ -350,7 +391,7 @@ cd pocketbase
 
 ---
 
-## 12. Правила добавления зависимостей
+## 13. Правила добавления зависимостей
 
 Перед добавлением зависимости ответить:
 
@@ -382,7 +423,7 @@ cd pocketbase
 
 ---
 
-## 13. Дизайн-реализация: что важно не потерять
+## 14. Дизайн-реализация: что важно не потерять
 
 При любой UI-задаче помнить:
 
@@ -398,7 +439,7 @@ cd pocketbase
 
 ---
 
-## 14. Проверка бизнес-логики
+## 15. Проверка бизнес-логики
 
 Перед завершением backend/API задачи проверить сценарии:
 
@@ -434,7 +475,7 @@ assignees item is visible to assignee and creator
 
 ---
 
-## 15. Ошибки, которых нельзя допускать
+## 16. Ошибки, которых нельзя допускать
 
 - Показывать данные другой семьи.
 - Давать ребёнку доступ к adult/private событиям.
@@ -449,7 +490,7 @@ assignees item is visible to assignee and creator
 
 ---
 
-## 16. Документация и изменения
+## 17. Документация и изменения
 
 Если меняется архитектура, обновить:
 
@@ -462,7 +503,7 @@ assignees item is visible to assignee and creator
 
 ---
 
-## 17. Минимальный формат отчёта после задачи
+## 18. Минимальный формат отчёта после задачи
 
 В финальном сообщении указывать:
 
@@ -483,7 +524,7 @@ assignees item is visible to assignee and creator
 
 ---
 
-## 18. Главный принцип
+## 19. Главный принцип
 
 Всегда выбирать решение, которое лучше всего служит семье-пользователю:
 
