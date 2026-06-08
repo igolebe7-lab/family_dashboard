@@ -135,11 +135,11 @@
 - Create: `apps/web/src/lib/utils/date.ts`
 - Create: `apps/web/src/lib/utils/validation.ts`
 
-- [ ] Описать roles: `owner`, `parent`, `adult`, `teen`, `child`, `guest`.
-- [ ] Описать item kinds, statuses, visibility, categories, priorities, notification types.
-- [ ] Описать `Family`, `FamilyMember`, `Item`, `ItemOccurrence`, `Notification`, `ActivityRecord`.
-- [ ] Добавить zod schemas для composer MVP forms.
-- [ ] Добавить pure permission helpers, совпадающие с будущими server hooks.
+- [x] Описать roles: `owner`, `parent`, `adult`, `teen`, `child`, `guest`.
+- [x] Описать item kinds, statuses, visibility, categories, priorities, notification types.
+- [x] Описать `Family`, `FamilyMember`, `Item`, `ItemOccurrence`, `Notification`, `ActivityRecord`.
+- [x] Добавить zod schemas для composer MVP forms.
+- [x] Добавить pure permission helpers, совпадающие с будущими server hooks.
 
 **Automated checks:**
 
