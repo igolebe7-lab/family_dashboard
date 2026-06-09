@@ -1,16 +1,16 @@
 :root {
   color-scheme: light;
   font-family:
-    Inter, 'SF Pro Display', 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
+    ui-rounded, 'SF Pro Rounded', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    system-ui, sans-serif;
 
-  --color-bg: #fffaf3;
+  --color-bg: #fffdf8;
   --color-surface: #ffffff;
-  --color-surface-soft: #fffdf8;
-  --color-text: #242936;
-  --color-text-muted: #747b8b;
-  --color-text-soft: #9aa1ad;
-  --color-border: #eee7dc;
+  --color-surface-soft: #fffaf3;
+  --color-text: #2d3340;
+  --color-text-muted: #7a8291;
+  --color-text-soft: #a1a7b2;
+  --color-border: #eee8dd;
   --color-shadow: 28 24 18;
 
   --color-green: #73b95f;
@@ -42,9 +42,9 @@
   --radius-xl: 28px;
   --radius-2xl: 36px;
 
-  --shadow-card: 0 14px 40px rgb(var(--color-shadow) / 0.08);
-  --shadow-soft: 0 8px 24px rgb(var(--color-shadow) / 0.06);
-  --shadow-floating: 0 18px 45px rgb(var(--color-shadow) / 0.16);
+  --shadow-card: 0 14px 34px rgb(var(--color-shadow) / 0.055);
+  --shadow-soft: 0 8px 20px rgb(var(--color-shadow) / 0.045);
+  --shadow-floating: 0 18px 38px rgb(var(--color-shadow) / 0.1);
 
   --font-size-xs: 12px;
   --font-size-sm: 14px;

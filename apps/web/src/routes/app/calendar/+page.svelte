@@ -99,22 +99,31 @@
     <Button variant="primary">+ Создать</Button>
   </div>
 
-  <section class="desktop-grid" aria-label="Недельная сетка">
-    {#each week as day, index}
-      <article class="desktop-day">
-        <div class="desktop-day__title">
+  <section class="desktop-calendar-board" aria-label="Недельная сетка">
+    <div class="desktop-calendar-week-header" aria-hidden="true">
+      {#each week as day}
+        <div class:desktop-calendar-day-heading--active={day.active === true} class="desktop-calendar-day-heading">
           <span>{day.day}</span>
           <strong>{day.date} мая</strong>
         </div>
-        {#each events.filter((_, eventIndex) => eventIndex % 3 === index % 3) as event}
-          <div class="desktop-event desktop-event--{event.color}">
-            <strong>{event.time}</strong>
-            <span>{event.title}</span>
-            <small>{event.person}</small>
-          </div>
+      {/each}
+    </div>
+
+    <div class="desktop-calendar-scroll" aria-label="События недели">
+      <div class="desktop-grid">
+        {#each week as day, index}
+          <article class="desktop-day" aria-label={`${day.day}, ${day.date} мая`}>
+            {#each events.filter((_, eventIndex) => eventIndex % 3 === index % 3) as event}
+              <div class="desktop-event desktop-event--{event.color}">
+                <strong>{event.time}</strong>
+                <span>{event.title}</span>
+                <small>{event.person}</small>
+              </div>
+            {/each}
+          </article>
         {/each}
-      </article>
-    {/each}
+      </div>
+    </div>
   </section>
 
   <svelte:fragment slot="aside">

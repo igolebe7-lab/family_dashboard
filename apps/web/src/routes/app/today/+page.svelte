@@ -1,16 +1,20 @@
 <script lang="ts">
-  import Button from '$lib/components/ui/Button.svelte';
+  import { browser } from '$app/environment';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import MemberAvatarRow from '$lib/components/family/MemberAvatarRow.svelte';
   import AttentionPanel from '$lib/components/today/AttentionPanel.svelte';
+  import DesktopHeader from '$lib/components/today/DesktopHeader.svelte';
   import QuickActions from '$lib/components/today/QuickActions.svelte';
   import TodayHeader from '$lib/components/today/TodayHeader.svelte';
   import TodayTimeline from '$lib/components/today/TodayTimeline.svelte';
   import TodayWeekBoard from '$lib/components/today/TodayWeekBoard.svelte';
+  import { getIcon } from '$lib/design/icon-registry';
   import { createTodayViewModel } from '$lib/today/today-view-model';
 
-  const today = createTodayViewModel();
+  const fixtureMode =
+    browser && new URLSearchParams(window.location.search).get('fixture') === 'desktop-reference';
+  const today = createTodayViewModel(fixtureMode ? { fixture: 'desktop-reference' } : undefined);
   const activeRoute = '/app/today';
 </script>
 
@@ -23,21 +27,20 @@
   />
 
   <MemberAvatarRow members={today.familyMembers} />
-  <TodayTimeline items={today.timelineItems} labelledBy="today-timeline-title-mobile" />
-  <AttentionPanel items={today.attentionItems} labelledBy="attention-title-mobile" />
-  <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" />
+  <section class="today-mobile-surface" aria-label="Сегодня, внимание и быстрые действия">
+    <TodayTimeline items={today.timelineItems} labelledBy="today-timeline-title-mobile" />
+    <AttentionPanel items={today.attentionItems} labelledBy="attention-title-mobile" />
+    <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" />
+  </section>
 </MobileShell>
 
 <DesktopShell {activeRoute} labelledBy="today-title-desktop">
-  <div class="today-desktop-header">
-    <TodayHeader
-      titleId="today-title-desktop"
-      greeting={today.greeting}
-      dateLabel={today.dateLabel}
-      notificationCount={today.attentionCount}
-    />
-    <Button variant="primary">+ Создать</Button>
-  </div>
+  <DesktopHeader
+    titleId="today-title-desktop"
+    greeting={today.greeting}
+    dateLabel={today.dateLabel}
+    notificationCount={today.attentionCount}
+  />
 
   <TodayWeekBoard
     labelledBy="today-week-title-desktop"
@@ -60,15 +63,19 @@
       </div>
 
       <div class="today-feed__list">
-        <article>
-          <strong>Миша</strong>
-          <span>закрыл поручение «Вынести мусор»</span>
-        </article>
-        <article>
-          <strong>Мама</strong>
-          <span>добавила событие «Врач»</span>
-        </article>
+        {#each today.feedItems as item (item.id)}
+          {@const Icon = getIcon(item.icon)}
+          <article class={`today-feed__item today-feed__item--${item.color}`}>
+            <span class="today-feed__icon" aria-hidden="true">
+              <svelte:component this={Icon} size={17} strokeWidth={2.35} />
+            </span>
+            <p><strong>{item.actor}</strong> {item.body}</p>
+            <time>{item.timeLabel}</time>
+          </article>
+        {/each}
       </div>
+
+      <a class="today-feed__link" href="/app/feed">Открыть всю ленту ›</a>
     </section>
   </svelte:fragment>
 </DesktopShell>

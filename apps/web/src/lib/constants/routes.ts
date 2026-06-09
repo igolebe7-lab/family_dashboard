@@ -24,6 +24,12 @@ export const APP_ROUTE_DEFINITIONS = {
     icon: 'square-check-big',
     description: 'Домашние поручения и подтверждения'
   },
+  tasks: {
+    label: 'Дела',
+    href: '/app/tasks',
+    icon: 'list-checks',
+    description: 'Семейные дела без подтверждения'
+  },
   family: {
     label: 'Семья',
     href: '/app/family',
@@ -51,6 +57,7 @@ export const desktopNavigation = [
   APP_ROUTE_DEFINITIONS.today,
   APP_ROUTE_DEFINITIONS.calendar,
   APP_ROUTE_DEFINITIONS.assignments,
+  APP_ROUTE_DEFINITIONS.tasks,
   APP_ROUTE_DEFINITIONS.feed,
   APP_ROUTE_DEFINITIONS.family
 ] as const;
