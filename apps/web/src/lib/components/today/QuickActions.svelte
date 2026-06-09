@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getIcon } from '$lib/design/icon-registry';
+  import Plus from '@lucide/svelte/icons/plus';
   import type { TodayQuickAction } from '$lib/today/today-view-model';
 
   export let actions: TodayQuickAction[] = [];
@@ -13,10 +13,9 @@
 
   <div class="today-quick-actions__grid">
     {#each actions as action (action.id)}
-      {@const Icon = getIcon(action.icon)}
       <button class={`today-quick-action today-quick-action--${action.color}`} type="button">
         <span aria-hidden="true">
-          <svelte:component this={Icon} size={20} strokeWidth={2.35} />
+          <Plus size={29} strokeWidth={2.45} />
         </span>
         {action.label}
       </button>

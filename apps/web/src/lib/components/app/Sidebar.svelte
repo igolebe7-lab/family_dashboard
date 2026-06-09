@@ -26,6 +26,36 @@
     {/each}
   </nav>
 
+  <section class="sidebar-family" aria-label="Семья">
+    <p>Семья</p>
+    <div class="sidebar-family__list">
+      <span class="sidebar-family__member">
+        <span class="sidebar-family__avatar portrait portrait--mom" aria-hidden="true">
+          <span class="portrait__face">М</span>
+        </span>
+        <span>Мама</span>
+      </span>
+      <span class="sidebar-family__member">
+        <span class="sidebar-family__avatar portrait portrait--dad" aria-hidden="true">
+          <span class="portrait__face">П</span>
+        </span>
+        <span>Папа</span>
+      </span>
+      <span class="sidebar-family__member">
+        <span class="sidebar-family__avatar portrait portrait--misha" aria-hidden="true">
+          <span class="portrait__face">М</span>
+        </span>
+        <span>Миша</span>
+      </span>
+      <span class="sidebar-family__member">
+        <span class="sidebar-family__avatar portrait portrait--anya" aria-hidden="true">
+          <span class="portrait__face">А</span>
+        </span>
+        <span>Аня</span>
+      </span>
+    </div>
+  </section>
+
   <section class="family-progress" aria-label="Семейный прогресс">
     <p>Семейный прогресс</p>
     <strong>78%</strong>

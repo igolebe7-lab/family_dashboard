@@ -7,10 +7,9 @@
   import QuickActions from '$lib/components/today/QuickActions.svelte';
   import TodayHeader from '$lib/components/today/TodayHeader.svelte';
   import TodayTimeline from '$lib/components/today/TodayTimeline.svelte';
-  import { createShellViewModel } from '$lib/app-shell';
+  import TodayWeekBoard from '$lib/components/today/TodayWeekBoard.svelte';
   import { createTodayViewModel } from '$lib/today/today-view-model';
 
-  const shell = createShellViewModel({ apiAvailable: false });
   const today = createTodayViewModel();
   const activeRoute = '/app/today';
 </script>
@@ -27,8 +26,6 @@
   <TodayTimeline items={today.timelineItems} labelledBy="today-timeline-title-mobile" />
   <AttentionPanel items={today.attentionItems} labelledBy="attention-title-mobile" />
   <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" />
-
-  <p class="offline-note" role="status">{shell.message}</p>
 </MobileShell>
 
 <DesktopShell {activeRoute} labelledBy="today-title-desktop">
@@ -42,8 +39,13 @@
     <Button variant="primary">+ Создать</Button>
   </div>
 
-  <MemberAvatarRow members={today.familyMembers} />
-  <TodayTimeline items={today.timelineItems} labelledBy="today-timeline-title-desktop" />
+  <TodayWeekBoard
+    labelledBy="today-week-title-desktop"
+    weekLabel={today.weekLabel}
+    days={today.weekDays}
+    times={today.weekTimes}
+    events={today.weekEvents}
+  />
 
   <svelte:fragment slot="aside">
     <AttentionPanel items={today.attentionItems} labelledBy="attention-title-desktop" />

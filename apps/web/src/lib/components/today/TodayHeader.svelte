@@ -10,11 +10,11 @@
 
 <header class="today-header">
   <div class="today-header__copy">
-    <span class="today-header__icon" aria-hidden="true">
-      <Sun size={18} strokeWidth={2.4} />
-    </span>
+    <h1 id={titleId}>
+      {greeting}
+      <Sun size={27} strokeWidth={2.3} aria-hidden="true" />
+    </h1>
     <p>{dateLabel}</p>
-    <h1 id={titleId}>{greeting}</h1>
   </div>
 
   <button class="icon-button" type="button" aria-label="Открыть уведомления">

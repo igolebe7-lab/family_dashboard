@@ -11,6 +11,7 @@
       name={member.name}
       initial={member.initial}
       color={member.color}
+      portrait={member.portrait}
       roleLabel={member.roleLabel}
       todayCount={member.todayCount}
       selected={index === 0}
