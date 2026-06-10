@@ -142,6 +142,16 @@ No constant polling. No heavy background worker.
 
 ## Rendering Rules
 
+Calendar visual language must reuse the accepted `Сегодня` patterns:
+
+- warm background and soft translucent surfaces;
+- compact typography with moderate weight;
+- the same button, chip, card and icon proportions;
+- stable internal scroll areas instead of page-stretching blocks;
+- circular markers and avatar initials, never oval artifacts;
+- muted pastel glows and alpha layers, not cartoon-like saturation;
+- no separate admin-style visual system for the year calendar.
+
 Year Calendar:
 
 - weekend: soft background;

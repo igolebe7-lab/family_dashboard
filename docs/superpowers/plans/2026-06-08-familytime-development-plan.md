@@ -280,10 +280,12 @@
 - [x] Add category/member filters.
 - [x] Re-scope product decision: Today owns day/week/month; Calendar owns year/global navigation.
 - [ ] Move active day/week/month work into Today and stop expanding Calendar as a duplicate workspace.
-- [ ] Add `day_annotations` domain model for birthdays, public holidays, family dates, observances and memorial dates.
+- [x] Add client `day_annotations` domain model and recurrence projection for birthdays, public holidays, family dates, observances and memorial dates.
+- [ ] Add PocketBase `day_annotations` schema, rules and hooks.
 - [ ] Implement external birthday fields: optional relation/status, optional contact/phone and optional note.
 - [ ] Implement manual special date create/edit/delete with color and yearly/one-time recurrence.
 - [ ] Implement Calendar year overview with months, days, week numbers, weekends and annotation markers.
+- [ ] Match Calendar year overview to accepted Today UI patterns: warm surfaces, compact typography, soft buttons/chips, stable internal scroll and circular markers.
 - [ ] Implement day detail sheet and navigation from Calendar day/month to Today.
 - [ ] Implement all-day information strip in Today day/week/month.
 - [ ] Implement weekly cached public holiday sync for current and next year.

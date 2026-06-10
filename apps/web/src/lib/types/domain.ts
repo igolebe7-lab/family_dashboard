@@ -1,9 +1,14 @@
 import type { ItemCategory } from '$lib/constants/categories';
+import type { AccentColor } from '$lib/constants/colors';
 import type { MemberRole } from '$lib/constants/roles';
 
 export type ItemKind = 'event' | 'task' | 'assignment' | 'routine';
 export type ItemPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type ItemVisibility = 'private' | 'assignees' | 'family' | 'adults';
+export type DayAnnotationKind = 'birthday' | 'public_holiday' | 'family_date' | 'observance' | 'memorial';
+export type DayAnnotationRecurrence = 'one_time' | 'yearly';
+export type DayAnnotationTone = 'positive' | 'neutral' | 'important' | 'memorial' | 'system';
+export type DayAnnotationSource = 'manual' | 'family_member' | 'nager_date';
 
 export type AssignmentStatus =
   | 'assigned'
@@ -123,6 +128,35 @@ export type ItemOccurrence = {
   rejectedBy?: string;
   rejectedAt?: string;
   rejectionReason?: string;
+};
+
+export type DayAnnotation = {
+  id: string;
+  family: string;
+  kind: DayAnnotationKind;
+  title: string;
+  description?: string;
+  month: number;
+  day: number;
+  year?: number;
+  recurrence: DayAnnotationRecurrence;
+  color: AccentColor;
+  tone: DayAnnotationTone;
+  visibility: ItemVisibility;
+  source: DayAnnotationSource;
+  readonly: boolean;
+  linkedMember?: string;
+  personName?: string;
+  personRelation?: string;
+  personContact?: string;
+  countryCode?: string;
+  regionCode?: string;
+  sourceUid?: string;
+  sourceHash?: string;
+  fetchedAt?: string;
+  createdBy?: string;
+  created?: string;
+  updated?: string;
 };
 
 export type ActivityRecord = {
