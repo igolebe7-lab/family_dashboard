@@ -60,4 +60,11 @@ describe('createTodayViewModel', () => {
       color: 'lavender'
     });
   });
+
+  it('uses a neutral date label when Today is focused on a selected non-current date', () => {
+    const model = createTodayViewModel(new Date(2026, 5, 18));
+
+    expect(model.dateLabel).toBe('18 июня 2026 г., четверг');
+    expect(model.dateLabel).not.toContain('Сегодня');
+  });
 });

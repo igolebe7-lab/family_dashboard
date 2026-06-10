@@ -292,7 +292,7 @@
 - [x] Implement navigation from Calendar day to Today with selected date and day view.
 - [ ] Implement navigation from Calendar month to Today month view after Today month UI exists.
 - [x] Implement all-day information strip in Today for selected day annotations.
-- [ ] Polish Today date label when viewing a non-current selected date from Calendar.
+- [x] Polish Today date label when viewing a non-current selected date from Calendar.
 - [ ] Implement weekly cached public holiday sync for current and next year.
 
 **Automated checks:**

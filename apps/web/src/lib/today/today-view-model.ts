@@ -322,7 +322,7 @@ function formatDayMonth(date: Date): string {
   return `${date.getDate()} ${GENITIVE_MONTHS[date.getMonth()]}`;
 }
 
-function formatTodayLabel(date: Date): string {
+function formatTodayLabel(date: Date, todayPrefix: boolean): string {
   const datePart = new Intl.DateTimeFormat('ru-RU', {
     day: 'numeric',
     month: 'long',
@@ -330,7 +330,7 @@ function formatTodayLabel(date: Date): string {
   }).format(date);
   const weekday = new Intl.DateTimeFormat('ru-RU', { weekday: 'long' }).format(date);
 
-  return `Сегодня, ${datePart}, ${weekday}`;
+  return todayPrefix ? `Сегодня, ${datePart}, ${weekday}` : `${datePart}, ${weekday}`;
 }
 
 function getWeekStart(date: Date): Date {
@@ -447,8 +447,9 @@ function resolveViewModelOptions(input?: Date | TodayViewModelOptions): Resolved
 
 export function createTodayViewModel(input?: Date | TodayViewModelOptions): TodayViewModel {
   const options = resolveViewModelOptions(input);
+  const isReferenceFixture = options.fixture === 'desktop-reference';
   const date =
-    options.fixture === 'desktop-reference'
+    isReferenceFixture
       ? createDateFromKey(REFERENCE_DESKTOP_WEEK_FIXTURE.selectedDate)
       : options.date;
   const weekDays = createWeekDays(date);
@@ -556,7 +557,7 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
 
   return {
     greeting: 'Доброе утро, семья',
-    dateLabel: formatTodayLabel(date),
+    dateLabel: formatTodayLabel(date, isReferenceFixture || isSameLocalDay(date, new Date())),
     weekLabel: formatWeekLabel(weekDays),
     weekDays,
     weekTimes,
@@ -577,4 +578,12 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
       body: 'Когда появятся события или дела, они будут здесь.'
     }
   };
+}
+
+function isSameLocalDay(left: Date, right: Date): boolean {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
 }
