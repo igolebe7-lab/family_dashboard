@@ -479,6 +479,234 @@ h3 {
   color: var(--color-green);
 }
 
+.calendar-year-toolbar,
+.calendar-year-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.calendar-year-toolbar {
+  border: 1px solid rgb(238 231 220 / 0.72);
+  border-radius: 1.45rem;
+  background: rgb(255 255 255 / 0.78);
+  box-shadow: 0 12px 28px rgb(28 24 18 / 0.045);
+  padding: 0.72rem;
+}
+
+.calendar-year-toolbar button,
+.calendar-year-actions button {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid rgb(238 231 220 / 0.86);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 0.86);
+  color: var(--color-text);
+  line-height: 0;
+}
+
+.calendar-year-toolbar div {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+}
+
+.calendar-year-toolbar span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.calendar-year-toolbar strong,
+.calendar-year-actions strong {
+  color: var(--color-text);
+  font-size: 1.25rem;
+  font-weight: 560;
+}
+
+.year-calendar {
+  display: grid;
+  gap: 0.92rem;
+}
+
+.year-month {
+  display: grid;
+  gap: 0.62rem;
+  min-width: 0;
+  border: 1px solid rgb(238 231 220 / 0.74);
+  border-radius: 1.45rem;
+  background: rgb(255 255 255 / 0.78);
+  box-shadow: 0 12px 30px rgb(28 24 18 / 0.045);
+  padding: 0.78rem;
+}
+
+.year-month__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.year-month__header h2 {
+  font-size: 1rem;
+  font-weight: 540;
+}
+
+.year-month__weekdays,
+.year-week {
+  display: grid;
+  grid-template-columns: 1.55rem repeat(7, minmax(0, 1fr));
+  gap: 0.18rem;
+}
+
+.year-month__weekdays {
+  color: var(--color-text-muted);
+  font-size: 0.66rem;
+  font-weight: 540;
+  text-align: center;
+}
+
+.year-month__weeks {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.year-week__number {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-soft);
+  font-size: 0.62rem;
+  font-weight: 520;
+}
+
+.year-day {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  height: 2.32rem;
+  align-content: center;
+  gap: 0.1rem;
+  border: 0;
+  border-radius: 0.78rem;
+  background: rgb(255 255 255 / 0.62);
+  color: var(--color-text);
+  padding: 0.16rem;
+}
+
+.year-day--weekend {
+  background: rgb(255 247 236 / 0.88);
+}
+
+.year-day--muted {
+  color: var(--color-text-soft);
+  opacity: 0.54;
+}
+
+.year-day--annotated {
+  box-shadow: inset 0 0 0 1px rgb(36 40 52 / 0.045);
+}
+
+.year-day__number {
+  font-size: 0.74rem;
+  font-weight: 520;
+  line-height: 1;
+}
+
+.year-day__markers {
+  display: flex;
+  min-width: 0;
+  justify-content: center;
+  gap: 0.12rem;
+}
+
+.year-marker {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--color-green);
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.78);
+}
+
+.year-marker--birthday {
+  border-radius: 999px;
+}
+
+.year-marker--public_holiday {
+  background: var(--color-yellow);
+}
+
+.year-marker--family_date {
+  background: var(--color-green);
+}
+
+.year-marker--observance {
+  background: var(--color-blue);
+}
+
+.year-marker--memorial {
+  background: var(--color-text-soft);
+}
+
+.year-marker--green {
+  background: var(--color-green);
+}
+
+.year-marker--lavender {
+  background: var(--color-lavender);
+}
+
+.year-marker--blue {
+  background: var(--color-blue);
+}
+
+.year-marker--peach {
+  background: var(--color-peach);
+}
+
+.year-marker--yellow {
+  background: var(--color-yellow);
+}
+
+.year-marker--gray {
+  background: var(--color-text-soft);
+}
+
+.year-day__markers b {
+  color: var(--color-text-muted);
+  font-size: 0.54rem;
+  font-weight: 540;
+  line-height: 0.42rem;
+}
+
+.calendar-legend {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.calendar-legend p {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 430;
+  line-height: 1.35;
+}
+
+.calendar-legend__items {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.calendar-legend__items span {
+  display: flex;
+  align-items: center;
+  gap: 0.52rem;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
 .fab {
   position: fixed;
   right: 1.4rem;

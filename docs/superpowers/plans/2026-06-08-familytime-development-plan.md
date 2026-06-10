@@ -286,8 +286,8 @@
 - [ ] Implement external birthday fields: optional relation/status, optional contact/phone and optional note.
 - [ ] Implement manual special date create/edit/delete with color and yearly/one-time recurrence.
 - [x] Add Calendar year/month view model with week numbers, weekends and annotation marker overflow.
-- [ ] Implement Calendar year overview with months, days, week numbers, weekends and annotation markers.
-- [ ] Match Calendar year overview to accepted Today UI patterns: warm surfaces, compact typography, soft buttons/chips, stable internal scroll and circular markers.
+- [x] Implement Calendar year overview with months, days, week numbers, weekends and annotation markers.
+- [x] Match Calendar year overview to accepted Today UI patterns: warm surfaces, compact typography, soft buttons/chips, stable internal scroll and circular markers.
 - [ ] Implement day detail sheet and navigation from Calendar day/month to Today.
 - [ ] Implement all-day information strip in Today day/week/month.
 - [ ] Implement weekly cached public holiday sync for current and next year.
