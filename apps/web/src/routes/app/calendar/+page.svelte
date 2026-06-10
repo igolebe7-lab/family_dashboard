@@ -10,12 +10,12 @@
   import DayDetailSheet from '$lib/components/calendar/DayDetailSheet.svelte';
   import YearCalendar from '$lib/components/calendar/YearCalendar.svelte';
   import Button from '$lib/components/ui/Button.svelte';
+  import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
   import { createYearCalendarViewModel } from '$lib/calendar/year-calendar';
   import type { YearCalendarDay } from '$lib/calendar/year-calendar';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
-  import type { DayAnnotation } from '$lib/types/domain';
 
   const activeRoute = '/app/calendar';
   let familyUnsubscribe: Unsubscriber | undefined;
@@ -23,78 +23,11 @@
   let loadedYearKey: string | null = null;
   let selectedDateKey: string | undefined;
 
-  const demoAnnotations: DayAnnotation[] = [
-    {
-      id: 'demo_new_year',
-      family: 'demo',
-      kind: 'public_holiday',
-      title: 'Новый год',
-      month: 1,
-      day: 1,
-      year: 2026,
-      recurrence: 'one_time',
-      color: 'gray',
-      tone: 'system',
-      visibility: 'family',
-      source: 'nager_date',
-      readonly: true,
-      countryCode: 'RU'
-    },
-    {
-      id: 'demo_misha_birthday',
-      family: 'demo',
-      kind: 'birthday',
-      title: 'День рождения Миши',
-      month: 3,
-      day: 12,
-      year: 2017,
-      recurrence: 'yearly',
-      color: 'green',
-      tone: 'positive',
-      visibility: 'family',
-      source: 'family_member',
-      readonly: false,
-      linkedMember: 'member_misha',
-      personName: 'Миша'
-    },
-    {
-      id: 'demo_vladimir_birthday',
-      family: 'demo',
-      kind: 'birthday',
-      title: 'День рождения Владимира',
-      month: 6,
-      day: 18,
-      recurrence: 'yearly',
-      color: 'blue',
-      tone: 'positive',
-      visibility: 'family',
-      source: 'manual',
-      readonly: false,
-      personName: 'Владимир',
-      personRelation: 'коллега',
-      personContact: '+7 999 000-00-00'
-    },
-    {
-      id: 'demo_memorial',
-      family: 'demo',
-      kind: 'memorial',
-      title: 'Памятный день',
-      month: 9,
-      day: 4,
-      recurrence: 'yearly',
-      color: 'gray',
-      tone: 'memorial',
-      visibility: 'family',
-      source: 'manual',
-      readonly: false
-    }
-  ];
-
   $: selectedYear = $dayAnnotationsStore.selectedYear;
   $: calendarAnnotations =
     $dayAnnotationsStore.projectedAnnotations.length > 0
       ? $dayAnnotationsStore.projectedAnnotations
-      : demoAnnotations;
+      : DEMO_DAY_ANNOTATIONS;
   $: yearModel = createYearCalendarViewModel(selectedYear, calendarAnnotations);
   $: selectedDay = selectedDateKey ? yearModel.daysByDate.get(selectedDateKey) : undefined;
   $: selectedTodayHref = selectedDay

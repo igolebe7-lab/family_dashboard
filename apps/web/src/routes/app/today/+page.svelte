@@ -9,12 +9,16 @@
   import DesktopHeader from '$lib/components/today/DesktopHeader.svelte';
   import QuickActions from '$lib/components/today/QuickActions.svelte';
   import TodayHeader from '$lib/components/today/TodayHeader.svelte';
+  import TodayAllDayStrip from '$lib/components/today/TodayAllDayStrip.svelte';
   import TodayTimeline from '$lib/components/today/TodayTimeline.svelte';
   import TodayWeekBoard from '$lib/components/today/TodayWeekBoard.svelte';
+  import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { parseTodayCalendarSearch } from '$lib/calendar/today-navigation';
   import { getIcon } from '$lib/design/icon-registry';
   import { calendarStore } from '$lib/stores/calendar.store';
+  import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
+  import { createTodayAllDayInfoViewModel } from '$lib/today/today-all-day';
   import { loadTodayViewModelFromOccurrences } from '$lib/today/today-data';
   import { createTodayViewModel, type TodayViewModel } from '$lib/today/today-view-model';
 
@@ -31,6 +35,16 @@
   );
   let familyUnsubscribe: Unsubscriber | undefined;
   let loadedContextKey: string | null = null;
+  let loadedAnnotationsKey: string | null = null;
+
+  $: todayAnnotations =
+    $dayAnnotationsStore.projectedAnnotations.length > 0
+      ? $dayAnnotationsStore.projectedAnnotations
+      : DEMO_DAY_ANNOTATIONS;
+  $: allDayInfo = createTodayAllDayInfoViewModel({
+    date: selectedTodayDate,
+    annotations: todayAnnotations
+  });
 
   async function loadTodayFromFamilyState(familyState: FamilyState) {
     const context = getActiveFamilyContext(familyState);
@@ -50,6 +64,23 @@
     }
   }
 
+  async function loadDayAnnotationsFromFamilyState(familyState: FamilyState) {
+    const context = getActiveFamilyContext(familyState);
+    if (!context) return;
+
+    const selectedYear = selectedTodayDate.getFullYear();
+    const annotationsKey = `${context.familyId}:${context.memberId}:${selectedYear}`;
+    if (loadedAnnotationsKey === annotationsKey) return;
+    loadedAnnotationsKey = annotationsKey;
+    dayAnnotationsStore.setYear(selectedYear);
+
+    try {
+      await dayAnnotationsStore.loadYear(context);
+    } catch (error) {
+      console.warn('Failed to load Today day annotations from PocketBase, keeping demo strip.', error);
+    }
+  }
+
   onMount(() => {
     if (fixtureMode) return;
 
@@ -61,6 +92,7 @@
     familyUnsubscribe = familyStore.subscribe((familyState) => {
       if (familyState.status !== 'ready') return;
       void loadTodayFromFamilyState(familyState);
+      void loadDayAnnotationsFromFamilyState(familyState);
     });
   });
 
@@ -79,6 +111,7 @@
 
   <MemberAvatarRow members={today.familyMembers} />
   <section class="today-mobile-surface" aria-label="Сегодня, внимание и быстрые действия">
+    <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-mobile" />
     <TodayTimeline items={today.timelineItems} labelledBy="today-timeline-title-mobile" />
     <AttentionPanel items={today.attentionItems} labelledBy="attention-title-mobile" />
     <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" />
@@ -92,6 +125,8 @@
     dateLabel={today.dateLabel}
     notificationCount={today.attentionCount}
   />
+
+  <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-desktop" />
 
   <TodayWeekBoard
     labelledBy="today-week-title-desktop"
