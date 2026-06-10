@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import X from '@lucide/svelte/icons/x';
   import { createDayDetailViewModel } from '$lib/calendar/day-detail';
   import type { YearCalendarDay } from '$lib/calendar/year-calendar';
@@ -6,6 +7,7 @@
   export let day: YearCalendarDay | undefined = undefined;
   export let onclose: (() => void) | undefined = undefined;
   export let titleId = 'day-detail-title';
+  export let todayHref: string | undefined = undefined;
 
   $: model = day ? createDayDetailViewModel(day) : undefined;
 </script>
@@ -39,6 +41,13 @@
           </article>
         {/each}
       </div>
+    {/if}
+
+    {#if todayHref}
+      <a class="day-detail-sheet__today-link" href={todayHref}>
+        Открыть в Сегодня
+        <ArrowRight size={17} strokeWidth={2.2} aria-hidden="true" />
+      </a>
     {/if}
   </aside>
 {/if}

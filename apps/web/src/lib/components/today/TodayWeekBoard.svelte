@@ -18,12 +18,13 @@
   type CalendarView = 'day' | 'week';
 
   export let labelledBy = 'today-week-title';
+  export let initialView: CalendarView = 'week';
   export let weekLabel: string;
   export let days: TodayWeekDay[] = [];
   export let times: string[] = [];
   export let events: TodayWeekEvent[] = [];
 
-  let selectedView: CalendarView = 'week';
+  let selectedView: CalendarView = initialView;
   let calendarScrollElement: HTMLDivElement | undefined;
 
   $: calendarBodyHeight = getCalendarBodyHeight();

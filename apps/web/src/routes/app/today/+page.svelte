@@ -11,17 +11,23 @@
   import TodayHeader from '$lib/components/today/TodayHeader.svelte';
   import TodayTimeline from '$lib/components/today/TodayTimeline.svelte';
   import TodayWeekBoard from '$lib/components/today/TodayWeekBoard.svelte';
+  import { parseTodayCalendarSearch } from '$lib/calendar/today-navigation';
   import { getIcon } from '$lib/design/icon-registry';
+  import { calendarStore } from '$lib/stores/calendar.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { loadTodayViewModelFromOccurrences } from '$lib/today/today-data';
   import { createTodayViewModel, type TodayViewModel } from '$lib/today/today-view-model';
 
   const fixtureMode =
     browser && new URLSearchParams(window.location.search).get('fixture') === 'desktop-reference';
+  const navigationState =
+    browser && !fixtureMode ? parseTodayCalendarSearch(new URLSearchParams(window.location.search)) : null;
+  const selectedTodayDate = navigationState?.date ?? new Date();
+  const selectedCalendarView = navigationState?.view === 'day' ? 'day' : 'week';
   const activeRoute = '/app/today';
 
   let today: TodayViewModel = createTodayViewModel(
-    fixtureMode ? { fixture: 'desktop-reference' } : undefined
+    fixtureMode ? { fixture: 'desktop-reference' } : selectedTodayDate
   );
   let familyUnsubscribe: Unsubscriber | undefined;
   let loadedContextKey: string | null = null;
@@ -30,12 +36,13 @@
     const context = getActiveFamilyContext(familyState);
     if (!context) return;
 
-    const contextKey = `${context.familyId}:${context.memberId}`;
+    const contextKey = `${context.familyId}:${context.memberId}:${today.weekLabel}`;
     if (loadedContextKey === contextKey) return;
     loadedContextKey = contextKey;
 
     try {
       today = await loadTodayViewModelFromOccurrences(context, {
+        date: selectedTodayDate,
         members: familyState.members
       });
     } catch (error) {
@@ -45,6 +52,11 @@
 
   onMount(() => {
     if (fixtureMode) return;
+
+    if (navigationState) {
+      calendarStore.setSelectedDate(navigationState.date);
+      calendarStore.setView(navigationState.view);
+    }
 
     familyUnsubscribe = familyStore.subscribe((familyState) => {
       if (familyState.status !== 'ready') return;
@@ -83,6 +95,7 @@
 
   <TodayWeekBoard
     labelledBy="today-week-title-desktop"
+    initialView={selectedCalendarView}
     weekLabel={today.weekLabel}
     days={today.weekDays}
     times={today.weekTimes}

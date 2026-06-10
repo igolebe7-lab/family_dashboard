@@ -757,6 +757,21 @@ h3 {
   padding: 0.86rem;
 }
 
+.day-detail-sheet__today-link {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+  border-radius: 0.95rem;
+  background: var(--color-green);
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: 560;
+  text-decoration: none;
+  box-shadow: 0 12px 24px rgb(112 183 92 / 0.2);
+}
+
 .day-detail-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

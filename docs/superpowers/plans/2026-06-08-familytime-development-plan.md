@@ -289,7 +289,8 @@
 - [x] Implement Calendar year overview with months, days, week numbers, weekends and annotation markers.
 - [x] Match Calendar year overview to accepted Today UI patterns: warm surfaces, compact typography, soft buttons/chips, stable internal scroll and circular markers.
 - [x] Implement Calendar day detail sheet for selected day annotations.
-- [ ] Implement navigation from Calendar day/month to Today.
+- [x] Implement navigation from Calendar day to Today with selected date and day view.
+- [ ] Implement navigation from Calendar month to Today month view after Today month UI exists.
 - [ ] Implement all-day information strip in Today day/week/month.
 - [ ] Implement weekly cached public holiday sync for current and next year.
 

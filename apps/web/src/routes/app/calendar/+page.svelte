@@ -10,6 +10,7 @@
   import DayDetailSheet from '$lib/components/calendar/DayDetailSheet.svelte';
   import YearCalendar from '$lib/components/calendar/YearCalendar.svelte';
   import Button from '$lib/components/ui/Button.svelte';
+  import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
   import { createYearCalendarViewModel } from '$lib/calendar/year-calendar';
   import type { YearCalendarDay } from '$lib/calendar/year-calendar';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
@@ -96,6 +97,9 @@
       : demoAnnotations;
   $: yearModel = createYearCalendarViewModel(selectedYear, calendarAnnotations);
   $: selectedDay = selectedDateKey ? yearModel.daysByDate.get(selectedDateKey) : undefined;
+  $: selectedTodayHref = selectedDay
+    ? buildTodayCalendarHref({ dateKey: selectedDay.dateKey, view: 'day' })
+    : undefined;
 
   async function loadAnnotationsFromFamilyState(familyState: FamilyState | undefined) {
     if (!familyState || familyState.status !== 'ready') return;
@@ -170,7 +174,12 @@
   </section>
 
   <YearCalendar model={yearModel} compact {selectedDateKey} onselectDay={selectDay} />
-  <DayDetailSheet day={selectedDay} titleId="day-detail-title-mobile" onclose={closeDayDetail} />
+  <DayDetailSheet
+    day={selectedDay}
+    todayHref={selectedTodayHref}
+    titleId="day-detail-title-mobile"
+    onclose={closeDayDetail}
+  />
 </MobileShell>
 
 <FloatingCreateButton />
@@ -196,7 +205,12 @@
   <YearCalendar model={yearModel} {selectedDateKey} onselectDay={selectDay} />
 
   <svelte:fragment slot="aside">
-    <DayDetailSheet day={selectedDay} titleId="day-detail-title-desktop" onclose={closeDayDetail} />
+    <DayDetailSheet
+      day={selectedDay}
+      todayHref={selectedTodayHref}
+      titleId="day-detail-title-desktop"
+      onclose={closeDayDetail}
+    />
 
     <section class="calendar-legend" aria-labelledby="calendar-legend-title">
       <h2 id="calendar-legend-title">Слой дат</h2>
