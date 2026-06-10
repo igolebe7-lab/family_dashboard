@@ -8,6 +8,7 @@ import {
   asRecord,
   asString,
   asStringArray,
+  escapeFilterValue,
   getPocketBaseClient,
   memberRequestOptions,
   requireActiveContext,
@@ -25,12 +26,25 @@ export type CreateMemberInput = {
   isChildLoginEnabled?: boolean;
 };
 
+export async function listMembersForFamily(familyId: string): Promise<FamilyMember[]> {
+  const members = getPocketBaseClient().collection(COLLECTIONS.familyMembers);
+  const getFullList = requireCollectionMethod(members, 'getFullList');
+  const family = escapeFilterValue(familyId);
+  const records = await getFullList({
+    filter: `family = "${family}" && active = true`,
+    sort: 'display_name'
+  });
+
+  return records.map(mapFamilyMemberRecord);
+}
+
 export async function listMembers(context: Partial<ActiveFamilyContext>): Promise<FamilyMember[]> {
   const activeContext = requireActiveContext(context);
   const members = getPocketBaseClient().collection(COLLECTIONS.familyMembers);
   const getFullList = requireCollectionMethod(members, 'getFullList');
+  const family = escapeFilterValue(activeContext.familyId);
   const records = await getFullList({
-    filter: `family = "${activeContext.familyId}" && active = true`,
+    filter: `family = "${family}" && active = true`,
     sort: 'display_name',
     ...memberRequestOptions(activeContext)
   });

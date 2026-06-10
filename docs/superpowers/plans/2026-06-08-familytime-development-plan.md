@@ -199,12 +199,15 @@
 - Create: `apps/web/src/lib/api/activity.api.ts`
 - Create: `apps/web/src/lib/stores/session.store.ts`
 - Create: `apps/web/src/lib/stores/family.store.ts`
+- Create: `apps/web/src/lib/stores/family.bootstrap.ts`
+- Create: `apps/web/src/lib/stores/app.bootstrap.ts`
 
 - [x] Configure PocketBase base URL via env.
 - [x] Wrap auth login/register/logout/token refresh in `auth.api.ts`.
 - [x] Implement active family/member state.
 - [x] Implement loading/error states for API-facing session/family state.
 - [x] Ensure API functions always require active family/member where needed.
+- [x] Bootstrap client session on app load and hydrate active family/member context when auth is valid.
 
 **Automated checks:**
 
@@ -232,7 +235,7 @@
 - Create: `apps/web/src/lib/components/today/QuickActions.svelte`
 - Create: `apps/web/src/lib/components/today/TodayEmptyState.svelte`
 
-- [ ] Load today occurrences by local family timezone day range.
+- [x] Load today occurrences by local family timezone day range.
 - [ ] Load attention items: done waiting approval, overdue/open assignments, prep reminders.
 - [ ] Show family avatar row with member colors.
 - [ ] Show timeline cards with category icon, time, title, member label/avatar.

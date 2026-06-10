@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
+  import { onDestroy, onMount } from 'svelte';
+  import type { Unsubscriber } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import MemberAvatarRow from '$lib/components/family/MemberAvatarRow.svelte';
@@ -12,7 +12,7 @@
   import TodayTimeline from '$lib/components/today/TodayTimeline.svelte';
   import TodayWeekBoard from '$lib/components/today/TodayWeekBoard.svelte';
   import { getIcon } from '$lib/design/icon-registry';
-  import { familyStore, getActiveFamilyContext } from '$lib/stores/family.store';
+  import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { loadTodayViewModelFromOccurrences } from '$lib/today/today-data';
   import { createTodayViewModel, type TodayViewModel } from '$lib/today/today-view-model';
 
@@ -23,13 +23,16 @@
   let today: TodayViewModel = createTodayViewModel(
     fixtureMode ? { fixture: 'desktop-reference' } : undefined
   );
+  let familyUnsubscribe: Unsubscriber | undefined;
+  let loadedContextKey: string | null = null;
 
-  onMount(async () => {
-    if (fixtureMode) return;
-
-    const familyState = get(familyStore);
+  async function loadTodayFromFamilyState(familyState: FamilyState) {
     const context = getActiveFamilyContext(familyState);
     if (!context) return;
+
+    const contextKey = `${context.familyId}:${context.memberId}`;
+    if (loadedContextKey === contextKey) return;
+    loadedContextKey = contextKey;
 
     try {
       today = await loadTodayViewModelFromOccurrences(context, {
@@ -38,6 +41,19 @@
     } catch (error) {
       console.warn('Failed to load Today data from PocketBase, keeping demo view model.', error);
     }
+  }
+
+  onMount(() => {
+    if (fixtureMode) return;
+
+    familyUnsubscribe = familyStore.subscribe((familyState) => {
+      if (familyState.status !== 'ready') return;
+      void loadTodayFromFamilyState(familyState);
+    });
+  });
+
+  onDestroy(() => {
+    familyUnsubscribe?.();
   });
 </script>
 
