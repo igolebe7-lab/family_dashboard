@@ -1,7 +1,28 @@
 import { get } from 'svelte/store';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import type { ActiveFamilyContext } from '$lib/api/pocketbase';
+import type { ItemOccurrence } from '$lib/types/domain';
 import { createCalendarStore } from './calendar.store';
+
+const context: ActiveFamilyContext = {
+  familyId: 'family_1',
+  memberId: 'member_misha'
+};
+
+const schoolOccurrence: ItemOccurrence = {
+  id: 'occ_school',
+  family: 'family_1',
+  item: 'item_school',
+  visibleTo: ['member_misha'],
+  kind: 'event',
+  titleSnapshot: 'Школа',
+  categorySnapshot: 'school',
+  startAt: '2026-06-10T08:00:00.000+02:00',
+  endAt: '2026-06-10T09:00:00.000+02:00',
+  allDay: false,
+  status: 'todo'
+};
 
 describe('createCalendarStore', () => {
   it('calculates API visible ranges for day, week, month and agenda views', () => {
@@ -78,5 +99,46 @@ describe('createCalendarStore', () => {
 
     expect(get(store).availableViews).toEqual(['agenda', 'day', 'week', 'month']);
     expect(() => store.setView('year')).toThrow('Calendar view "year" is reserved for post-MVP');
+  });
+
+  it('loads occurrences only for the current visible range', async () => {
+    const listOccurrencesInRange = vi.fn().mockResolvedValue({
+      items: [schoolOccurrence],
+      totalItems: 1
+    });
+    const store = createCalendarStore({
+      selectedDate: new Date('2026-06-10T12:00:00.000+02:00')
+    });
+
+    const result = await store.loadVisibleOccurrences(context, { listOccurrencesInRange });
+
+    expect(listOccurrencesInRange).toHaveBeenCalledWith(context, {
+      from: '2026-06-08T00:00:00+02:00',
+      to: '2026-06-14T23:59:59+02:00'
+    });
+    expect(result).toEqual([schoolOccurrence]);
+    expect(get(store)).toMatchObject({
+      status: 'ready',
+      occurrences: [schoolOccurrence],
+      totalItems: 1,
+      error: null
+    });
+  });
+
+  it('stores a user-facing error when occurrence loading fails', async () => {
+    const store = createCalendarStore();
+
+    await expect(
+      store.loadVisibleOccurrences(context, {
+        listOccurrencesInRange: vi.fn().mockRejectedValue(new Error('PocketBase unavailable'))
+      })
+    ).rejects.toThrow('PocketBase unavailable');
+
+    expect(get(store)).toMatchObject({
+      status: 'error',
+      occurrences: [],
+      totalItems: 0,
+      error: 'Не удалось загрузить календарь'
+    });
   });
 });

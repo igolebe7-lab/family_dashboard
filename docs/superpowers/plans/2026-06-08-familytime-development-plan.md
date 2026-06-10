@@ -273,7 +273,7 @@
 - Create: `apps/web/src/lib/components/calendar/OccurrenceCard.svelte`
 
 - [x] Implement visible range calculation per view.
-- [ ] Fetch `item_occurrences` only for visible range.
+- [x] Fetch `item_occurrences` only for visible range.
 - [ ] Add category/member filters.
 - [ ] Implement mobile day/week timeline.
 - [ ] Implement desktop week grid.

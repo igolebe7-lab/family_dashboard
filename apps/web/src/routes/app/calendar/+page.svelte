@@ -1,6 +1,8 @@
 <script lang="ts">
   import Bell from '@lucide/svelte/icons/bell';
   import CalendarDays from '@lucide/svelte/icons/calendar-days';
+  import { onDestroy, onMount } from 'svelte';
+  import { get, type Unsubscriber } from 'svelte/store';
   import Button from '$lib/components/ui/Button.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import Chip from '$lib/components/ui/Chip.svelte';
@@ -8,8 +10,40 @@
   import FloatingCreateButton from '$lib/components/app/FloatingCreateButton.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
+  import { calendarStore } from '$lib/stores/calendar.store';
+  import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
 
   const activeRoute = '/app/calendar';
+  let familyUnsubscribe: Unsubscriber | undefined;
+  let loadedRangeKey: string | null = null;
+
+  async function loadCalendarFromFamilyState(familyState: FamilyState) {
+    const context = getActiveFamilyContext(familyState);
+    if (!context) return;
+
+    const calendarState = get(calendarStore);
+    const rangeKey = `${context.familyId}:${context.memberId}:${calendarState.visibleRange.from}:${calendarState.visibleRange.to}`;
+    if (loadedRangeKey === rangeKey) return;
+    loadedRangeKey = rangeKey;
+
+    try {
+      await calendarStore.loadVisibleOccurrences(context);
+    } catch (error) {
+      console.warn('Failed to load Calendar occurrences from PocketBase, keeping demo calendar.', error);
+    }
+  }
+
+  onMount(() => {
+    familyUnsubscribe = familyStore.subscribe((familyState) => {
+      if (familyState.status !== 'ready') return;
+      void loadCalendarFromFamilyState(familyState);
+    });
+  });
+
+  onDestroy(() => {
+    familyUnsubscribe?.();
+  });
+
   const viewOptions = [
     { label: 'День', value: 'day' },
     { label: 'Неделя', value: 'week' },

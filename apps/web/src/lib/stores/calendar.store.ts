@@ -1,7 +1,10 @@
 import { addDays, addMonths } from 'date-fns';
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 
+import { listOccurrencesInRange } from '$lib/api/occurrences.api';
+import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 import type { ItemCategory } from '$lib/constants/categories';
+import type { ItemOccurrence } from '$lib/types/domain';
 import {
   getVisibleRange,
   toIsoRange,
@@ -20,6 +23,8 @@ export type CalendarFilters = {
   members: string[];
 };
 
+export type CalendarStatus = 'idle' | 'loading' | 'ready' | 'error';
+
 export type CalendarState = {
   availableViews: CalendarView[];
   view: CalendarView;
@@ -27,11 +32,19 @@ export type CalendarState = {
   selectedDateKey: string;
   visibleRange: CalendarVisibleRange;
   filters: CalendarFilters;
+  status: CalendarStatus;
+  occurrences: ItemOccurrence[];
+  totalItems: number;
+  error: string | null;
 };
 
 export type CalendarStoreOptions = {
   selectedDate?: Date;
   view?: CalendarView;
+};
+
+export type CalendarLoadDependencies = {
+  listOccurrencesInRange?: typeof listOccurrencesInRange;
 };
 
 const AVAILABLE_VIEWS: CalendarView[] = ['agenda', 'day', 'week', 'month'];
@@ -77,7 +90,43 @@ export function createCalendarStore(options: CalendarStoreOptions = {}) {
         })
       ),
     clearFilters: () =>
-      store.update((state) => createCalendarState(state.selectedDate, state.view, initialFilters))
+      store.update((state) => createCalendarState(state.selectedDate, state.view, initialFilters)),
+    loadVisibleOccurrences: async (
+      context: ActiveFamilyContext,
+      dependencies: CalendarLoadDependencies = {}
+    ): Promise<ItemOccurrence[]> => {
+      const loader = dependencies.listOccurrencesInRange ?? listOccurrencesInRange;
+      const range = get(store).visibleRange;
+
+      store.update((state) => ({
+        ...state,
+        status: 'loading',
+        error: null
+      }));
+
+      try {
+        const result = await loader(context, range);
+
+        store.update((state) => ({
+          ...state,
+          status: 'ready',
+          occurrences: result.items,
+          totalItems: result.totalItems,
+          error: null
+        }));
+
+        return result.items;
+      } catch (error) {
+        store.update((state) => ({
+          ...state,
+          status: 'error',
+          occurrences: [],
+          totalItems: 0,
+          error: 'Не удалось загрузить календарь'
+        }));
+        throw error;
+      }
+    }
   };
 }
 
@@ -100,7 +149,11 @@ function createCalendarState(
     filters: {
       categories: [...filters.categories],
       members: [...filters.members]
-    }
+    },
+    status: 'idle',
+    occurrences: [],
+    totalItems: 0,
+    error: null
   };
 }
 
