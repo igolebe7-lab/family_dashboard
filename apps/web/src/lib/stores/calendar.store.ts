@@ -34,6 +34,7 @@ export type CalendarState = {
   filters: CalendarFilters;
   status: CalendarStatus;
   occurrences: ItemOccurrence[];
+  filteredOccurrences: ItemOccurrence[];
   totalItems: number;
   error: string | null;
 };
@@ -63,34 +64,48 @@ export function createCalendarStore(options: CalendarStoreOptions = {}) {
     subscribe: store.subscribe,
     setView: (view: DateCalendarView) => {
       assertMvpView(view);
-      store.update((state) => createCalendarState(state.selectedDate, view, state.filters));
+      store.update((state) => createCalendarState(state.selectedDate, view, state.filters, state));
     },
     setSelectedDate: (date: Date) =>
-      store.update((state) => createCalendarState(date, state.view, state.filters)),
+      store.update((state) => createCalendarState(date, state.view, state.filters, state)),
     goPrevious: () =>
       store.update((state) =>
-        createCalendarState(shiftDate(state.selectedDate, state.view, -1), state.view, state.filters)
+        createCalendarState(shiftDate(state.selectedDate, state.view, -1), state.view, state.filters, state)
       ),
     goNext: () =>
       store.update((state) =>
-        createCalendarState(shiftDate(state.selectedDate, state.view, 1), state.view, state.filters)
+        createCalendarState(shiftDate(state.selectedDate, state.view, 1), state.view, state.filters, state)
       ),
     toggleCategory: (category: ItemCategory) =>
       store.update((state) =>
         createCalendarState(state.selectedDate, state.view, {
           ...state.filters,
           categories: toggleValue(state.filters.categories, category)
-        })
+        }, state)
       ),
     toggleMember: (memberId: string) =>
       store.update((state) =>
         createCalendarState(state.selectedDate, state.view, {
           ...state.filters,
           members: toggleValue(state.filters.members, memberId)
-        })
+        }, state)
+      ),
+    clearCategories: () =>
+      store.update((state) =>
+        createCalendarState(state.selectedDate, state.view, {
+          ...state.filters,
+          categories: []
+        }, state)
+      ),
+    clearMembers: () =>
+      store.update((state) =>
+        createCalendarState(state.selectedDate, state.view, {
+          ...state.filters,
+          members: []
+        }, state)
       ),
     clearFilters: () =>
-      store.update((state) => createCalendarState(state.selectedDate, state.view, initialFilters)),
+      store.update((state) => createCalendarState(state.selectedDate, state.view, initialFilters, state)),
     loadVisibleOccurrences: async (
       context: ActiveFamilyContext,
       dependencies: CalendarLoadDependencies = {}
@@ -111,6 +126,7 @@ export function createCalendarStore(options: CalendarStoreOptions = {}) {
           ...state,
           status: 'ready',
           occurrences: result.items,
+          filteredOccurrences: filterOccurrences(result.items, state.filters),
           totalItems: result.totalItems,
           error: null
         }));
@@ -121,6 +137,7 @@ export function createCalendarStore(options: CalendarStoreOptions = {}) {
           ...state,
           status: 'error',
           occurrences: [],
+          filteredOccurrences: [],
           totalItems: 0,
           error: 'Не удалось загрузить календарь'
         }));
@@ -133,9 +150,11 @@ export function createCalendarStore(options: CalendarStoreOptions = {}) {
 function createCalendarState(
   selectedDate: Date,
   view: CalendarView,
-  filters: CalendarFilters = initialFilters
+  filters: CalendarFilters = initialFilters,
+  existingState?: Pick<CalendarState, 'status' | 'occurrences' | 'totalItems' | 'error'>
 ): CalendarState {
   const range = toIsoRange(getVisibleRange(view, selectedDate));
+  const occurrences = existingState?.occurrences ?? [];
 
   return {
     availableViews: AVAILABLE_VIEWS,
@@ -150,10 +169,11 @@ function createCalendarState(
       categories: [...filters.categories],
       members: [...filters.members]
     },
-    status: 'idle',
-    occurrences: [],
-    totalItems: 0,
-    error: null
+    status: existingState?.status ?? 'idle',
+    occurrences,
+    filteredOccurrences: filterOccurrences(occurrences, filters),
+    totalItems: existingState?.totalItems ?? 0,
+    error: existingState?.error ?? null
   };
 }
 
@@ -171,6 +191,21 @@ function shiftDate(date: Date, view: CalendarView, direction: -1 | 1): Date {
 
 function toggleValue<T>(values: T[], value: T): T[] {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
+}
+
+function filterOccurrences(
+  occurrences: ItemOccurrence[],
+  filters: CalendarFilters
+): ItemOccurrence[] {
+  return occurrences.filter((occurrence) => {
+    const matchesCategory =
+      filters.categories.length === 0 || filters.categories.includes(occurrence.categorySnapshot);
+    const matchesMember =
+      filters.members.length === 0 ||
+      occurrence.visibleTo.some((memberId) => filters.members.includes(memberId));
+
+    return matchesCategory && matchesMember;
+  });
 }
 
 function formatDateKey(date: Date): string {

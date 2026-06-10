@@ -10,8 +10,11 @@
   import FloatingCreateButton from '$lib/components/app/FloatingCreateButton.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
+  import type { ItemCategory } from '$lib/constants/categories';
+  import { getCategoryMeta } from '$lib/constants/categories';
   import { calendarStore } from '$lib/stores/calendar.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
+  import type { ItemOccurrence } from '$lib/types/domain';
 
   const activeRoute = '/app/calendar';
   let familyUnsubscribe: Unsubscriber | undefined;
@@ -49,6 +52,12 @@
     { label: 'Неделя', value: 'week' },
     { label: 'Месяц', value: 'month' }
   ] as const;
+  const categoryFilterOptions: Array<{ label: string; value: ItemCategory }> = [
+    { label: 'Семья', value: 'family' },
+    { label: 'Дом', value: 'home' },
+    { label: 'Школа', value: 'school' },
+    { label: 'Спорт', value: 'sport' }
+  ];
 
   const week = [
     { day: 'Пн', date: '12', dots: ['lavender', 'blue'] },
@@ -60,13 +69,49 @@
     { day: 'Вс', date: '18', dots: ['blue', 'peach'] }
   ];
 
-  const events = [
-    { time: '08:00', title: 'Школа', person: 'Миша', color: 'green' },
-    { time: '10:30', title: 'Врач', person: 'мама', color: 'lavender' },
-    { time: '16:00', title: 'Забрать заказ', person: 'папа', color: 'blue' },
-    { time: '18:00', title: 'Тренировка', person: 'Аня', color: 'peach' },
-    { time: '20:00', title: 'Семейный ужин', person: 'Вся семья', color: 'yellow' }
+  type CalendarEventCard = {
+    time: string;
+    title: string;
+    person: string;
+    color: string;
+    category: ItemCategory;
+  };
+
+  const demoEvents: CalendarEventCard[] = [
+    { time: '08:00', title: 'Школа', person: 'Миша', color: 'green', category: 'school' },
+    { time: '10:30', title: 'Врач', person: 'мама', color: 'lavender', category: 'health' },
+    { time: '16:00', title: 'Забрать заказ', person: 'папа', color: 'blue', category: 'shopping' },
+    { time: '18:00', title: 'Тренировка', person: 'Аня', color: 'peach', category: 'sport' },
+    { time: '20:00', title: 'Семейный ужин', person: 'Вся семья', color: 'yellow', category: 'family' }
   ];
+
+  $: displayEvents =
+    $calendarStore.occurrences.length > 0
+      ? $calendarStore.filteredOccurrences.map(mapOccurrenceToEventCard)
+      : demoEvents.filter((event) =>
+          $calendarStore.filters.categories.length === 0 ||
+          $calendarStore.filters.categories.includes(event.category)
+        );
+
+  function mapOccurrenceToEventCard(occurrence: ItemOccurrence): CalendarEventCard {
+    const meta = getCategoryMeta(occurrence.categorySnapshot);
+    const timestamp = occurrence.startAt ?? occurrence.dueAt ?? occurrence.endAt;
+
+    return {
+      time: timestamp ? formatEventTime(timestamp) : 'Весь день',
+      title: occurrence.titleSnapshot,
+      person: occurrence.visibleTo.length > 1 ? 'Вся семья' : occurrence.visibleTo[0] ?? 'Семья',
+      color: meta.color,
+      category: occurrence.categorySnapshot
+    };
+  }
+
+  function formatEventTime(value: string): string {
+    return new Intl.DateTimeFormat('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(value));
+  }
 </script>
 
 <MobileShell {activeRoute} labelledBy="calendar-title-mobile" calendar>
@@ -101,14 +146,37 @@
       </div>
 
       <div class="filter-row" aria-label="Фильтры категорий">
-        <Chip active>Все</Chip>
-        <Chip>Семья</Chip>
-        <Chip>Дом</Chip>
-        <Chip>Школа</Chip>
+        <Chip active={$calendarStore.filters.categories.length === 0} onclick={() => calendarStore.clearCategories()}>
+          Все
+        </Chip>
+        {#each categoryFilterOptions as option (option.value)}
+          <Chip
+            active={$calendarStore.filters.categories.includes(option.value)}
+            onclick={() => calendarStore.toggleCategory(option.value)}
+          >
+            {option.label}
+          </Chip>
+        {/each}
       </div>
 
+      {#if $familyStore.members.length > 0}
+        <div class="filter-row" aria-label="Фильтры участников">
+          <Chip active={$calendarStore.filters.members.length === 0} onclick={() => calendarStore.clearMembers()}>
+            Все
+          </Chip>
+          {#each $familyStore.members as member (member.id)}
+            <Chip
+              active={$calendarStore.filters.members.includes(member.id)}
+              onclick={() => calendarStore.toggleMember(member.id)}
+            >
+              {member.displayName}
+            </Chip>
+          {/each}
+        </div>
+      {/if}
+
       <div class="day-agenda">
-        {#each events as event}
+        {#each displayEvents as event}
           <article class="timeline-item timeline-item--{event.color}">
             <time>{event.time}</time>
             <div>
@@ -147,7 +215,7 @@
       <div class="desktop-grid">
         {#each week as day, index}
           <article class="desktop-day" aria-label={`${day.day}, ${day.date} мая`}>
-            {#each events.filter((_, eventIndex) => eventIndex % 3 === index % 3) as event}
+            {#each displayEvents.filter((_, eventIndex) => eventIndex % 3 === index % 3) as event}
               <div class="desktop-event desktop-event--{event.color}">
                 <strong>{event.time}</strong>
                 <span>{event.title}</span>

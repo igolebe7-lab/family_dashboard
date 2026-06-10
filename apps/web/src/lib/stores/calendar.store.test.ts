@@ -24,6 +24,20 @@ const schoolOccurrence: ItemOccurrence = {
   status: 'todo'
 };
 
+const trainingOccurrence: ItemOccurrence = {
+  id: 'occ_training',
+  family: 'family_1',
+  item: 'item_training',
+  visibleTo: ['member_anya'],
+  kind: 'event',
+  titleSnapshot: 'Тренировка',
+  categorySnapshot: 'sport',
+  startAt: '2026-06-10T18:00:00.000+02:00',
+  endAt: '2026-06-10T19:00:00.000+02:00',
+  allDay: false,
+  status: 'todo'
+};
+
 describe('createCalendarStore', () => {
   it('calculates API visible ranges for day, week, month and agenda views', () => {
     const store = createCalendarStore({
@@ -94,6 +108,25 @@ describe('createCalendarStore', () => {
     });
   });
 
+  it('clears category and member filters independently', () => {
+    const store = createCalendarStore();
+
+    store.toggleCategory('school');
+    store.toggleMember('member_misha');
+
+    store.clearCategories();
+    expect(get(store).filters).toEqual({
+      categories: [],
+      members: ['member_misha']
+    });
+
+    store.clearMembers();
+    expect(get(store).filters).toEqual({
+      categories: [],
+      members: []
+    });
+  });
+
   it('keeps year view reserved outside the MVP calendar store', () => {
     const store = createCalendarStore();
 
@@ -103,8 +136,8 @@ describe('createCalendarStore', () => {
 
   it('loads occurrences only for the current visible range', async () => {
     const listOccurrencesInRange = vi.fn().mockResolvedValue({
-      items: [schoolOccurrence],
-      totalItems: 1
+      items: [schoolOccurrence, trainingOccurrence],
+      totalItems: 2
     });
     const store = createCalendarStore({
       selectedDate: new Date('2026-06-10T12:00:00.000+02:00')
@@ -116,13 +149,37 @@ describe('createCalendarStore', () => {
       from: '2026-06-08T00:00:00+02:00',
       to: '2026-06-14T23:59:59+02:00'
     });
-    expect(result).toEqual([schoolOccurrence]);
+    expect(result).toEqual([schoolOccurrence, trainingOccurrence]);
     expect(get(store)).toMatchObject({
       status: 'ready',
-      occurrences: [schoolOccurrence],
-      totalItems: 1,
+      occurrences: [schoolOccurrence, trainingOccurrence],
+      filteredOccurrences: [schoolOccurrence, trainingOccurrence],
+      totalItems: 2,
       error: null
     });
+  });
+
+  it('filters loaded occurrences by selected categories and members', async () => {
+    const store = createCalendarStore();
+
+    await store.loadVisibleOccurrences(context, {
+      listOccurrencesInRange: vi.fn().mockResolvedValue({
+        items: [schoolOccurrence, trainingOccurrence],
+        totalItems: 2
+      })
+    });
+
+    store.toggleCategory('sport');
+    expect(get(store).filteredOccurrences).toEqual([trainingOccurrence]);
+
+    store.toggleMember('member_misha');
+    expect(get(store).filteredOccurrences).toEqual([]);
+
+    store.toggleCategory('sport');
+    expect(get(store).filteredOccurrences).toEqual([schoolOccurrence]);
+
+    store.clearFilters();
+    expect(get(store).filteredOccurrences).toEqual([schoolOccurrence, trainingOccurrence]);
   });
 
   it('stores a user-facing error when occurrence loading fails', async () => {

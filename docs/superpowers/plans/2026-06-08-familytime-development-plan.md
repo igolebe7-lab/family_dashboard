@@ -274,7 +274,7 @@
 
 - [x] Implement visible range calculation per view.
 - [x] Fetch `item_occurrences` only for visible range.
-- [ ] Add category/member filters.
+- [x] Add category/member filters.
 - [ ] Implement mobile day/week timeline.
 - [ ] Implement desktop week grid.
 - [ ] Keep year view route/state reserved but not implemented in MVP.
