@@ -283,7 +283,7 @@
 - [x] Add client `day_annotations` domain model and recurrence projection for birthdays, public holidays, family dates, observances and memorial dates.
 - [x] Add frontend API/store loading for `day_annotations` by selected year.
 - [x] Add PocketBase `day_annotations` schema, rules and hooks.
-- [ ] Implement external birthday fields: optional relation/status, optional contact/phone and optional note.
+- [x] Implement external birthday data/API fields: optional relation/status, optional contact/phone and optional note.
 - [ ] Implement manual special date create/edit/delete with color and yearly/one-time recurrence.
 - [x] Add Calendar year/month view model with week numbers, weekends and annotation marker overflow.
 - [x] Implement Calendar year overview with months, days, week numbers, weekends and annotation markers.

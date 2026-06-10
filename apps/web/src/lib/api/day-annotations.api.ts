@@ -19,6 +19,25 @@ export type DayAnnotationListResult = {
   totalItems: number;
 };
 
+export type DayAnnotationInput = {
+  kind: DayAnnotation['kind'];
+  title: string;
+  description?: string;
+  month: number;
+  day: number;
+  year?: number;
+  recurrence: DayAnnotation['recurrence'];
+  color: DayAnnotation['color'];
+  tone: DayAnnotation['tone'];
+  visibility: DayAnnotation['visibility'];
+  linkedMember?: string;
+  personName?: string;
+  personRelation?: string;
+  personContact?: string;
+};
+
+export type DayAnnotationUpdateInput = Partial<DayAnnotationInput>;
+
 export async function listDayAnnotationsForYear(
   context: Partial<ActiveFamilyContext>,
   year: number
@@ -38,6 +57,53 @@ export async function listDayAnnotationsForYear(
     items: Array.isArray(result.items) ? result.items.map(mapDayAnnotationRecord) : [],
     totalItems: typeof result.totalItems === 'number' ? result.totalItems : 0
   };
+}
+
+export async function createDayAnnotation(
+  input: DayAnnotationInput,
+  context: Partial<ActiveFamilyContext>
+): Promise<DayAnnotation> {
+  const activeContext = requireActiveContext(context);
+  const collection = getPocketBaseClient().collection(COLLECTIONS.dayAnnotations);
+  const create = requireCollectionMethod(collection, 'create');
+
+  return mapDayAnnotationRecord(
+    await create(
+      {
+        ...mapDayAnnotationInput(input),
+        family: activeContext.familyId,
+        created_by: activeContext.memberId,
+        source: 'manual',
+        readonly: false
+      },
+      memberRequestOptions(activeContext)
+    )
+  );
+}
+
+export async function updateDayAnnotation(
+  id: string,
+  input: DayAnnotationUpdateInput,
+  context: Partial<ActiveFamilyContext>
+): Promise<DayAnnotation> {
+  const activeContext = requireActiveContext(context);
+  const collection = getPocketBaseClient().collection(COLLECTIONS.dayAnnotations);
+  const update = requireCollectionMethod(collection, 'update');
+
+  return mapDayAnnotationRecord(
+    await update(id, mapDayAnnotationInput(input), memberRequestOptions(activeContext))
+  );
+}
+
+export async function deleteDayAnnotation(
+  id: string,
+  context: Partial<ActiveFamilyContext>
+): Promise<void> {
+  const activeContext = requireActiveContext(context);
+  const collection = getPocketBaseClient().collection(COLLECTIONS.dayAnnotations);
+  const remove = requireCollectionMethod(collection, 'delete');
+
+  await remove(id, memberRequestOptions(activeContext));
 }
 
 export function buildDayAnnotationsYearFilter(familyId: string, year: number): string {
@@ -88,6 +154,29 @@ export function mapDayAnnotationRecord(value: unknown): DayAnnotation {
     created: asString(record.created) || undefined,
     updated: asString(record.updated) || undefined
   };
+}
+
+function mapDayAnnotationInput(input: DayAnnotationUpdateInput): Record<string, unknown> {
+  return omitUndefined({
+    kind: input.kind,
+    title: input.title,
+    description: input.description,
+    month: input.month,
+    day: input.day,
+    year: input.year,
+    recurrence: input.recurrence,
+    color: input.color,
+    tone: input.tone,
+    visibility: input.visibility,
+    linked_member: input.linkedMember,
+    person_name: input.personName,
+    person_relation: input.personRelation,
+    person_contact: input.personContact
+  });
+}
+
+function omitUndefined(value: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined));
 }
 
 function asNumber(value: unknown, fallback = 0): number {

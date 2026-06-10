@@ -23,6 +23,7 @@ export type PocketBaseCollectionLike = {
     body: Record<string, unknown>,
     options?: Record<string, unknown>
   ) => Promise<unknown>;
+  delete?: (id: string, options?: Record<string, unknown>) => Promise<unknown>;
   getList?: (
     page: number,
     perPage: number,

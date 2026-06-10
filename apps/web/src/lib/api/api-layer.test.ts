@@ -12,7 +12,12 @@ import { login, logout } from './auth.api';
 import { createFamily } from './families.api';
 import { createItem } from './items.api';
 import { listOccurrencesInRange } from './occurrences.api';
-import { listDayAnnotationsForYear } from './day-annotations.api';
+import {
+  createDayAnnotation,
+  deleteDayAnnotation,
+  listDayAnnotationsForYear,
+  updateDayAnnotation
+} from './day-annotations.api';
 
 type FakeCollectionService = {
   authWithPassword?: ReturnType<typeof vi.fn>;
@@ -290,6 +295,89 @@ describe('PocketBase API layer', () => {
       personContact: '+7 999 000-00-00'
     });
     expect(result.totalItems).toBe(2);
+
+    resetPocketBaseClient();
+  });
+
+  it('creates, updates and deletes manual day annotations with optional external contact fields', async () => {
+    const createdRecord = {
+      id: 'birthday_vladimir',
+      family: 'family_1',
+      kind: 'birthday',
+      title: 'День рождения Владимира',
+      month: 3,
+      day: 12,
+      recurrence: 'yearly',
+      color: 'blue',
+      tone: 'positive',
+      visibility: 'family',
+      source: 'manual',
+      readonly: false,
+      person_name: 'Владимир',
+      person_relation: 'коллега',
+      person_contact: '+7 999 000-00-00',
+      created_by: 'member_1'
+    };
+    const dayAnnotations = {
+      create: vi.fn().mockResolvedValue(createdRecord),
+      update: vi.fn().mockResolvedValue({
+        ...createdRecord,
+        person_contact: ''
+      }),
+      delete: vi.fn().mockResolvedValue({})
+    };
+    const client = createFakeClient({ [COLLECTIONS.dayAnnotations]: dayAnnotations });
+    setPocketBaseClient(client);
+
+    const context = { familyId: 'family_1', memberId: 'member_1' };
+    const created = await createDayAnnotation(
+      {
+        kind: 'birthday',
+        title: 'День рождения Владимира',
+        month: 3,
+        day: 12,
+        recurrence: 'yearly',
+        color: 'blue',
+        tone: 'positive',
+        visibility: 'family',
+        personName: 'Владимир',
+        personRelation: 'коллега',
+        personContact: '+7 999 000-00-00'
+      },
+      context
+    );
+
+    const updated = await updateDayAnnotation(
+      'birthday_vladimir',
+      {
+        personContact: ''
+      },
+      context
+    );
+    await deleteDayAnnotation('birthday_vladimir', context);
+
+    expect(dayAnnotations.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        family: 'family_1',
+        created_by: 'member_1',
+        source: 'manual',
+        person_name: 'Владимир',
+        person_relation: 'коллега',
+        person_contact: '+7 999 000-00-00'
+      }),
+      { headers: { 'X-Family-Member-Id': 'member_1' } }
+    );
+    expect(dayAnnotations.update).toHaveBeenCalledWith(
+      'birthday_vladimir',
+      { person_contact: '' },
+      { headers: { 'X-Family-Member-Id': 'member_1' } }
+    );
+    expect(dayAnnotations.delete).toHaveBeenCalledWith(
+      'birthday_vladimir',
+      { headers: { 'X-Family-Member-Id': 'member_1' } }
+    );
+    expect(created.personContact).toBe('+7 999 000-00-00');
+    expect(updated.personContact).toBeUndefined();
 
     resetPocketBaseClient();
   });
