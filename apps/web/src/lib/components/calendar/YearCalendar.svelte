@@ -1,8 +1,10 @@
 <script lang="ts">
-  import type { YearCalendarViewModel } from '$lib/calendar/year-calendar';
+  import type { YearCalendarDay, YearCalendarViewModel } from '$lib/calendar/year-calendar';
 
   export let model: YearCalendarViewModel;
   export let compact = false;
+  export let selectedDateKey: string | undefined = undefined;
+  export let onselectDay: ((day: YearCalendarDay) => void) | undefined = undefined;
 
   const weekdayLabels = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
 </script>
@@ -30,9 +32,12 @@
                 class:year-day--muted={!day.inCurrentMonth}
                 class:year-day--weekend={day.isWeekend}
                 class:year-day--annotated={day.annotations.length > 0}
+                class:year-day--selected={day.dateKey === selectedDateKey}
                 class="year-day"
                 type="button"
+                aria-pressed={day.dateKey === selectedDateKey}
                 aria-label={`${day.dateKey}, ${day.annotations.length} особых дат`}
+                on:click={() => onselectDay?.(day)}
               >
                 <span class="year-day__number">{day.day}</span>
                 {#if day.annotations.length > 0}

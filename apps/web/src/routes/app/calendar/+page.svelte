@@ -7,9 +7,11 @@
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import FloatingCreateButton from '$lib/components/app/FloatingCreateButton.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
+  import DayDetailSheet from '$lib/components/calendar/DayDetailSheet.svelte';
   import YearCalendar from '$lib/components/calendar/YearCalendar.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { createYearCalendarViewModel } from '$lib/calendar/year-calendar';
+  import type { YearCalendarDay } from '$lib/calendar/year-calendar';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import type { DayAnnotation } from '$lib/types/domain';
@@ -18,6 +20,7 @@
   let familyUnsubscribe: Unsubscriber | undefined;
   let currentFamilyState: FamilyState | undefined;
   let loadedYearKey: string | null = null;
+  let selectedDateKey: string | undefined;
 
   const demoAnnotations: DayAnnotation[] = [
     {
@@ -92,6 +95,7 @@
       ? $dayAnnotationsStore.projectedAnnotations
       : demoAnnotations;
   $: yearModel = createYearCalendarViewModel(selectedYear, calendarAnnotations);
+  $: selectedDay = selectedDateKey ? yearModel.daysByDate.get(selectedDateKey) : undefined;
 
   async function loadAnnotationsFromFamilyState(familyState: FamilyState | undefined) {
     if (!familyState || familyState.status !== 'ready') return;
@@ -113,12 +117,22 @@
 
   function goPreviousYear(): void {
     dayAnnotationsStore.goPreviousYear();
+    selectedDateKey = undefined;
     void loadAnnotationsFromFamilyState(currentFamilyState);
   }
 
   function goNextYear(): void {
     dayAnnotationsStore.goNextYear();
+    selectedDateKey = undefined;
     void loadAnnotationsFromFamilyState(currentFamilyState);
+  }
+
+  function selectDay(day: YearCalendarDay): void {
+    selectedDateKey = day.dateKey;
+  }
+
+  function closeDayDetail(): void {
+    selectedDateKey = undefined;
   }
 
   onMount(() => {
@@ -155,7 +169,8 @@
     </button>
   </section>
 
-  <YearCalendar model={yearModel} compact />
+  <YearCalendar model={yearModel} compact {selectedDateKey} onselectDay={selectDay} />
+  <DayDetailSheet day={selectedDay} titleId="day-detail-title-mobile" onclose={closeDayDetail} />
 </MobileShell>
 
 <FloatingCreateButton />
@@ -178,9 +193,11 @@
     <Button variant="primary">+ Особая дата</Button>
   </div>
 
-  <YearCalendar model={yearModel} />
+  <YearCalendar model={yearModel} {selectedDateKey} onselectDay={selectDay} />
 
   <svelte:fragment slot="aside">
+    <DayDetailSheet day={selectedDay} titleId="day-detail-title-desktop" onclose={closeDayDetail} />
+
     <section class="calendar-legend" aria-labelledby="calendar-legend-title">
       <h2 id="calendar-legend-title">Слой дат</h2>
       <p>Праздники, дни рождения и особые даты показываются как информация о дне, отдельно от дел и поручений.</p>
