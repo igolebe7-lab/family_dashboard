@@ -236,10 +236,10 @@
 - Create: `apps/web/src/lib/components/today/TodayEmptyState.svelte`
 
 - [x] Load today occurrences by local family timezone day range.
-- [ ] Load attention items: done waiting approval, overdue/open assignments, prep reminders.
-- [ ] Show family avatar row with member colors.
-- [ ] Show timeline cards with category icon, time, title, member label/avatar.
-- [ ] Provide quick actions for `+ Дело`, `+ Поручение`, `+ Событие`.
+- [x] Load attention items: done waiting approval, overdue/open assignments, prep reminders.
+- [x] Show family avatar row with member colors.
+- [x] Show timeline cards with category icon, time, title, member label/avatar.
+- [x] Provide quick actions for `+ Дело`, `+ Поручение`, `+ Событие`.
 - [ ] Add empty states for no events/tasks/attention.
 
 **Automated checks:**

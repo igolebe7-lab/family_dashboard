@@ -8,6 +8,7 @@ import type { IconName } from '$lib/design/icon-registry';
 import {
   createTodayViewModel,
   formatDateKey,
+  type TodayAttentionItem,
   type TodayFamilyMember,
   type TodayTimelineItem,
   type TodayViewModel,
@@ -68,6 +69,7 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
     .filter((occurrence) => getOccurrenceDateKey(occurrence) === todayKey)
     .map((occurrence) => mapOccurrenceToTimelineItem(occurrence, memberById))
     .sort((left, right) => left.time.localeCompare(right.time));
+  const attentionItems = createAttentionItems(weekOccurrences, memberById, date);
   const familyMembers =
     input.members && input.members.length > 0 ? input.members.map(mapFamilyMemberToTodayMember) : base.familyMembers;
 
@@ -76,11 +78,128 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
     familyMembers,
     weekEvents,
     timelineItems,
+    attentionItems,
+    attentionCount: attentionItems.length,
     emptyState: {
       ...base.emptyState,
       isEmpty: timelineItems.length === 0
     }
   };
+}
+
+function createAttentionItems(
+  occurrences: ItemOccurrence[],
+  memberById: Map<string, FamilyMember>,
+  date: Date
+): TodayAttentionItem[] {
+  const tomorrow = new Date(date);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowKey = formatDateKey(tomorrow);
+
+  return occurrences
+    .flatMap((occurrence) => {
+      if (isAssignmentWaitingApproval(occurrence)) {
+        return [mapWaitingApprovalAttention(occurrence, memberById)];
+      }
+
+      if (isOverdueAssignment(occurrence, date)) {
+        return [mapOverdueAttention(occurrence, memberById)];
+      }
+
+      if (isTomorrowPrepReminder(occurrence, tomorrowKey)) {
+        return [mapPrepReminderAttention(occurrence, memberById)];
+      }
+
+      return [];
+    })
+    .sort(compareAttentionItems);
+}
+
+function isAssignmentWaitingApproval(occurrence: ItemOccurrence): boolean {
+  return occurrence.kind === 'assignment' && occurrence.status === 'done' && !occurrence.approvedAt;
+}
+
+function isOverdueAssignment(occurrence: ItemOccurrence, date: Date): boolean {
+  if (occurrence.kind !== 'assignment') return false;
+  if (!['assigned', 'accepted', 'in_progress', 'overdue'].includes(occurrence.status)) return false;
+
+  const dueValue = occurrence.dueAt ?? occurrence.startAt;
+  if (!dueValue) return false;
+
+  return new Date(dueValue).getTime() < date.getTime();
+}
+
+function isTomorrowPrepReminder(occurrence: ItemOccurrence, tomorrowKey: string): boolean {
+  return occurrence.kind === 'event' && getOccurrenceDateKey(occurrence) === tomorrowKey;
+}
+
+function mapWaitingApprovalAttention(
+  occurrence: ItemOccurrence,
+  memberById: Map<string, FamilyMember>
+): TodayAttentionItem {
+  const member = getOccurrenceMember(
+    {
+      ...occurrence,
+      visibleTo: occurrence.completedBy ? [occurrence.completedBy] : occurrence.visibleTo
+    },
+    memberById
+  );
+
+  return {
+    id: `attention-approval-${occurrence.id}`,
+    body: `${member.name} отметил «${occurrence.titleSnapshot}» как готово`,
+    ...memberToAttentionMember(member),
+    actionLabel: 'Проверить'
+  };
+}
+
+function mapOverdueAttention(
+  occurrence: ItemOccurrence,
+  memberById: Map<string, FamilyMember>
+): TodayAttentionItem {
+  const member = getOccurrenceMember(occurrence, memberById);
+
+  return {
+    id: `attention-overdue-${occurrence.id}`,
+    body: `Просрочено: ${member.name} — «${occurrence.titleSnapshot}»`,
+    ...memberToAttentionMember(member),
+    actionLabel: 'Открыть'
+  };
+}
+
+function mapPrepReminderAttention(
+  occurrence: ItemOccurrence,
+  memberById: Map<string, FamilyMember>
+): TodayAttentionItem {
+  const member = getOccurrenceMember(occurrence, memberById);
+
+  return {
+    id: `attention-prep-${occurrence.id}`,
+    body: `Завтра у ${toGenitiveName(member.name)} «${occurrence.titleSnapshot}» — подготовиться`,
+    ...memberToAttentionMember(member),
+    actionLabel: 'Добавить дело'
+  };
+}
+
+function memberToAttentionMember(
+  member: MemberDisplay
+): Pick<TodayAttentionItem, 'color' | 'memberInitial' | 'memberName' | 'memberPortrait'> {
+  return {
+    color: member.color,
+    memberInitial: member.initial,
+    memberName: member.name,
+    memberPortrait: member.portrait
+  };
+}
+
+function compareAttentionItems(left: TodayAttentionItem, right: TodayAttentionItem): number {
+  const priority = (item: TodayAttentionItem) => {
+    if (item.id.startsWith('attention-approval-')) return 0;
+    if (item.id.startsWith('attention-overdue-')) return 1;
+    return 2;
+  };
+
+  return priority(left) - priority(right) || left.id.localeCompare(right.id);
 }
 
 export async function loadTodayViewModelFromOccurrences(
@@ -218,6 +337,17 @@ function getOccurrenceDurationMinutes(occurrence: ItemOccurrence): number {
 
 function getInitial(value: string): string {
   return value.trim().charAt(0).toUpperCase() || DEFAULT_MEMBER.initial;
+}
+
+function toGenitiveName(value: string): string {
+  const name = value.trim();
+  if (!name) return DEFAULT_MEMBER.name;
+  if (name.endsWith('а')) {
+    const stem = name.slice(0, -1);
+    return `${stem}${/[жчшщ]$/i.test(stem) ? 'и' : 'ы'}`;
+  }
+  if (name.endsWith('я')) return `${name.slice(0, -1)}и`;
+  return name;
 }
 
 function compareWeekEvents(left: TodayWeekEvent, right: TodayWeekEvent): number {

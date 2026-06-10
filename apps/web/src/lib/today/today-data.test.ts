@@ -44,6 +44,48 @@ const schoolOccurrence: ItemOccurrence = {
   status: 'todo'
 };
 
+const doneAssignmentOccurrence: ItemOccurrence = {
+  id: 'occ_trash',
+  family: 'family_1',
+  item: 'item_trash',
+  visibleTo: ['member_misha'],
+  kind: 'assignment',
+  titleSnapshot: 'Вынести мусор',
+  categorySnapshot: 'home',
+  dueAt: '2026-06-10T09:00:00.000+02:00',
+  allDay: false,
+  status: 'done',
+  completedBy: 'member_misha',
+  completedAt: '2026-06-10T08:30:00.000+02:00'
+};
+
+const overdueAssignmentOccurrence: ItemOccurrence = {
+  id: 'occ_room',
+  family: 'family_1',
+  item: 'item_room',
+  visibleTo: ['member_misha'],
+  kind: 'assignment',
+  titleSnapshot: 'Убрать комнату',
+  categorySnapshot: 'home',
+  dueAt: '2026-06-10T08:00:00.000+02:00',
+  allDay: false,
+  status: 'assigned'
+};
+
+const tomorrowTrainingOccurrence: ItemOccurrence = {
+  id: 'occ_training',
+  family: 'family_1',
+  item: 'item_training',
+  visibleTo: ['member_misha'],
+  kind: 'event',
+  titleSnapshot: 'Тренировка',
+  categorySnapshot: 'sport',
+  startAt: '2026-06-11T18:00:00.000+02:00',
+  endAt: '2026-06-11T19:00:00.000+02:00',
+  allDay: false,
+  status: 'todo'
+};
+
 describe('today data adapter', () => {
   it('builds Today view model sections from occurrence records', () => {
     const model = createTodayViewModelFromOccurrences({
@@ -77,10 +119,43 @@ describe('today data adapter', () => {
     ]);
   });
 
+  it('builds attention items from assignments waiting approval, overdue work, and prep reminders', () => {
+    const model = createTodayViewModelFromOccurrences({
+      date: new Date('2026-06-10T12:00:00.000+02:00'),
+      occurrences: [doneAssignmentOccurrence, overdueAssignmentOccurrence, tomorrowTrainingOccurrence],
+      members
+    });
+
+    expect(model.attentionItems).toEqual([
+      expect.objectContaining({
+        id: 'attention-approval-occ_trash',
+        body: 'Миша отметил «Вынести мусор» как готово',
+        memberName: 'Миша',
+        color: 'green',
+        actionLabel: 'Проверить'
+      }),
+      expect.objectContaining({
+        id: 'attention-overdue-occ_room',
+        body: 'Просрочено: Миша — «Убрать комнату»',
+        memberName: 'Миша',
+        color: 'green',
+        actionLabel: 'Открыть'
+      }),
+      expect.objectContaining({
+        id: 'attention-prep-occ_training',
+        body: 'Завтра у Миши «Тренировка» — подготовиться',
+        memberName: 'Миша',
+        color: 'green',
+        actionLabel: 'Добавить дело'
+      })
+    ]);
+    expect(model.attentionCount).toBe(3);
+  });
+
   it('loads occurrences for the visible week range through the API boundary', async () => {
     const listOccurrencesInRange = vi.fn().mockResolvedValue({
-      items: [schoolOccurrence],
-      totalItems: 1
+      items: [schoolOccurrence, doneAssignmentOccurrence],
+      totalItems: 2
     });
 
     const model = await loadTodayViewModelFromOccurrences(context, {
@@ -93,6 +168,7 @@ describe('today data adapter', () => {
       from: '2026-06-08T00:00:00+02:00',
       to: '2026-06-14T23:59:59+02:00'
     });
-    expect(model.weekEvents).toHaveLength(1);
+    expect(model.weekEvents.map((event) => event.id)).toEqual(['occ_school', 'occ_trash']);
+    expect(model.attentionItems).toHaveLength(1);
   });
 });
