@@ -240,7 +240,7 @@
 - [x] Show family avatar row with member colors.
 - [x] Show timeline cards with category icon, time, title, member label/avatar.
 - [x] Provide quick actions for `+ Дело`, `+ Поручение`, `+ Событие`.
-- [ ] Add empty states for no events/tasks/attention.
+- [x] Add empty states for no events/tasks/attention.
 
 **Automated checks:**
 
