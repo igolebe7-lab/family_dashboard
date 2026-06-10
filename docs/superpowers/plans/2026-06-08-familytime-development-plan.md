@@ -272,7 +272,7 @@
 - Create: `apps/web/src/lib/components/calendar/CalendarFilters.svelte`
 - Create: `apps/web/src/lib/components/calendar/OccurrenceCard.svelte`
 
-- [ ] Implement visible range calculation per view.
+- [x] Implement visible range calculation per view.
 - [ ] Fetch `item_occurrences` only for visible range.
 - [ ] Add category/member filters.
 - [ ] Implement mobile day/week timeline.
