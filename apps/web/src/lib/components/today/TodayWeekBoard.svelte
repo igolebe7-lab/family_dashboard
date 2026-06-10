@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount, tick } from 'svelte';
   import ChevronLeft from '@lucide/svelte/icons/chevron-left';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
@@ -9,9 +10,12 @@
     HOUR_HEIGHT,
     getCalendarBodyHeight,
     getCalendarEventHeight,
-    getCalendarEventTop
+    getCalendarEventTop,
+    getCalendarInitialScrollTop
   } from '$lib/today/week-calendar';
   import type { TodayWeekDay, TodayWeekEvent } from '$lib/today/today-view-model';
+
+  type CalendarView = 'day' | 'week';
 
   export let labelledBy = 'today-week-title';
   export let weekLabel: string;
@@ -19,12 +23,33 @@
   export let times: string[] = [];
   export let events: TodayWeekEvent[] = [];
 
+  let selectedView: CalendarView = 'week';
+  let calendarScrollElement: HTMLDivElement | undefined;
+
   $: calendarBodyHeight = getCalendarBodyHeight();
   $: calendarStyle = `--calendar-start-hour:${CALENDAR_START_HOUR}; --calendar-end-hour:${CALENDAR_END_HOUR}; --hour-height:${HOUR_HEIGHT}px;`;
+  $: selectedDay = days.find((day) => day.isToday);
+  $: visibleDays = selectedView === 'day' ? (selectedDay ? [selectedDay] : days.slice(0, 1)) : days;
+  $: visibleEvents = events.filter((event) => visibleDays.some((day) => day.dateKey === event.day));
 
   function eventsForDay(day: TodayWeekDay): TodayWeekEvent[] {
     return events.filter((event) => event.day === day.dateKey);
   }
+
+  async function scrollToFirstEvent(): Promise<void> {
+    await tick();
+    if (!calendarScrollElement) return;
+    calendarScrollElement.scrollTop = getCalendarInitialScrollTop(visibleEvents);
+  }
+
+  function setView(view: CalendarView): void {
+    selectedView = view;
+    void scrollToFirstEvent();
+  }
+
+  onMount(() => {
+    void scrollToFirstEvent();
+  });
 </script>
 
 <section class="today-week-board" aria-labelledby={labelledBy}>
@@ -43,9 +68,19 @@
     </div>
 
     <div class="today-week-toolbar__view" aria-label="Вид календаря">
-      <button type="button">День</button>
-      <button class="today-week-toolbar__active" type="button">Неделя</button>
-      <button type="button">Месяц</button>
+      <button
+        class:today-week-toolbar__active={selectedView === 'day'}
+        type="button"
+        aria-pressed={selectedView === 'day'}
+        on:click={() => setView('day')}>День</button
+      >
+      <button
+        class:today-week-toolbar__active={selectedView === 'week'}
+        type="button"
+        aria-pressed={selectedView === 'week'}
+        on:click={() => setView('week')}>Неделя</button
+      >
+      <button type="button" aria-disabled="true">Месяц</button>
     </div>
 
     <button class="today-week-toolbar__filter" type="button" aria-label="Фильтры календаря">
@@ -53,10 +88,10 @@
     </button>
   </div>
 
-  <div class="week-calendar" style={calendarStyle}>
+  <div class:week-calendar--day={selectedView === 'day'} class="week-calendar" style={calendarStyle}>
     <div class="week-calendar__header">
       <div class="week-calendar__corner" aria-hidden="true"></div>
-      {#each days as day (day.id)}
+      {#each visibleDays as day (day.id)}
         <div class:week-calendar__day--active={day.isToday} class="week-calendar__day">
           <span>{day.weekday}</span>
           <strong>{day.day}</strong>
@@ -64,7 +99,7 @@
       {/each}
     </div>
 
-    <div class="week-calendar__body-scroll" aria-label="Сетка времени недели">
+    <div bind:this={calendarScrollElement} class="week-calendar__body-scroll" aria-label="Сетка времени недели">
       <div class="week-calendar__body" style={`height:${calendarBodyHeight}px;`}>
         <div class="week-calendar__time-scale">
           {#each times as time (`time-${time}`)}
@@ -74,7 +109,7 @@
           {/each}
         </div>
 
-        {#each days as day (day.id)}
+        {#each visibleDays as day (day.id)}
           <section
             class:week-calendar__day-column--active={day.isToday}
             class="week-calendar__day-column"

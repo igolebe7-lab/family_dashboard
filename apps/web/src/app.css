@@ -1260,6 +1260,11 @@ h3 {
   grid-template-columns: 3.5rem repeat(7, minmax(0, 1fr));
 }
 
+.week-calendar--day .week-calendar__header,
+.week-calendar--day .week-calendar__body {
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+}
+
 .week-calendar__header {
   min-height: 3.25rem;
   border-bottom: 1px solid rgb(36 40 52 / 0.06);
@@ -1330,7 +1335,7 @@ h3 {
   font-size: 0.72rem;
   font-weight: 520;
   line-height: 1;
-  transform: translateY(-50%);
+  transform: translateY(0.38rem);
 }
 
 .week-calendar__day-column {
@@ -2338,6 +2343,11 @@ h3 {
   .week-calendar__header,
   .week-calendar__body {
     grid-template-columns: 3.5rem repeat(7, minmax(6rem, 1fr));
+  }
+
+  .week-calendar--day .week-calendar__header,
+  .week-calendar--day .week-calendar__body {
+    grid-template-columns: 3.5rem minmax(6rem, 1fr);
   }
 }
 

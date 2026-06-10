@@ -9,7 +9,21 @@ describe('createTodayViewModel', () => {
     expect(model.familyMembers).toHaveLength(4);
     expect(model.weekDays).toHaveLength(7);
     expect(model.weekEvents).toHaveLength(13);
-    expect(model.weekTimes).toEqual(['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00']);
+    expect(model.weekTimes).toEqual([
+      '00:00',
+      '02:00',
+      '04:00',
+      '06:00',
+      '08:00',
+      '10:00',
+      '12:00',
+      '14:00',
+      '16:00',
+      '18:00',
+      '20:00',
+      '22:00',
+      '24:00'
+    ]);
     expect(model.timelineItems.length).toBeGreaterThan(0);
     expect(model.attentionItems).toHaveLength(2);
     expect(model.attentionCount).toBe(2);

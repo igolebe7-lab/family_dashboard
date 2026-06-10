@@ -1,6 +1,7 @@
 import type { ItemCategory } from '$lib/constants/categories';
 import type { AccentColor } from '$lib/constants/colors';
 import type { IconName } from '$lib/design/icon-registry';
+import { createCalendarTimeLabels } from './week-calendar';
 
 export type TodayFamilyMember = {
   id: string;
@@ -451,7 +452,7 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
       ? createDateFromKey(REFERENCE_DESKTOP_WEEK_FIXTURE.selectedDate)
       : options.date;
   const weekDays = createWeekDays(date);
-  const weekTimes = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+  const weekTimes = createCalendarTimeLabels();
   const weekEvents =
     options.fixture === 'desktop-reference' ? createReferenceWeekEvents() : createDemoWeekEvents(weekDays);
   const timelineItems: TodayTimelineItem[] = [
