@@ -1,5 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import MemberAvatarRow from '$lib/components/family/MemberAvatarRow.svelte';
@@ -10,12 +12,33 @@
   import TodayTimeline from '$lib/components/today/TodayTimeline.svelte';
   import TodayWeekBoard from '$lib/components/today/TodayWeekBoard.svelte';
   import { getIcon } from '$lib/design/icon-registry';
-  import { createTodayViewModel } from '$lib/today/today-view-model';
+  import { familyStore, getActiveFamilyContext } from '$lib/stores/family.store';
+  import { loadTodayViewModelFromOccurrences } from '$lib/today/today-data';
+  import { createTodayViewModel, type TodayViewModel } from '$lib/today/today-view-model';
 
   const fixtureMode =
     browser && new URLSearchParams(window.location.search).get('fixture') === 'desktop-reference';
-  const today = createTodayViewModel(fixtureMode ? { fixture: 'desktop-reference' } : undefined);
   const activeRoute = '/app/today';
+
+  let today: TodayViewModel = createTodayViewModel(
+    fixtureMode ? { fixture: 'desktop-reference' } : undefined
+  );
+
+  onMount(async () => {
+    if (fixtureMode) return;
+
+    const familyState = get(familyStore);
+    const context = getActiveFamilyContext(familyState);
+    if (!context) return;
+
+    try {
+      today = await loadTodayViewModelFromOccurrences(context, {
+        members: familyState.members
+      });
+    } catch (error) {
+      console.warn('Failed to load Today data from PocketBase, keeping demo view model.', error);
+    }
+  });
 </script>
 
 <MobileShell {activeRoute} labelledBy="today-title-mobile">
