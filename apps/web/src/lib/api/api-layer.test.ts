@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { COLLECTIONS } from '$lib/constants/collections';
 import type { ItemCategory } from '$lib/constants/categories';
-import type { ItemKind, ItemPriority, ItemVisibility } from '$lib/types/domain';
+import type { DayAnnotationKind, ItemKind, ItemPriority, ItemVisibility } from '$lib/types/domain';
 import {
   resetPocketBaseClient,
   resolvePocketBaseUrl,
@@ -12,6 +12,7 @@ import { login, logout } from './auth.api';
 import { createFamily } from './families.api';
 import { createItem } from './items.api';
 import { listOccurrencesInRange } from './occurrences.api';
+import { listDayAnnotationsForYear } from './day-annotations.api';
 
 type FakeCollectionService = {
   authWithPassword?: ReturnType<typeof vi.fn>;
@@ -210,6 +211,85 @@ describe('PocketBase API layer', () => {
       'start_at < "2026-06-15T00:00:00.000Z"'
     );
     expect(result.items).toEqual([]);
+
+    resetPocketBaseClient();
+  });
+
+  it('loads yearly and one-time day annotations for the selected year', async () => {
+    const dayAnnotations = {
+      getList: vi.fn().mockResolvedValue({
+        page: 1,
+        perPage: 200,
+        totalItems: 2,
+        totalPages: 1,
+        items: [
+          {
+            id: 'birthday_vladimir',
+            family: 'family_1',
+            kind: 'birthday' satisfies DayAnnotationKind,
+            title: 'День рождения Владимира',
+            month: 3,
+            day: 12,
+            recurrence: 'yearly',
+            color: 'blue',
+            tone: 'positive',
+            visibility: 'family',
+            source: 'manual',
+            readonly: false,
+            person_name: 'Владимир',
+            person_relation: 'коллега',
+            person_contact: '+7 999 000-00-00',
+            created_by: 'member_1'
+          },
+          {
+            id: 'new_year_2026',
+            family: 'family_1',
+            kind: 'public_holiday' satisfies DayAnnotationKind,
+            title: 'Новый год',
+            month: 1,
+            day: 1,
+            year: 2026,
+            recurrence: 'one_time',
+            color: 'gray',
+            tone: 'system',
+            visibility: 'family',
+            source: 'nager_date',
+            readonly: true,
+            country_code: 'RU',
+            source_uid: 'RU-2026-01-01-NewYear',
+            fetched_at: '2026-06-10T10:00:00.000Z'
+          }
+        ]
+      })
+    };
+    const client = createFakeClient({ [COLLECTIONS.dayAnnotations]: dayAnnotations });
+    setPocketBaseClient(client);
+
+    const result = await listDayAnnotationsForYear(
+      {
+        familyId: 'family_1',
+        memberId: 'member_1'
+      },
+      2026
+    );
+
+    expect(dayAnnotations.getList).toHaveBeenCalledWith(
+      1,
+      200,
+      expect.objectContaining({
+        filter: expect.stringContaining('family = "family_1"'),
+        sort: 'month,day,title'
+      })
+    );
+    expect(dayAnnotations.getList.mock.calls[0][2].filter).toContain('recurrence = "yearly"');
+    expect(dayAnnotations.getList.mock.calls[0][2].filter).toContain('year = 2026');
+    expect(result.items[0]).toMatchObject({
+      id: 'birthday_vladimir',
+      personName: 'Владимир',
+      personRelation: 'коллега',
+      personContact: '+7 999 000-00-00'
+    });
+    expect(result.totalItems).toBe(2);
 
     resetPocketBaseClient();
   });
