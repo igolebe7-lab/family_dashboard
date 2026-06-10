@@ -652,6 +652,12 @@ h3 {
   font-weight: 560;
 }
 
+.calendar-special-date-button,
+.desktop-calendar-create {
+  min-height: 2.8rem;
+  width: 100%;
+}
+
 .year-calendar {
   display: grid;
   gap: 0.92rem;
@@ -971,6 +977,133 @@ h3 {
   padding: 0.2rem 0.38rem;
 }
 
+.day-detail-item > button {
+  display: grid;
+  align-self: start;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid rgb(238 231 220 / 0.72);
+  border-radius: 0.72rem;
+  background: rgb(255 255 255 / 0.72);
+  color: var(--color-text-muted);
+  line-height: 0;
+}
+
+.special-date-form {
+  display: grid;
+  gap: 0.72rem;
+  min-width: 0;
+  border: 1px solid rgb(238 231 220 / 0.76);
+  border-radius: 1.45rem;
+  background: rgb(255 255 255 / 0.86);
+  box-shadow: 0 16px 38px rgb(28 24 18 / 0.07);
+  padding: 0.9rem;
+}
+
+.special-date-form__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.special-date-form__header h2 {
+  color: var(--color-text);
+  font-size: 1.08rem;
+  font-weight: 560;
+  line-height: 1.12;
+}
+
+.special-date-form__header button {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border: 1px solid rgb(238 231 220 / 0.82);
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 0.82);
+  color: var(--color-text-muted);
+  line-height: 0;
+}
+
+.special-date-form label {
+  display: grid;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.special-date-form label span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 520;
+}
+
+.special-date-form input,
+.special-date-form select,
+.special-date-form textarea {
+  min-width: 0;
+  border: 1px solid rgb(238 231 220 / 0.82);
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 0.8);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 440;
+  padding: 0.64rem 0.72rem;
+}
+
+.special-date-form textarea {
+  resize: vertical;
+}
+
+.special-date-form__date-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.special-date-form__birthday {
+  display: grid;
+  gap: 0.55rem;
+  border-radius: 1.05rem;
+  background: rgb(243 236 252 / 0.36);
+  padding: 0.72rem;
+}
+
+.special-date-form__error {
+  border-radius: 0.95rem;
+  background: rgb(255 239 231 / 0.68);
+  color: #b95e45;
+  font-size: var(--font-size-xs);
+  font-weight: 520;
+  line-height: 1.28;
+  padding: 0.62rem 0.72rem;
+}
+
+.special-date-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.special-date-form__actions .button {
+  min-height: 2.65rem;
+}
+
+.special-date-form__delete {
+  min-height: 2.65rem;
+  margin-right: auto;
+  border: 1px solid rgb(255 185 160 / 0.68);
+  border-radius: 0.95rem;
+  background: rgb(255 239 231 / 0.72);
+  color: #b95e45;
+  font-weight: 560;
+  padding: 0 0.86rem;
+}
+
 .app-screen--mobile .day-detail-sheet {
   position: fixed;
   right: 1.15rem;
@@ -986,6 +1119,19 @@ h3 {
 
 .app-screen--mobile .day-detail-sheet__list {
   max-height: min(14rem, calc(100dvh - 17rem));
+}
+
+.app-screen--mobile .special-date-form {
+  position: fixed;
+  right: 1.15rem;
+  bottom: 6.7rem;
+  left: 1.15rem;
+  z-index: 40;
+  max-height: min(38rem, calc(100dvh - 8.8rem));
+  overflow-y: auto;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 22px 60px rgb(35 38 47 / 0.16);
+  backdrop-filter: blur(18px);
 }
 
 .calendar-legend p {

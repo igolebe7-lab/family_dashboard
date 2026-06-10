@@ -284,7 +284,7 @@
 - [x] Add frontend API/store loading for `day_annotations` by selected year.
 - [x] Add PocketBase `day_annotations` schema, rules and hooks.
 - [x] Implement external birthday data/API fields: optional relation/status, optional contact/phone and optional note.
-- [ ] Implement manual special date create/edit/delete with color and yearly/one-time recurrence.
+- [x] Implement manual special date create/edit/delete with color and yearly/one-time recurrence.
 - [x] Add Calendar year/month view model with week numbers, weekends and annotation marker overflow.
 - [x] Implement Calendar year overview with months, days, week numbers, weekends and annotation markers.
 - [x] Match Calendar year overview to accepted Today UI patterns: warm surfaces, compact typography, soft buttons/chips, stable internal scroll and circular markers.

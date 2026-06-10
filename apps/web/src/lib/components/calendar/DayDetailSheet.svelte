@@ -1,11 +1,13 @@
 <script lang="ts">
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
+  import Pencil from '@lucide/svelte/icons/pencil';
   import X from '@lucide/svelte/icons/x';
   import { createDayDetailViewModel } from '$lib/calendar/day-detail';
   import type { YearCalendarDay } from '$lib/calendar/year-calendar';
 
   export let day: YearCalendarDay | undefined = undefined;
   export let onclose: (() => void) | undefined = undefined;
+  export let onedit: ((id: string) => void) | undefined = undefined;
   export let titleId = 'day-detail-title';
   export let todayHref: string | undefined = undefined;
 
@@ -37,6 +39,10 @@
             </div>
             {#if item.readonly}
               <span class="day-detail-item__badge">системное</span>
+            {:else if onedit}
+              <button type="button" aria-label={`Изменить ${item.title}`} on:click={() => onedit?.(item.id)}>
+                <Pencil size={15} strokeWidth={2.2} aria-hidden="true" />
+              </button>
             {/if}
           </article>
         {/each}
