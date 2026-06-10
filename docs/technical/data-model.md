@@ -9,6 +9,7 @@ Source of truth: `TECHNICAL_SPEC.md`.
 - `family_members` — family profile linked to `users` or managed child profile.
 - `items` — logical object: event, task, assignment, routine.
 - `item_occurrences` — materialized calendar/status instances.
+- `day_annotations` — all-day informational dates: birthdays, public holidays, special family dates, observances and memorial dates.
 - `item_comments` — comments and reactions.
 - `item_activity` — family feed records.
 - `notifications` — in-app notifications.
@@ -36,6 +37,10 @@ receive adult/private records through client-side filters.
 Every dated `items` record creates at least one `item_occurrences` record. Calendar and Today query occurrences by visible date range instead of loading all items.
 
 Occurrences copy `visible_to` from their source item so calendar queries can enforce the same visibility rule without loading all logical items.
+
+`day_annotations` are not `items` and do not create `item_occurrences`. They are rendered as an all-day informational layer. Yearly annotations are stored once with `month` and `day` and projected into the visible year at query/render time.
+
+Manual birthday annotations can point to `family_members` or store an external person's optional `person_name`, `person_relation` and `person_contact`. Public holidays are read-only annotations synced from a verified provider and cached with source metadata.
 
 ## Assignment invariant
 

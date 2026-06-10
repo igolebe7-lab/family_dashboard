@@ -254,42 +254,57 @@
 - Attention card appears for assignment waiting approval.
 - Keyboard and screen-reader labels are present for notification bell and quick actions.
 
-## Stage 7: Calendar MVP
+## Stage 7: Calendar Year Navigator and Day Annotations
 
-**Цель:** agenda/day/week/month с range-based loading.
+**Цель:** убрать дублирование между `Сегодня` и `Календарь`: `Сегодня` становится рабочим day/week/month календарём, а `Календарь` — годовым навигатором с особыми датами, днями рождения, праздниками, выходными и переходом в Today.
 
 **Files:**
-- Create: `apps/web/src/routes/(app)/calendar/+page.svelte`
-- Create: `apps/web/src/lib/stores/calendar.store.ts`
-- Create: `apps/web/src/lib/components/calendar/CalendarViewport.svelte`
-- Create: `apps/web/src/lib/components/calendar/CalendarHeader.svelte`
-- Create: `apps/web/src/lib/components/calendar/CalendarViewSwitcher.svelte`
-- Create: `apps/web/src/lib/components/calendar/WeekStrip.svelte`
-- Create: `apps/web/src/lib/components/calendar/DayTimeline.svelte`
-- Create: `apps/web/src/lib/components/calendar/WeekGrid.svelte`
-- Create: `apps/web/src/lib/components/calendar/MonthGrid.svelte`
-- Create: `apps/web/src/lib/components/calendar/AgendaList.svelte`
-- Create: `apps/web/src/lib/components/calendar/CalendarFilters.svelte`
-- Create: `apps/web/src/lib/components/calendar/OccurrenceCard.svelte`
+- Modify: `apps/web/src/routes/app/today/+page.svelte`
+- Modify: `apps/web/src/routes/app/calendar/+page.svelte`
+- Modify: `apps/web/src/lib/stores/calendar.store.ts`
+- Create: `apps/web/src/lib/stores/day-annotations.store.ts`
+- Create: `apps/web/src/lib/api/day-annotations.api.ts`
+- Create: `apps/web/src/lib/api/holiday-sync.api.ts`
+- Create: `apps/web/src/lib/components/calendar/YearCalendar.svelte`
+- Create: `apps/web/src/lib/components/calendar/MonthMiniGrid.svelte`
+- Create: `apps/web/src/lib/components/calendar/DayAnnotationMarkers.svelte`
+- Create: `apps/web/src/lib/components/calendar/DayDetailSheet.svelte`
+- Create: `apps/web/src/lib/components/calendar/SpecialDateForm.svelte`
+- Create: `apps/web/src/lib/day-annotations/day-annotations.ts`
+- Create/Modify: `pocketbase/pb_migrations/*`
+- Create/Modify: `pocketbase/pb_hooks/day_annotations.pb.js`
+- Create/Modify: `pocketbase/pb_hooks/holiday_sync.pb.js`
 
 - [x] Implement visible range calculation per view.
 - [x] Fetch `item_occurrences` only for visible range.
 - [x] Add category/member filters.
-- [ ] Implement mobile day/week timeline.
-- [ ] Implement desktop week grid.
-- [ ] Keep year view route/state reserved but not implemented in MVP.
+- [x] Re-scope product decision: Today owns day/week/month; Calendar owns year/global navigation.
+- [ ] Move active day/week/month work into Today and stop expanding Calendar as a duplicate workspace.
+- [ ] Add `day_annotations` domain model for birthdays, public holidays, family dates, observances and memorial dates.
+- [ ] Implement external birthday fields: optional relation/status, optional contact/phone and optional note.
+- [ ] Implement manual special date create/edit/delete with color and yearly/one-time recurrence.
+- [ ] Implement Calendar year overview with months, days, week numbers, weekends and annotation markers.
+- [ ] Implement day detail sheet and navigation from Calendar day/month to Today.
+- [ ] Implement all-day information strip in Today day/week/month.
+- [ ] Implement weekly cached public holiday sync for current and next year.
 
 **Automated checks:**
 
-- unit tests for range calculation and filters
+- unit tests for annotation recurrence projection
+- unit tests for holiday sync normalization
+- unit tests for Calendar year/month view model
 - `pnpm check`
+- `pnpm test`
 - `pnpm build`
 
 **Manual local test gate:**
 
-- 390x844 viewport compare to `image-2-mobile-calendar-week.png`.
-- 1440x900 viewport compare to `image-3-desktop-week-dashboard.png`.
-- Navigate previous/next week: API requests change range, not all-year loading.
+- 390x844 Today keeps accepted UI and shows all-day info without mixing it into tasks.
+- 390x844 Calendar shows year/month overview, not duplicate day/week agenda.
+- 1440x900 Calendar shows year overview without scrolling sidebars unexpectedly.
+- Create external birthday with only name/date; optional relation/contact can be empty.
+- Yearly special date appears in the next year.
+- Public holidays are read-only and use cached data when provider is unavailable.
 - Direct refresh `/app/calendar` works after static build fallback.
 
 ## Stage 8: Composer for event, task, assignment

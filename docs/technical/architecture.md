@@ -77,6 +77,7 @@ families
 family_members
 items
 item_occurrences
+day_annotations
 item_comments
 item_activity
 notifications
@@ -85,7 +86,9 @@ push_subscriptions
 chore_templates
 ```
 
-Календарь и Today не читают `items` за все время. Они читают `item_occurrences` по range и при необходимости expand parent item/member/category data.
+Today не читает `items` за все время. Рабочие виды дня/недели/месяца читают `item_occurrences` по range и при необходимости expand parent item/member/category data.
+
+Вкладка `Календарь` является годовым навигатором: она читает `day_annotations` для выбранного года и агрегированные маркеры по дням. Особые даты, дни рождения и государственные праздники не смешиваются с `item_occurrences`.
 
 ## Realtime rule
 
