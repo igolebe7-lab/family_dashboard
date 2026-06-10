@@ -4,6 +4,7 @@
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
   import CalendarEventCard from './CalendarEventCard.svelte';
+  import TodayMonthGrid from './TodayMonthGrid.svelte';
   import {
     CALENDAR_END_HOUR,
     CALENDAR_START_HOUR,
@@ -13,16 +14,21 @@
     getCalendarEventTop,
     getCalendarInitialScrollTop
   } from '$lib/today/week-calendar';
+  import { createTodayMonthViewModel } from '$lib/today/today-month-calendar';
+  import type { DayAnnotation } from '$lib/types/domain';
   import type { TodayWeekDay, TodayWeekEvent } from '$lib/today/today-view-model';
 
-  type CalendarView = 'day' | 'week';
+  type CalendarView = 'day' | 'week' | 'month';
 
   export let labelledBy = 'today-week-title';
   export let initialView: CalendarView = 'week';
+  export let selectedDate: Date;
+  export let selectedDateKey: string;
   export let weekLabel: string;
   export let days: TodayWeekDay[] = [];
   export let times: string[] = [];
   export let events: TodayWeekEvent[] = [];
+  export let annotations: DayAnnotation[] = [];
 
   let selectedView: CalendarView = initialView;
   let calendarScrollElement: HTMLDivElement | undefined;
@@ -32,6 +38,11 @@
   $: selectedDay = days.find((day) => day.isToday);
   $: visibleDays = selectedView === 'day' ? (selectedDay ? [selectedDay] : days.slice(0, 1)) : days;
   $: visibleEvents = events.filter((event) => visibleDays.some((day) => day.dateKey === event.day));
+  $: monthModel = createTodayMonthViewModel({
+    annotations,
+    date: selectedDate,
+    events
+  });
 
   function eventsForDay(day: TodayWeekDay): TodayWeekEvent[] {
     return events.filter((event) => event.day === day.dateKey);
@@ -45,7 +56,7 @@
 
   function setView(view: CalendarView): void {
     selectedView = view;
-    void scrollToFirstEvent();
+    if (view !== 'month') void scrollToFirstEvent();
   }
 
   onMount(() => {
@@ -81,7 +92,12 @@
         aria-pressed={selectedView === 'week'}
         on:click={() => setView('week')}>Неделя</button
       >
-      <button type="button" aria-disabled="true">Месяц</button>
+      <button
+        class:today-week-toolbar__active={selectedView === 'month'}
+        type="button"
+        aria-pressed={selectedView === 'month'}
+        on:click={() => setView('month')}>Месяц</button
+      >
     </div>
 
     <button class="today-week-toolbar__filter" type="button" aria-label="Фильтры календаря">
@@ -89,7 +105,10 @@
     </button>
   </div>
 
-  <div class:week-calendar--day={selectedView === 'day'} class="week-calendar" style={calendarStyle}>
+  {#if selectedView === 'month'}
+    <TodayMonthGrid model={monthModel} {selectedDateKey} />
+  {:else}
+    <div class:week-calendar--day={selectedView === 'day'} class="week-calendar" style={calendarStyle}>
     <div class="week-calendar__header">
       <div class="week-calendar__corner" aria-hidden="true"></div>
       {#each visibleDays as day (day.id)}
@@ -131,5 +150,6 @@
         {/each}
       </div>
     </div>
-  </div>
+    </div>
+  {/if}
 </section>

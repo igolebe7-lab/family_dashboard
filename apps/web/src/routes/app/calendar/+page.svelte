@@ -17,9 +17,10 @@
     type DayAnnotationInput
   } from '$lib/api/day-annotations.api';
   import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
+  import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
   import { createYearCalendarViewModel } from '$lib/calendar/year-calendar';
-  import type { YearCalendarDay } from '$lib/calendar/year-calendar';
+  import type { YearCalendarDay, YearCalendarMonth } from '$lib/calendar/year-calendar';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import type { DayAnnotation } from '$lib/types/domain';
@@ -34,12 +35,15 @@
   let editingAnnotation: DayAnnotation | undefined;
   let formError: string | null = null;
   let formSaving = false;
+  let publicHolidayAnnotations: DayAnnotation[] = [];
 
   $: selectedYear = $dayAnnotationsStore.selectedYear;
+  $: loadedCalendarAnnotations = mergeDayAnnotations(
+    $dayAnnotationsStore.projectedAnnotations,
+    publicHolidayAnnotations
+  );
   $: calendarAnnotations =
-    $dayAnnotationsStore.projectedAnnotations.length > 0
-      ? $dayAnnotationsStore.projectedAnnotations
-      : DEMO_DAY_ANNOTATIONS;
+    loadedCalendarAnnotations.length > 0 ? loadedCalendarAnnotations : DEMO_DAY_ANNOTATIONS;
   $: yearModel = createYearCalendarViewModel(selectedYear, calendarAnnotations);
   $: selectedDay = selectedDateKey ? yearModel.daysByDate.get(selectedDateKey) : undefined;
   $: selectedTodayHref = selectedDay
@@ -64,7 +68,18 @@
     try {
       await dayAnnotationsStore.loadYear(context);
     } catch (error) {
-      console.warn('Failed to load Calendar day annotations from PocketBase, keeping demo year.', error);
+      console.warn('Failed to load Calendar day annotations from PocketBase, keeping cached holiday layer.', error);
+    }
+
+    try {
+      publicHolidayAnnotations = await loadPublicHolidaysForYears({
+        countryCode: 'RU',
+        familyId: context.familyId,
+        storage: localStorage,
+        years: [selectedYear, selectedYear + 1]
+      });
+    } catch (error) {
+      console.warn('Failed to load Calendar public holidays, keeping local family annotations.', error);
     }
   }
 
@@ -82,6 +97,11 @@
 
   function selectDay(day: YearCalendarDay): void {
     selectedDateKey = day.dateKey;
+  }
+
+  function getMonthHref(month: YearCalendarMonth): string {
+    const monthValue = String(month.month).padStart(2, '0');
+    return buildTodayCalendarHref({ dateKey: `${selectedYear}-${monthValue}-01`, view: 'month' });
   }
 
   function closeDayDetail(): void {
@@ -204,7 +224,7 @@
     + Особая дата
   </button>
 
-  <YearCalendar model={yearModel} compact {selectedDateKey} onselectDay={selectDay} />
+  <YearCalendar model={yearModel} compact {selectedDateKey} onselectDay={selectDay} monthHref={getMonthHref} />
   <DayDetailSheet
     day={selectedDay}
     onedit={openEditSpecialDate}
@@ -248,7 +268,7 @@
     </button>
   </div>
 
-  <YearCalendar model={yearModel} {selectedDateKey} onselectDay={selectDay} />
+  <YearCalendar model={yearModel} {selectedDateKey} onselectDay={selectDay} monthHref={getMonthHref} />
 
   <svelte:fragment slot="aside">
     <DayDetailSheet

@@ -13,6 +13,7 @@
   import TodayTimeline from '$lib/components/today/TodayTimeline.svelte';
   import TodayWeekBoard from '$lib/components/today/TodayWeekBoard.svelte';
   import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
+  import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { parseTodayCalendarSearch } from '$lib/calendar/today-navigation';
   import { getIcon } from '$lib/design/icon-registry';
   import { calendarStore } from '$lib/stores/calendar.store';
@@ -20,14 +21,20 @@
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { createTodayAllDayInfoViewModel } from '$lib/today/today-all-day';
   import { loadTodayViewModelFromOccurrences } from '$lib/today/today-data';
-  import { createTodayViewModel, type TodayViewModel } from '$lib/today/today-view-model';
+  import {
+    createTodayViewModel,
+    formatDateKey,
+    type TodayViewModel
+  } from '$lib/today/today-view-model';
+  import type { DayAnnotation } from '$lib/types/domain';
 
   const fixtureMode =
     browser && new URLSearchParams(window.location.search).get('fixture') === 'desktop-reference';
   const navigationState =
     browser && !fixtureMode ? parseTodayCalendarSearch(new URLSearchParams(window.location.search)) : null;
   const selectedTodayDate = navigationState?.date ?? new Date();
-  const selectedCalendarView = navigationState?.view === 'day' ? 'day' : 'week';
+  const selectedCalendarView = navigationState?.view ?? 'week';
+  const selectedTodayDateKey = navigationState?.dateKey ?? formatDateKey(selectedTodayDate);
   const activeRoute = '/app/today';
 
   let today: TodayViewModel = createTodayViewModel(
@@ -36,11 +43,14 @@
   let familyUnsubscribe: Unsubscriber | undefined;
   let loadedContextKey: string | null = null;
   let loadedAnnotationsKey: string | null = null;
+  let publicHolidayAnnotations: DayAnnotation[] = [];
 
+  $: loadedTodayAnnotations = mergeDayAnnotations(
+    $dayAnnotationsStore.projectedAnnotations,
+    publicHolidayAnnotations
+  );
   $: todayAnnotations =
-    $dayAnnotationsStore.projectedAnnotations.length > 0
-      ? $dayAnnotationsStore.projectedAnnotations
-      : DEMO_DAY_ANNOTATIONS;
+    loadedTodayAnnotations.length > 0 ? loadedTodayAnnotations : DEMO_DAY_ANNOTATIONS;
   $: allDayInfo = createTodayAllDayInfoViewModel({
     date: selectedTodayDate,
     annotations: todayAnnotations
@@ -77,7 +87,18 @@
     try {
       await dayAnnotationsStore.loadYear(context);
     } catch (error) {
-      console.warn('Failed to load Today day annotations from PocketBase, keeping demo strip.', error);
+      console.warn('Failed to load Today day annotations from PocketBase, keeping cached holiday layer.', error);
+    }
+
+    try {
+      publicHolidayAnnotations = await loadPublicHolidaysForYears({
+        countryCode: 'RU',
+        familyId: context.familyId,
+        storage: localStorage,
+        years: [selectedYear, selectedYear + 1]
+      });
+    } catch (error) {
+      console.warn('Failed to load Today public holidays, keeping local family annotations.', error);
     }
   }
 
@@ -131,10 +152,13 @@
   <TodayWeekBoard
     labelledBy="today-week-title-desktop"
     initialView={selectedCalendarView}
+    selectedDate={selectedTodayDate}
+    selectedDateKey={selectedTodayDateKey}
     weekLabel={today.weekLabel}
     days={today.weekDays}
     times={today.weekTimes}
     events={today.weekEvents}
+    annotations={todayAnnotations}
   />
 
   <svelte:fragment slot="aside">

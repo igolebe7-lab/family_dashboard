@@ -1,10 +1,15 @@
 <script lang="ts">
-  import type { YearCalendarDay, YearCalendarViewModel } from '$lib/calendar/year-calendar';
+  import type {
+    YearCalendarDay,
+    YearCalendarMonth,
+    YearCalendarViewModel
+  } from '$lib/calendar/year-calendar';
 
   export let model: YearCalendarViewModel;
   export let compact = false;
   export let selectedDateKey: string | undefined = undefined;
   export let onselectDay: ((day: YearCalendarDay) => void) | undefined = undefined;
+  export let monthHref: ((month: YearCalendarMonth) => string) | undefined = undefined;
 
   const weekdayLabels = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
 </script>
@@ -14,6 +19,11 @@
     <article class="year-month" aria-label={`${month.label} ${model.year}`}>
       <header class="year-month__header">
         <h2>{month.label}</h2>
+        {#if monthHref}
+          <a class="year-month__open-link" href={monthHref(month)} aria-label={`Открыть ${month.label} в месяце`}>
+            Месяц
+          </a>
+        {/if}
       </header>
 
       <div class="year-month__weekdays" aria-hidden="true">

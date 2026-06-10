@@ -264,22 +264,23 @@
 - Modify: `apps/web/src/lib/stores/calendar.store.ts`
 - Create: `apps/web/src/lib/stores/day-annotations.store.ts`
 - Create: `apps/web/src/lib/api/day-annotations.api.ts`
-- Create: `apps/web/src/lib/api/holiday-sync.api.ts`
+- Create: `apps/web/src/lib/calendar/holiday-sync.ts`
 - Create: `apps/web/src/lib/components/calendar/YearCalendar.svelte`
+- Create: `apps/web/src/lib/components/today/TodayMonthGrid.svelte`
 - Create: `apps/web/src/lib/components/calendar/MonthMiniGrid.svelte`
 - Create: `apps/web/src/lib/components/calendar/DayAnnotationMarkers.svelte`
 - Create: `apps/web/src/lib/components/calendar/DayDetailSheet.svelte`
 - Create: `apps/web/src/lib/components/calendar/SpecialDateForm.svelte`
 - Create: `apps/web/src/lib/day-annotations/day-annotations.ts`
+- Create: `apps/web/src/lib/today/today-month-calendar.ts`
 - Create/Modify: `pocketbase/pb_migrations/*`
 - Create/Modify: `pocketbase/pb_hooks/day_annotations.pb.js`
-- Create/Modify: `pocketbase/pb_hooks/holiday_sync.pb.js`
 
 - [x] Implement visible range calculation per view.
 - [x] Fetch `item_occurrences` only for visible range.
 - [x] Add category/member filters.
 - [x] Re-scope product decision: Today owns day/week/month; Calendar owns year/global navigation.
-- [ ] Move active day/week/month work into Today and stop expanding Calendar as a duplicate workspace.
+- [x] Move active day/week/month work into Today and stop expanding Calendar as a duplicate workspace.
 - [x] Add client `day_annotations` domain model and recurrence projection for birthdays, public holidays, family dates, observances and memorial dates.
 - [x] Add frontend API/store loading for `day_annotations` by selected year.
 - [x] Add PocketBase `day_annotations` schema, rules and hooks.
@@ -290,10 +291,10 @@
 - [x] Match Calendar year overview to accepted Today UI patterns: warm surfaces, compact typography, soft buttons/chips, stable internal scroll and circular markers.
 - [x] Implement Calendar day detail sheet for selected day annotations.
 - [x] Implement navigation from Calendar day to Today with selected date and day view.
-- [ ] Implement navigation from Calendar month to Today month view after Today month UI exists.
+- [x] Implement navigation from Calendar month to Today month view after Today month UI exists.
 - [x] Implement all-day information strip in Today for selected day annotations.
 - [x] Polish Today date label when viewing a non-current selected date from Calendar.
-- [ ] Implement weekly cached public holiday sync for current and next year.
+- [x] Implement weekly cached public holiday sync for current and next year.
 
 **Automated checks:**
 
