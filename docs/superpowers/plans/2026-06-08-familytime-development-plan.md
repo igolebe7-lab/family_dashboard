@@ -282,7 +282,7 @@
 - [ ] Move active day/week/month work into Today and stop expanding Calendar as a duplicate workspace.
 - [x] Add client `day_annotations` domain model and recurrence projection for birthdays, public holidays, family dates, observances and memorial dates.
 - [x] Add frontend API/store loading for `day_annotations` by selected year.
-- [ ] Add PocketBase `day_annotations` schema, rules and hooks.
+- [x] Add PocketBase `day_annotations` schema, rules and hooks.
 - [ ] Implement external birthday fields: optional relation/status, optional contact/phone and optional note.
 - [ ] Implement manual special date create/edit/delete with color and yearly/one-time recurrence.
 - [x] Add Calendar year/month view model with week numbers, weekends and annotation marker overflow.

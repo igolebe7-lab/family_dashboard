@@ -28,8 +28,12 @@ Syntax-only check from repo root:
 
 ```bash
 node --check pocketbase/pb_migrations/20260608230000_init_collections.js
+node --check pocketbase/pb_migrations/20260610170000_day_annotations.js
 node --check pocketbase/pb_hooks/items.pb.js
 node --check pocketbase/pb_hooks/occurrences.pb.js
+node --check pocketbase/pb_hooks/day_annotations.pb.js
+node --check pocketbase/pb_hooks/_shared/day-annotations.pb.js
+node scripts/verify-day-annotations-schema.mjs
 ```
 
 Full verification requires a local PocketBase binary:
