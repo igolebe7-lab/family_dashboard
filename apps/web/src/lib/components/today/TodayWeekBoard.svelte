@@ -35,7 +35,7 @@
 
   $: calendarBodyHeight = getCalendarBodyHeight();
   $: calendarStyle = `--calendar-start-hour:${CALENDAR_START_HOUR}; --calendar-end-hour:${CALENDAR_END_HOUR}; --hour-height:${HOUR_HEIGHT}px;`;
-  $: selectedDay = days.find((day) => day.isToday);
+  $: selectedDay = days.find((day) => day.dateKey === selectedDateKey) ?? days.find((day) => day.isToday);
   $: visibleDays = selectedView === 'day' ? (selectedDay ? [selectedDay] : days.slice(0, 1)) : days;
   $: visibleEvents = events.filter((event) => visibleDays.some((day) => day.dateKey === event.day));
   $: monthModel = createTodayMonthViewModel({

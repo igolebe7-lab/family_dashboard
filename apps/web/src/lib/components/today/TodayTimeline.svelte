@@ -9,11 +9,26 @@
   export let items: TodayTimelineItem[] = [];
   export let allDayItems: TodayAllDayItem[] = [];
   export let labelledBy = 'today-timeline-title';
+  export let loadDetails:
+    | ((item: TodayTimelineItem | TodayAllDayItem) => Promise<Partial<TodayTimelineItem | TodayAllDayItem>>)
+    | undefined = undefined;
 
   let selectedItem: TodayTimelineItem | TodayAllDayItem | null = null;
+  let selectedLoading = false;
 
-  function openItem(item: TodayTimelineItem | TodayAllDayItem): void {
+  async function openItem(item: TodayTimelineItem | TodayAllDayItem): Promise<void> {
     selectedItem = item;
+    if (!loadDetails) return;
+
+    selectedLoading = true;
+    try {
+      const details = await loadDetails(item);
+      selectedItem = { ...item, ...details };
+    } catch (error) {
+      console.warn('Failed to load item details.', error);
+    } finally {
+      selectedLoading = false;
+    }
   }
 </script>
 
@@ -98,7 +113,31 @@
       <div class="today-detail-sheet__handle" aria-hidden="true"></div>
       <p>{'time' in selectedItem ? selectedItem.time : selectedItem.label}</p>
       <h3>{selectedItem.title}</h3>
-      <span>{selectedItem.subtitle}</span>
+      <dl class="today-detail-sheet__meta">
+        <div>
+          <dt>Дата</dt>
+          <dd>{selectedItem.dateLabel}</dd>
+        </div>
+        <div>
+          <dt>Категория</dt>
+          <dd>{selectedItem.categoryLabel}</dd>
+        </div>
+        <div>
+          <dt>Участники</dt>
+          <dd>{selectedItem.participantNames?.join(', ') || selectedItem.subtitle}</dd>
+        </div>
+        {#if selectedItem.locationText}
+          <div>
+            <dt>Место</dt>
+            <dd>{selectedItem.locationText}</dd>
+          </div>
+        {/if}
+      </dl>
+      {#if selectedItem.description}
+        <p class="today-detail-sheet__description">{selectedItem.description}</p>
+      {:else if selectedLoading}
+        <p class="today-detail-sheet__description">Загружаем детали...</p>
+      {/if}
       <button type="button" on:click={() => (selectedItem = null)}>Закрыть</button>
     </div>
   </div>

@@ -5,10 +5,12 @@ import type { ItemKind, ItemPriority, ItemVisibility } from '$lib/types/domain';
 export type ComposerKind = Extract<ItemKind, 'event' | 'task'>;
 export type ComposerReminder = 'none' | 'at_time' | 'before_15' | 'before_60' | 'before_day';
 export type ComposerRepeat = 'none' | 'daily' | 'weekly' | 'monthly';
+export const FAMILY_TARGET = '__family__';
 
 export type ComposerFormValues = {
   kind: ComposerKind;
   activeMemberId: string;
+  familyMemberIds: string[];
   title: string;
   description: string;
   category: ItemCategory;
@@ -44,6 +46,7 @@ export function createComposerFormValues(input: {
   return {
     kind: input.kind ?? 'event',
     activeMemberId: input.activeMemberId ?? '',
+    familyMemberIds: input.activeMemberId ? [input.activeMemberId] : [],
     title: '',
     description: '',
     category: input.kind === 'task' ? 'home' : 'family',
@@ -69,6 +72,7 @@ export function createComposerFormValues(input: {
 export function createComposerItemInput(values: ComposerFormValues, timezone: string): ComposerSubmitResult {
   const errors = validateComposerForm(values);
   if (errors.length > 0) return { ok: false, errors };
+  const familyMemberIds = getFamilyMemberIds(values);
 
   const base = {
     kind: values.kind,
@@ -96,8 +100,23 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
         allDay: values.allDay,
         startAt,
         endAt,
-        participants: values.participants,
+        participants: getEventParticipants(values, familyMemberIds),
         locationText: values.locationText.trim() || undefined
+      } as CreateItemInput
+    };
+  }
+
+  if (values.kind === 'task' && values.owner === FAMILY_TARGET) {
+    return {
+      ok: true,
+      input: {
+        ...base,
+        kind: 'assignment',
+        visibility: 'family',
+        assignees: familyMemberIds,
+        dueAt: createDateTimeIso(values.date, values.dueTime),
+        approvalRequired: values.approvalRequired,
+        points: values.points ? Number(values.points) : undefined
       } as CreateItemInput
     };
   }
@@ -140,7 +159,7 @@ export function validateComposerForm(values: ComposerFormValues): string[] {
   if (values.kind === 'event') {
     if (!values.allDay && !isValidTimeInput(values.startTime)) errors.push('Проверьте время начала');
     if (!values.allDay && !isValidTimeInput(values.endTime)) errors.push('Проверьте время окончания');
-    if (values.participants.length === 0) errors.push('Выберите участников события');
+    if (getEventParticipants(values, getFamilyMemberIds(values)).length === 0) errors.push('Выберите участников события');
 
     if (!values.allDay && isValidDateInput(values.date) && isValidTimeInput(values.startTime) && isValidTimeInput(values.endTime)) {
       const startAt = createDateTimeIso(values.date, values.startTime);
@@ -153,11 +172,21 @@ export function validateComposerForm(values: ComposerFormValues): string[] {
 
   if (values.kind === 'task') {
     if (!values.owner) errors.push('Выберите, для кого задача');
+    if (values.owner === FAMILY_TARGET && getFamilyMemberIds(values).length === 0) errors.push('Нет участников семьи для задачи');
     if (!isValidTimeInput(values.dueTime)) errors.push('Проверьте время задачи');
     if (values.points && Number(values.points) < 0) errors.push('Баллы не могут быть отрицательными');
   }
 
   return errors;
+}
+
+export function getFamilyMemberIds(values: ComposerFormValues): string[] {
+  return Array.from(new Set([...values.familyMemberIds, values.activeMemberId].filter(Boolean)));
+}
+
+export function getEventParticipants(values: ComposerFormValues, familyMemberIds = getFamilyMemberIds(values)): string[] {
+  if (values.participants.includes(FAMILY_TARGET)) return familyMemberIds;
+  return Array.from(new Set(values.participants.filter(Boolean)));
 }
 
 export function setComposerKind(values: ComposerFormValues, kind: ComposerKind): ComposerFormValues {

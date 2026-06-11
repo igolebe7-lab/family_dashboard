@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import type {
     YearCalendarDay,
     YearCalendarMonth,
@@ -30,8 +30,18 @@
     const currentMonth = calendarElement.querySelector<HTMLElement>(
       `[data-month="${now.getMonth() + 1}"]`
     );
-    currentMonth?.scrollIntoView({ block: 'start' });
+    if (!currentMonth) return;
+
+    const stickyHeaderHeight =
+      document.querySelector<HTMLElement>('.calendar-mobile-sticky')?.getBoundingClientRect().height ?? 0;
+    const top = currentMonth.getBoundingClientRect().top + window.scrollY - stickyHeaderHeight - 12;
+    window.scrollTo({ top: Math.max(0, top) });
   }
+
+  onMount(() => {
+    if (!compact) return;
+    window.setTimeout(() => void scrollCurrentMonthIntoView(), 120);
+  });
 </script>
 
 <section

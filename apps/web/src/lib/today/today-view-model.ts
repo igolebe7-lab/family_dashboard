@@ -1,6 +1,7 @@
 import type { ItemCategory } from '$lib/constants/categories';
 import type { AccentColor } from '$lib/constants/colors';
 import type { IconName } from '$lib/design/icon-registry';
+import type { ItemKind } from '$lib/types/domain';
 import { createCalendarTimeLabels } from './week-calendar';
 
 export type TodayFamilyMember = {
@@ -15,7 +16,10 @@ export type TodayFamilyMember = {
 
 export type TodayTimelineItem = {
   id: string;
+  itemId: string;
+  kind: ItemKind;
   time: string;
+  dateLabel: string;
   title: string;
   subtitle: string;
   memberName: string;
@@ -23,7 +27,11 @@ export type TodayTimelineItem = {
   memberPortrait: TodayFamilyMember['portrait'];
   color: AccentColor;
   category: ItemCategory;
+  categoryLabel: string;
   icon: IconName;
+  description?: string;
+  locationText?: string;
+  participantNames?: string[];
 };
 
 export type TodayAllDayItem = Omit<TodayTimelineItem, 'time'> & {
@@ -464,7 +472,10 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
   const timelineItems: TodayTimelineItem[] = [
     {
       id: 'school',
+      itemId: 'school',
+      kind: 'event',
       time: '08:00',
+      dateLabel: 'Сегодня',
       title: 'Школа',
       subtitle: 'Миша',
       memberName: 'Миша',
@@ -472,11 +483,15 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
       memberPortrait: 'misha',
       color: 'green',
       category: 'school',
+      categoryLabel: 'Школа',
       icon: 'backpack'
     },
     {
       id: 'doctor',
+      itemId: 'doctor',
+      kind: 'event',
       time: '10:30',
+      dateLabel: 'Сегодня',
       title: 'Врач',
       subtitle: 'мама',
       memberName: 'Мама',
@@ -484,11 +499,15 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
       memberPortrait: 'mom',
       color: 'lavender',
       category: 'health',
+      categoryLabel: 'Здоровье',
       icon: 'stethoscope'
     },
     {
       id: 'sport',
+      itemId: 'sport',
+      kind: 'event',
       time: '18:00',
+      dateLabel: 'Сегодня',
       title: 'Тренировка',
       subtitle: 'Аня',
       memberName: 'Аня',
@@ -496,11 +515,15 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
       memberPortrait: 'anya',
       color: 'peach',
       category: 'sport',
+      categoryLabel: 'Спорт',
       icon: 'dumbbell'
     },
     {
       id: 'dinner',
+      itemId: 'dinner',
+      kind: 'event',
       time: '20:00',
+      dateLabel: 'Сегодня',
       title: 'Семейный ужин',
       subtitle: 'Вся семья',
       memberName: 'Вся семья',
@@ -508,6 +531,7 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
       memberPortrait: 'misha',
       color: 'yellow',
       category: 'family',
+      categoryLabel: 'Семья',
       icon: 'users-round'
     }
   ];

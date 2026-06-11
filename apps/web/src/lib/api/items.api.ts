@@ -85,6 +85,18 @@ export async function createItem(
   return mapItemRecord(record);
 }
 
+export async function getItem(
+  id: string,
+  context?: Partial<ActiveFamilyContext>
+): Promise<Item> {
+  const activeContext = requireActiveContext(context);
+  const items = getPocketBaseClient().collection(COLLECTIONS.items);
+  const getOne = requireCollectionMethod(items, 'getOne');
+  const record = await getOne(id, memberRequestOptions(activeContext));
+
+  return mapItemRecord(record);
+}
+
 export function mapItemRecord(value: unknown): Item {
   const record = asRecord(value);
 

@@ -6,6 +6,12 @@
   color: #242936;
 }
 
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -13,6 +19,8 @@
 body {
   margin: 0;
   overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
   min-width: 320px;
   min-height: 100vh;
   background:
@@ -81,6 +89,9 @@ h3 {
 
 .app-screen,
 .route-fallback {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   min-height: 100vh;
   padding: 1.85rem 1.15rem 7.2rem;
 }
@@ -173,6 +184,8 @@ h3 {
   display: grid;
   gap: 1.08rem;
   width: min(100%, 44rem);
+  max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -750,6 +763,10 @@ h3 {
   gap: 0.92rem;
 }
 
+.year-calendar--compact {
+  padding-bottom: 5.4rem;
+}
+
 .year-month {
   display: grid;
   gap: 0.62rem;
@@ -1271,6 +1288,10 @@ h3 {
   box-shadow: var(--shadow-floating);
 }
 
+.app-screen--calendar {
+  padding-bottom: 10.5rem;
+}
+
 .composer-backdrop {
   position: fixed;
   inset: 0;
@@ -1526,6 +1547,7 @@ h3 {
 .today-mobile-surface {
   display: grid;
   gap: 1rem;
+  min-width: 0;
   margin: 0.08rem -0.22rem -7.75rem;
   border: 1px solid rgb(238 232 222 / 0.78);
   border-bottom: 0;
@@ -2087,6 +2109,41 @@ h3 {
   font-weight: 440;
 }
 
+.today-detail-sheet__meta {
+  display: grid;
+  gap: 0.46rem;
+  margin: 0;
+}
+
+.today-detail-sheet__meta div {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.today-detail-sheet__meta dt {
+  color: var(--color-text-soft);
+  font-size: 0.68rem;
+  font-weight: 560;
+}
+
+.today-detail-sheet__meta dd {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 440;
+  line-height: 1.28;
+}
+
+.today-detail-sheet__description {
+  border-radius: 1rem;
+  background: color-mix(in srgb, currentColor 8%, white);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 430;
+  line-height: 1.38;
+  padding: 0.68rem 0.76rem;
+}
+
 .today-detail-sheet button {
   justify-self: end;
   border: 1px solid rgb(238 232 222 / 0.95);
@@ -2111,6 +2168,8 @@ h3 {
 .today-attention-card {
   position: relative;
   display: grid;
+  min-width: 0;
+  overflow: hidden;
   min-height: 5.7rem;
   grid-template-columns: 2.05rem minmax(0, 1fr);
   gap: 0.52rem;
@@ -2141,10 +2200,12 @@ h3 {
 
 .today-attention-card p {
   margin: 0;
+  overflow: hidden;
   color: var(--color-text);
   font-size: 0.78rem;
   font-weight: 500;
   line-height: 1.28;
+  overflow-wrap: anywhere;
 }
 
 .today-attention-card button {
@@ -2176,7 +2237,7 @@ h3 {
 
 .today-quick-actions__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(9.4rem, 100%), 1fr));
   gap: 0.82rem;
 }
 
@@ -2232,6 +2293,8 @@ h3 {
 
 .today-empty-state {
   display: flex;
+  min-width: 0;
+  overflow: hidden;
   align-items: center;
   gap: 0.8rem;
   border-radius: var(--radius-lg);
@@ -3007,7 +3070,7 @@ h3 {
   }
 
   .today-quick-actions__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.78rem;
   }
 

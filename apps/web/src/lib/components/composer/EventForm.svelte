@@ -1,12 +1,25 @@
 <script lang="ts">
   import { CATEGORY_META, ITEM_CATEGORIES } from '$lib/constants/categories';
-  import type { ComposerFormValues } from '$lib/composer/composer-form';
+  import { FAMILY_TARGET, type ComposerFormValues } from '$lib/composer/composer-form';
   import type { FamilyMember } from '$lib/types/domain';
   import ReminderPicker from './ReminderPicker.svelte';
   import RepeatRuleEditor from './RepeatRuleEditor.svelte';
 
   export let values: ComposerFormValues;
   export let members: FamilyMember[] = [];
+
+  $: isFamilySelected = values.participants.includes(FAMILY_TARGET);
+
+  function toggleFamilySelection(): void {
+    values.participants = isFamilySelected ? [] : [FAMILY_TARGET];
+  }
+
+  function toggleMemberSelection(memberId: string): void {
+    const selected = values.participants.filter((id) => id !== FAMILY_TARGET);
+    values.participants = selected.includes(memberId)
+      ? selected.filter((id) => id !== memberId)
+      : [...selected, memberId];
+  }
 </script>
 
 <div class="composer-form-grid">
@@ -60,9 +73,17 @@
   <fieldset class="composer-fieldset composer-field--wide">
     <legend>Участники</legend>
     <div class="composer-member-grid">
+      <label class="composer-member-option composer-member-option--family">
+        <input checked={isFamilySelected} type="checkbox" on:change={toggleFamilySelection} />
+        <span>Вся семья</span>
+      </label>
       {#each members as member (member.id)}
         <label class="composer-member-option">
-          <input bind:group={values.participants} type="checkbox" value={member.id} />
+          <input
+            checked={!isFamilySelected && values.participants.includes(member.id)}
+            type="checkbox"
+            on:change={() => toggleMemberSelection(member.id)}
+          />
           <span>{member.displayName}</span>
         </label>
       {/each}

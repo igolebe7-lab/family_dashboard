@@ -51,6 +51,21 @@
   $: if (values.kind !== activeKind) {
     values = setComposerKind(values, activeKind);
   }
+  $: {
+    const familyMemberIds = members.map((member) => member.id).filter(Boolean);
+    const nextIds = Array.from(
+      new Set([...familyMemberIds, context?.memberId].filter((memberId): memberId is string => Boolean(memberId)))
+    );
+    if (nextIds.join('|') !== values.familyMemberIds.join('|') || (context?.memberId && values.activeMemberId !== context.memberId)) {
+      values = {
+        ...values,
+        activeMemberId: context?.memberId ?? values.activeMemberId,
+        familyMemberIds: nextIds,
+        owner: values.owner || context?.memberId || '',
+        participants: values.participants.length > 0 ? values.participants : context?.memberId ? [context.memberId] : []
+      };
+    }
+  }
 
   function changeKind(kind: ComposerKind): void {
     activeKind = kind;

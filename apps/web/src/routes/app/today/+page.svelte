@@ -16,6 +16,7 @@
   import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { parseTodayCalendarSearch } from '$lib/calendar/today-navigation';
+  import { getItem } from '$lib/api/items.api';
   import type { ComposerKind } from '$lib/composer/composer-form';
   import { getIcon } from '$lib/design/icon-registry';
   import { calendarStore } from '$lib/stores/calendar.store';
@@ -26,6 +27,8 @@
   import {
     createTodayViewModel,
     formatDateKey,
+    type TodayAllDayItem,
+    type TodayTimelineItem,
     type TodayViewModel
   } from '$lib/today/today-view-model';
   import type { DayAnnotation } from '$lib/types/domain';
@@ -118,6 +121,31 @@
     await loadTodayFromFamilyState(currentFamilyState);
   }
 
+  async function loadTimelineDetails(item: TodayTimelineItem | TodayAllDayItem) {
+    const context = currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null;
+    if (!context) return {};
+
+    const fullItem = await getItem(item.itemId, context);
+    const participantIds =
+      fullItem.kind === 'event'
+        ? fullItem.participants
+        : fullItem.assignees.length > 0
+          ? fullItem.assignees
+          : fullItem.owner
+            ? [fullItem.owner]
+            : [];
+    const participantNames = participantIds
+      .map((memberId) => currentFamilyState?.members.find((member) => member.id === memberId)?.displayName)
+      .filter((name): name is string => Boolean(name));
+
+    return {
+      description: fullItem.description,
+      locationText: fullItem.locationText,
+      participantNames:
+        participantNames.length === currentFamilyState?.members.length ? ['Вся семья'] : participantNames
+    };
+  }
+
   onMount(() => {
     if (fixtureMode) return;
 
@@ -154,6 +182,7 @@
       allDayItems={today.allDayItems}
       items={today.timelineItems}
       labelledBy="today-timeline-title-mobile"
+      loadDetails={loadTimelineDetails}
     />
     <AttentionPanel items={today.attentionItems} labelledBy="attention-title-mobile" />
     <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" onselect={openComposer} />

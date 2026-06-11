@@ -362,6 +362,15 @@
 - [x] Derive birthday titles from person/member data instead of asking for a manual title.
 - [ ] Persist in-progress modal drafts through short Safari backgrounding via session storage.
 
+**Stage 8C.1 phone QA corrections — 2026-06-11:**
+
+- [x] Add explicit `Для себя` fallback and `Вся семья` target to `+ Задача`.
+- [x] Add `Вся семья` participant shortcut to events and expand it to active family members before save.
+- [x] Load full item details for Today detail sheet when an occurrence card is tapped.
+- [x] Tighten mobile horizontal overflow guards for iPhone Safari.
+- [x] Scroll Calendar to the current month with sticky header offset and add bottom room for the floating button.
+- [x] Make Today day view use the selected URL date instead of always using the real current day.
+
 **Automated checks:**
 
 - form validation tests

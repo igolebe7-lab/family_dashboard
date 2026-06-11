@@ -29,6 +29,7 @@ export type PocketBaseCollectionLike = {
     perPage: number,
     options?: Record<string, unknown>
   ) => Promise<unknown>;
+  getOne?: (id: string, options?: Record<string, unknown>) => Promise<unknown>;
   getFullList?: (options?: Record<string, unknown>) => Promise<unknown[]>;
 };
 

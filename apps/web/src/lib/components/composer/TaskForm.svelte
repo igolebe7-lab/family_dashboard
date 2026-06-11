@@ -1,6 +1,6 @@
 <script lang="ts">
   import { CATEGORY_META, ITEM_CATEGORIES } from '$lib/constants/categories';
-  import type { ComposerFormValues } from '$lib/composer/composer-form';
+  import { FAMILY_TARGET, type ComposerFormValues } from '$lib/composer/composer-form';
   import type { FamilyMember } from '$lib/types/domain';
   import ReminderPicker from './ReminderPicker.svelte';
   import RepeatRuleEditor from './RepeatRuleEditor.svelte';
@@ -8,7 +8,13 @@
   export let values: ComposerFormValues;
   export let members: FamilyMember[] = [];
 
+  $: activeMember = members.find((member) => member.id === values.activeMemberId);
+  $: hasActiveMemberOption = Boolean(values.activeMemberId);
+  $: isActiveMemberInList = members.some((member) => member.id === values.activeMemberId);
   $: isAssignment = Boolean(values.owner && values.owner !== values.activeMemberId);
+  $: isFamilyTask = values.owner === FAMILY_TARGET;
+  $: if (isFamilyTask && values.visibility !== 'family') values.visibility = 'family';
+  $: if (isAssignment && !isFamilyTask && values.visibility !== 'assignees') values.visibility = 'assignees';
 </script>
 
 <div class="composer-form-grid">
@@ -21,8 +27,16 @@
     <span>Для кого</span>
     <select bind:value={values.owner}>
       <option value="">Выберите</option>
+      {#if hasActiveMemberOption}
+        <option value={values.activeMemberId}>
+          Для себя{activeMember ? ` · ${activeMember.displayName}` : ''}
+        </option>
+      {/if}
+      <option value={FAMILY_TARGET}>Вся семья</option>
       {#each members as member (member.id)}
-        <option value={member.id}>{member.displayName}</option>
+        {#if member.id !== values.activeMemberId || !isActiveMemberInList}
+          <option value={member.id}>{member.displayName}</option>
+        {/if}
       {/each}
     </select>
   </label>
@@ -58,9 +72,10 @@
 
   <label>
     <span>Видимость</span>
-    <select bind:value={values.visibility} disabled={isAssignment}>
+    <select bind:value={values.visibility} disabled={isAssignment || isFamilyTask}>
       <option value="private">Личное</option>
       <option value="family">Вся семья</option>
+      <option value="assignees">Исполнитель</option>
       <option value="adults">Только взрослые</option>
     </select>
   </label>

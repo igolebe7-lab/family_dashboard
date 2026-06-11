@@ -259,7 +259,10 @@ function mapOccurrenceToTimelineItem(
 
   return {
     id: occurrence.id,
+    itemId: occurrence.item,
+    kind: occurrence.kind,
     time: getOccurrenceTime(occurrence),
+    dateLabel: formatOccurrenceDateLabel(occurrence),
     title: occurrence.titleSnapshot,
     subtitle: member.name,
     memberName: member.name,
@@ -267,6 +270,7 @@ function mapOccurrenceToTimelineItem(
     memberPortrait: member.portrait,
     color: category.color,
     category: occurrence.categorySnapshot,
+    categoryLabel: category.label,
     icon: category.icon as IconName
   };
 }
@@ -281,7 +285,10 @@ function mapOccurrenceToAllDayItem(
 
   return {
     id: occurrence.id,
+    itemId: occurrence.item,
+    kind: occurrence.kind,
     label: 'Весь день',
+    dateLabel: formatOccurrenceDateLabel(occurrence),
     title: occurrence.titleSnapshot,
     subtitle: member.name,
     memberName: member.name,
@@ -289,6 +296,7 @@ function mapOccurrenceToAllDayItem(
     memberPortrait: member.portrait,
     color: category.color,
     category: occurrence.categorySnapshot,
+    categoryLabel: category.label,
     icon: category.icon as IconName
   };
 }
@@ -371,6 +379,17 @@ function getOccurrenceTime(occurrence: ItemOccurrence): string {
 
   const date = new Date(value);
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function formatOccurrenceDateLabel(occurrence: ItemOccurrence): string {
+  const value = occurrence.startAt ?? occurrence.dueAt;
+  if (!value) return 'Без даты';
+
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(value));
 }
 
 function getOccurrenceDurationMinutes(occurrence: ItemOccurrence): number {
