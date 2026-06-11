@@ -94,6 +94,7 @@ export type Item = {
   timezone: string;
   recurrenceRule?: string;
   recurrenceUntil?: string;
+  reminderOffsetMinutes?: number;
   approvalRequired: boolean;
   checklist?: ChecklistItem[];
   points?: number;

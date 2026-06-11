@@ -36,6 +36,7 @@ export type CreateItemInput = {
   timezone: string;
   recurrenceRule?: string;
   recurrenceUntil?: string;
+  reminderOffsetMinutes?: number;
   approvalRequired?: boolean;
   checklist?: unknown;
   points?: number;
@@ -70,6 +71,7 @@ export async function createItem(
       timezone: input.timezone,
       recurrence_rule: input.recurrenceRule,
       recurrence_until: input.recurrenceUntil,
+      reminder_offset_minutes: input.reminderOffsetMinutes,
       approval_required: input.approvalRequired || false,
       checklist_json: input.checklist,
       points: input.points,
@@ -107,6 +109,8 @@ export function mapItemRecord(value: unknown): Item {
     timezone: asString(record.timezone),
     recurrenceRule: asString(record.recurrence_rule) || undefined,
     recurrenceUntil: asString(record.recurrence_until) || undefined,
+    reminderOffsetMinutes:
+      typeof record.reminder_offset_minutes === 'number' ? record.reminder_offset_minutes : undefined,
     approvalRequired: asBoolean(record.approval_required),
     points: typeof record.points === 'number' ? record.points : undefined,
     locationText: asString(record.location_text) || undefined,

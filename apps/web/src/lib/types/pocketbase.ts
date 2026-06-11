@@ -28,6 +28,7 @@ export type PocketBaseItemRecord = PocketBaseRecordBase & {
   timezone: string;
   recurrence_rule?: string;
   recurrence_until?: string;
+  reminder_offset_minutes?: number;
   approval_required: boolean;
   checklist_json?: unknown;
   points?: number;

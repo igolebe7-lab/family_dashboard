@@ -335,12 +335,18 @@
 - Create: `apps/web/src/lib/components/composer/ReminderPicker.svelte`
 - Create: `apps/web/src/lib/components/composer/RepeatRuleEditor.svelte`
 
-- [ ] Mobile: bottom sheet; desktop: modal or side panel.
-- [ ] Event form includes title, category, participants, start/end, all-day, reminder, location, visibility, description.
-- [ ] Task form includes title, owner, due date/time, priority, category, checklist, visibility, reminder, description.
-- [ ] Assignment form includes title, assignee, due date/time, approval required, repeat, points, category, description, reminder.
-- [ ] Add loading/error/success states.
-- [ ] Use GSAP only for sheet open/close if CSS is insufficient; dynamic import and cleanup required.
+- [x] Mobile: bottom sheet; desktop: modal or side panel.
+- [x] Event form includes title, category, participants, start/end, all-day, reminder, location, visibility, description.
+- [x] Task form includes title, owner, due date/time, priority, category, checklist, visibility, reminder, description.
+- [x] Assignment form includes title, assignee, due date/time, approval required, repeat, points, category, description, reminder.
+- [x] Add loading/error/success states.
+- [x] Use GSAP only for sheet open/close if CSS is insufficient; dynamic import and cleanup required.
+
+**Implementation note — 2026-06-11:**
+
+- Composer uses CSS-only sheet/modal transitions for now; GSAP is not needed.
+- Reminder selection is persisted as `items.reminder_offset_minutes` and consumed by later notification stages.
+- Today refreshes its visible occurrence range after successful composer create without full page reload.
 
 **Automated checks:**
 

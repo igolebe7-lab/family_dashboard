@@ -32,6 +32,10 @@ Every family-scoped collection has `family`. API rules and hooks must prevent cr
 API rules for item reads use `visible_to.user ?= @request.auth.id`, so child accounts do not
 receive adult/private records through client-side filters.
 
+`items.reminder_offset_minutes` stores the selected reminder offset relative to `start_at` or
+`due_at`. Stage 8 persists the value from the composer; notification delivery rules consume it in
+later realtime/notification stages.
+
 ## Calendar invariant
 
 Every dated `items` record creates at least one `item_occurrences` record. Calendar and Today query occurrences by visible date range instead of loading all items.

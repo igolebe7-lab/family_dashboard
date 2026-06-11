@@ -4,6 +4,7 @@
   import type { Unsubscriber } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
+  import ComposerSheet from '$lib/components/composer/ComposerSheet.svelte';
   import MemberAvatarRow from '$lib/components/family/MemberAvatarRow.svelte';
   import AttentionPanel from '$lib/components/today/AttentionPanel.svelte';
   import DesktopHeader from '$lib/components/today/DesktopHeader.svelte';
@@ -15,6 +16,7 @@
   import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { parseTodayCalendarSearch } from '$lib/calendar/today-navigation';
+  import type { ComposerKind } from '$lib/composer/composer-form';
   import { getIcon } from '$lib/design/icon-registry';
   import { calendarStore } from '$lib/stores/calendar.store';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
@@ -41,9 +43,12 @@
     fixtureMode ? { fixture: 'desktop-reference' } : selectedTodayDate
   );
   let familyUnsubscribe: Unsubscriber | undefined;
+  let currentFamilyState: FamilyState | undefined;
   let loadedContextKey: string | null = null;
   let loadedAnnotationsKey: string | null = null;
   let publicHolidayAnnotations: DayAnnotation[] = [];
+  let composerOpen = false;
+  let composerKind: ComposerKind = 'event';
 
   $: loadedTodayAnnotations = mergeDayAnnotations(
     $dayAnnotationsStore.projectedAnnotations,
@@ -102,6 +107,17 @@
     }
   }
 
+  function openComposer(kind: ComposerKind): void {
+    composerKind = kind;
+    composerOpen = true;
+  }
+
+  async function refreshTodayAfterCreate(): Promise<void> {
+    if (!currentFamilyState) return;
+    loadedContextKey = null;
+    await loadTodayFromFamilyState(currentFamilyState);
+  }
+
   onMount(() => {
     if (fixtureMode) return;
 
@@ -111,6 +127,7 @@
     }
 
     familyUnsubscribe = familyStore.subscribe((familyState) => {
+      currentFamilyState = familyState;
       if (familyState.status !== 'ready') return;
       void loadTodayFromFamilyState(familyState);
       void loadDayAnnotationsFromFamilyState(familyState);
@@ -135,8 +152,21 @@
     <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-mobile" />
     <TodayTimeline items={today.timelineItems} labelledBy="today-timeline-title-mobile" />
     <AttentionPanel items={today.attentionItems} labelledBy="attention-title-mobile" />
-    <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" />
+    <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" onselect={openComposer} />
   </section>
+
+  {#if composerOpen}
+    <ComposerSheet
+      activeKind={composerKind}
+      context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
+      members={currentFamilyState?.members ?? []}
+      selectedDate={selectedTodayDate}
+      timezone={currentFamilyState?.activeFamily?.timezone}
+      titleId="composer-title-mobile"
+      onclose={() => (composerOpen = false)}
+      oncreated={refreshTodayAfterCreate}
+    />
+  {/if}
 </MobileShell>
 
 <DesktopShell {activeRoute} labelledBy="today-title-desktop">
@@ -163,7 +193,7 @@
 
   <svelte:fragment slot="aside">
     <AttentionPanel items={today.attentionItems} labelledBy="attention-title-desktop" />
-    <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-desktop" />
+    <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-desktop" onselect={openComposer} />
 
     <section class="today-feed" aria-labelledby="today-feed-title">
       <div class="section-title-row">
@@ -189,4 +219,17 @@
       <a class="today-feed__link" href="/app/feed">Открыть всю ленту ›</a>
     </section>
   </svelte:fragment>
+
+  {#if composerOpen}
+    <ComposerSheet
+      activeKind={composerKind}
+      context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
+      members={currentFamilyState?.members ?? []}
+      selectedDate={selectedTodayDate}
+      timezone={currentFamilyState?.activeFamily?.timezone}
+      titleId="composer-title-desktop"
+      onclose={() => (composerOpen = false)}
+      oncreated={refreshTodayAfterCreate}
+    />
+  {/if}
 </DesktopShell>

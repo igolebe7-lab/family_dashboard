@@ -125,6 +125,7 @@ migrate((app) => {
       text('recurrence_rule'),
       date('recurrence_until'),
       json('recurrence_exdates_json'),
+      number('reminder_offset_minutes'),
       bool('approval_required', false),
       json('checklist_json'),
       number('points'),

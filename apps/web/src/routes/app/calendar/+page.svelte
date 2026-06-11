@@ -10,6 +10,7 @@
   import DayDetailSheet from '$lib/components/calendar/DayDetailSheet.svelte';
   import SpecialDateForm from '$lib/components/calendar/SpecialDateForm.svelte';
   import YearCalendar from '$lib/components/calendar/YearCalendar.svelte';
+  import ComposerSheet from '$lib/components/composer/ComposerSheet.svelte';
   import {
     createDayAnnotation,
     deleteDayAnnotation,
@@ -19,6 +20,7 @@
   import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
+  import type { ComposerKind } from '$lib/composer/composer-form';
   import { createYearCalendarViewModel } from '$lib/calendar/year-calendar';
   import type { YearCalendarDay, YearCalendarMonth } from '$lib/calendar/year-calendar';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
@@ -36,6 +38,8 @@
   let formError: string | null = null;
   let formSaving = false;
   let publicHolidayAnnotations: DayAnnotation[] = [];
+  let composerOpen = false;
+  let composerKind: ComposerKind = 'event';
 
   $: selectedYear = $dayAnnotationsStore.selectedYear;
   $: loadedCalendarAnnotations = mergeDayAnnotations(
@@ -112,6 +116,11 @@
     editingAnnotation = undefined;
     formError = null;
     formMode = 'create';
+  }
+
+  function openComposer(kind: ComposerKind = 'event'): void {
+    composerKind = kind;
+    composerOpen = true;
   }
 
   function openEditSpecialDate(annotationId: string): void {
@@ -244,9 +253,20 @@
       onsave={saveSpecialDate}
     />
   {/if}
+  {#if composerOpen}
+    <ComposerSheet
+      activeKind={composerKind}
+      context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
+      members={currentFamilyState?.members ?? []}
+      selectedDate={selectedDateForForm}
+      timezone={currentFamilyState?.activeFamily?.timezone}
+      titleId="calendar-composer-title-mobile"
+      onclose={() => (composerOpen = false)}
+    />
+  {/if}
 </MobileShell>
 
-<FloatingCreateButton />
+<FloatingCreateButton onclick={() => openComposer('event')} />
 
 <DesktopShell {activeRoute} labelledBy="calendar-title-desktop">
   <div class="desktop-header">
@@ -289,6 +309,17 @@
         oncancel={closeSpecialDateForm}
         ondelete={removeSpecialDate}
         onsave={saveSpecialDate}
+      />
+    {/if}
+    {#if composerOpen}
+      <ComposerSheet
+        activeKind={composerKind}
+        context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
+        members={currentFamilyState?.members ?? []}
+        selectedDate={selectedDateForForm}
+        timezone={currentFamilyState?.activeFamily?.timezone}
+        titleId="calendar-composer-title-desktop"
+        onclose={() => (composerOpen = false)}
       />
     {/if}
 

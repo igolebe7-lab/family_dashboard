@@ -1,0 +1,138 @@
+<script lang="ts">
+  import X from '@lucide/svelte/icons/x';
+  import { createItem } from '$lib/api/items.api';
+  import type { ActiveFamilyContext } from '$lib/api/pocketbase';
+  import {
+    createComposerFormValues,
+    createComposerItemInput,
+    setComposerKind,
+    type ComposerFormValues,
+    type ComposerKind
+  } from '$lib/composer/composer-form';
+  import type { FamilyMember } from '$lib/types/domain';
+  import AssignmentForm from './AssignmentForm.svelte';
+  import ComposerTabs from './ComposerTabs.svelte';
+  import EventForm from './EventForm.svelte';
+  import TaskForm from './TaskForm.svelte';
+
+  export let activeKind: ComposerKind = 'event';
+  export let context: ActiveFamilyContext | null = null;
+  export let members: FamilyMember[] = [];
+  export let selectedDate: Date = new Date();
+  export let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  export let titleId = 'composer-title';
+  export let onclose: (() => void) | undefined = undefined;
+  export let oncreated: (() => void | Promise<void>) | undefined = undefined;
+
+  let values: ComposerFormValues = createComposerFormValues({
+    activeMemberId: context?.memberId,
+    date: selectedDate,
+    kind: activeKind
+  });
+  let validationErrors: string[] = [];
+  let submitError: string | null = null;
+  let successMessage: string | null = null;
+  let saving = false;
+
+  $: if (values.kind !== activeKind) {
+    values = setComposerKind(values, activeKind);
+  }
+
+  function changeKind(kind: ComposerKind): void {
+    activeKind = kind;
+    validationErrors = [];
+    submitError = null;
+    successMessage = null;
+  }
+
+  async function submitForm(): Promise<void> {
+    submitError = null;
+    successMessage = null;
+
+    const result = createComposerItemInput(values, timezone);
+    if (!result.ok) {
+      validationErrors = result.errors;
+      return;
+    }
+
+    if (!context) {
+      submitError = 'Сначала подключите семью, затем можно будет создавать записи.';
+      return;
+    }
+
+    validationErrors = [];
+    saving = true;
+
+    try {
+      await createItem(result.input, context);
+      successMessage = getSuccessMessage(values.kind);
+      await oncreated?.();
+      values = createComposerFormValues({
+        activeMemberId: context.memberId,
+        date: selectedDate,
+        kind: values.kind
+      });
+    } catch (error) {
+      submitError = 'Не удалось сохранить. Проверьте поля или подключение к серверу.';
+      console.warn('Failed to create item from composer.', error);
+    } finally {
+      saving = false;
+    }
+  }
+
+  function getSuccessMessage(kind: ComposerKind): string {
+    if (kind === 'task') return 'Дело создано';
+    if (kind === 'assignment') return 'Поручение создано';
+    return 'Событие создано';
+  }
+</script>
+
+<div class="composer-backdrop" role="presentation" on:click={() => onclose?.()}></div>
+<div class="composer-sheet" aria-labelledby={titleId} role="dialog" aria-modal="true">
+  <header class="composer-sheet__header">
+    <div>
+      <p class="section-kicker">Создание</p>
+      <h2 id={titleId}>Новая запись</h2>
+    </div>
+    <button type="button" aria-label="Закрыть форму" on:click={() => onclose?.()}>
+      <X size={19} strokeWidth={2.2} aria-hidden="true" />
+    </button>
+  </header>
+
+  <ComposerTabs value={values.kind} onchange={changeKind} />
+
+  {#if validationErrors.length > 0}
+    <div class="composer-message composer-message--error" role="alert">
+      {#each validationErrors as validationError}
+        <p>{validationError}</p>
+      {/each}
+    </div>
+  {/if}
+
+  {#if submitError}
+    <p class="composer-message composer-message--error" role="alert">{submitError}</p>
+  {/if}
+
+  {#if successMessage}
+    <p class="composer-message composer-message--success" role="status">{successMessage}</p>
+  {/if}
+
+  <form class="composer-form" on:submit|preventDefault={submitForm}>
+    {#if values.kind === 'event'}
+      <EventForm bind:values {members} />
+    {:else if values.kind === 'task'}
+      <TaskForm bind:values {members} />
+    {:else}
+      <AssignmentForm bind:values {members} />
+    {/if}
+
+    <div class="composer-sheet__actions">
+      <button class="button button--ghost" disabled={saving} type="button" on:click={() => onclose?.()}>
+        Отмена
+      </button>
+      <button class="button button--primary" disabled={saving} type="submit">
+        {saving ? 'Сохраняем' : 'Создать'}
+      </button>
+    </div>
+  </form>
+</div>
