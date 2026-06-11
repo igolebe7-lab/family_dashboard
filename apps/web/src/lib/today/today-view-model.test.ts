@@ -29,8 +29,7 @@ describe('createTodayViewModel', () => {
     expect(model.attentionCount).toBe(2);
     expect(model.feedItems).toHaveLength(3);
     expect(model.quickActions.map((action) => action.label)).toEqual([
-      '+ Дело',
-      '+ Поручение',
+      '+ Задача',
       '+ Событие'
     ]);
     expect(model.emptyState.isEmpty).toBe(false);

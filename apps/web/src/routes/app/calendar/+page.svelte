@@ -55,7 +55,7 @@
     : undefined;
   $: selectedDateForForm = selectedDay
     ? createDateFromDateKey(selectedDay.dateKey)
-    : new Date(selectedYear, 0, 1);
+    : createDefaultCalendarDate(selectedYear);
   $: isFormOpen = formMode !== 'closed';
 
   async function loadAnnotationsFromFamilyState(familyState: FamilyState | undefined) {
@@ -195,6 +195,12 @@
     return new Date(year, month - 1, day);
   }
 
+  function createDefaultCalendarDate(year: number): Date {
+    const today = new Date();
+    if (today.getFullYear() === year) return today;
+    return new Date(year, 0, 1);
+  }
+
   onMount(() => {
     familyUnsubscribe = familyStore.subscribe((familyState) => {
       currentFamilyState = familyState;
@@ -208,30 +214,32 @@
 </script>
 
 <MobileShell {activeRoute} labelledBy="calendar-title-mobile" calendar>
-  <header class="top-row">
-    <h1 id="calendar-title-mobile">Календарь</h1>
-    <button class="icon-button" type="button" aria-label="Открыть уведомления">
-      <Bell size={23} strokeWidth={2.2} aria-hidden="true" />
-      <span class="notification-dot" aria-hidden="true"></span>
-    </button>
-  </header>
+  <div class="calendar-mobile-sticky">
+    <header class="top-row">
+      <h1 id="calendar-title-mobile">Календарь</h1>
+      <button class="icon-button" type="button" aria-label="Открыть уведомления">
+        <Bell size={23} strokeWidth={2.2} aria-hidden="true" />
+        <span class="notification-dot" aria-hidden="true"></span>
+      </button>
+    </header>
 
-  <section class="calendar-year-toolbar" aria-label="Навигация по году">
-    <button type="button" aria-label="Предыдущий год" on:click={goPreviousYear}>
-      <ChevronLeft size={19} strokeWidth={2.2} aria-hidden="true" />
-    </button>
-    <div>
-      <span>Годовой обзор</span>
-      <strong>{selectedYear}</strong>
-    </div>
-    <button type="button" aria-label="Следующий год" on:click={goNextYear}>
-      <ChevronRight size={19} strokeWidth={2.2} aria-hidden="true" />
-    </button>
-  </section>
+    <section class="calendar-year-toolbar" aria-label="Навигация по году">
+      <button type="button" aria-label="Предыдущий год" on:click={goPreviousYear}>
+        <ChevronLeft size={19} strokeWidth={2.2} aria-hidden="true" />
+      </button>
+      <div>
+        <span>Годовой обзор</span>
+        <strong>{selectedYear}</strong>
+      </div>
+      <button type="button" aria-label="Следующий год" on:click={goNextYear}>
+        <ChevronRight size={19} strokeWidth={2.2} aria-hidden="true" />
+      </button>
+    </section>
 
-  <button class="button button--primary calendar-special-date-button" type="button" on:click={openCreateSpecialDate}>
-    + Особая дата
-  </button>
+    <button class="button button--primary calendar-special-date-button" type="button" on:click={openCreateSpecialDate}>
+      + Особая дата
+    </button>
+  </div>
 
   <YearCalendar model={yearModel} compact {selectedDateKey} onselectDay={selectDay} monthHref={getMonthHref} />
   <DayDetailSheet

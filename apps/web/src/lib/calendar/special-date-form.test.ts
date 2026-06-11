@@ -80,6 +80,24 @@ describe('special date form model', () => {
     expect(oneTime).toEqual(expect.objectContaining({ title: 'Поездка', year: 2026 }));
   });
 
+  it('derives birthday title from person data', () => {
+    const input = createSpecialDateInput({
+      ...createSpecialDateFormValues(),
+      kind: 'birthday',
+      title: '',
+      personName: 'Владимир',
+      personRelation: 'коллега'
+    });
+
+    expect(input).toEqual(
+      expect.objectContaining({
+        title: 'День рождения Владимир',
+        personName: 'Владимир',
+        personRelation: 'коллега'
+      })
+    );
+  });
+
   it('validates required title and real calendar date', () => {
     expect(
       validateSpecialDateForm({
@@ -89,5 +107,15 @@ describe('special date form model', () => {
         day: 31
       })
     ).toEqual(['Добавьте название', 'Проверьте дату']);
+  });
+
+  it('validates required birthday person name', () => {
+    expect(
+      validateSpecialDateForm({
+        ...createSpecialDateFormValues(),
+        kind: 'birthday',
+        title: ''
+      })
+    ).toEqual(['Добавьте имя именинника']);
   });
 });

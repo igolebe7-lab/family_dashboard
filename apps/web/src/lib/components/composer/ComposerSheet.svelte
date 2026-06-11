@@ -1,5 +1,6 @@
 <script lang="ts">
   import X from '@lucide/svelte/icons/x';
+  import { onDestroy, onMount } from 'svelte';
   import { createItem } from '$lib/api/items.api';
   import type { ActiveFamilyContext } from '$lib/api/pocketbase';
   import {
@@ -10,7 +11,6 @@
     type ComposerKind
   } from '$lib/composer/composer-form';
   import type { FamilyMember } from '$lib/types/domain';
-  import AssignmentForm from './AssignmentForm.svelte';
   import ComposerTabs from './ComposerTabs.svelte';
   import EventForm from './EventForm.svelte';
   import TaskForm from './TaskForm.svelte';
@@ -33,6 +33,20 @@
   let submitError: string | null = null;
   let successMessage: string | null = null;
   let saving = false;
+  let previousBodyOverflow = '';
+  let previousBodyOverscrollBehavior = '';
+
+  onMount(() => {
+    previousBodyOverflow = document.body.style.overflow;
+    previousBodyOverscrollBehavior = document.body.style.overscrollBehavior;
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+  });
+
+  onDestroy(() => {
+    document.body.style.overflow = previousBodyOverflow;
+    document.body.style.overscrollBehavior = previousBodyOverscrollBehavior;
+  });
 
   $: if (values.kind !== activeKind) {
     values = setComposerKind(values, activeKind);
@@ -72,6 +86,7 @@
         date: selectedDate,
         kind: values.kind
       });
+      onclose?.();
     } catch (error) {
       submitError = 'Не удалось сохранить. Проверьте поля или подключение к серверу.';
       console.warn('Failed to create item from composer.', error);
@@ -81,8 +96,7 @@
   }
 
   function getSuccessMessage(kind: ComposerKind): string {
-    if (kind === 'task') return 'Дело создано';
-    if (kind === 'assignment') return 'Поручение создано';
+    if (kind === 'task') return 'Задача создана';
     return 'Событие создано';
   }
 </script>
@@ -120,10 +134,8 @@
   <form class="composer-form" on:submit|preventDefault={submitForm}>
     {#if values.kind === 'event'}
       <EventForm bind:values {members} />
-    {:else if values.kind === 'task'}
-      <TaskForm bind:values {members} />
     {:else}
-      <AssignmentForm bind:values {members} />
+      <TaskForm bind:values {members} />
     {/if}
 
     <div class="composer-sheet__actions">

@@ -1,6 +1,5 @@
 <script lang="ts">
   import CalendarDays from '@lucide/svelte/icons/calendar-days';
-  import MessageSquareText from '@lucide/svelte/icons/message-square-text';
   import SquareCheckBig from '@lucide/svelte/icons/square-check-big';
   import type { ComposerKind } from '$lib/composer/composer-form';
 
@@ -9,8 +8,7 @@
 
   const tabs = [
     { kind: 'event' as const, label: 'Событие', icon: CalendarDays },
-    { kind: 'task' as const, label: 'Дело', icon: SquareCheckBig },
-    { kind: 'assignment' as const, label: 'Поручение', icon: MessageSquareText }
+    { kind: 'task' as const, label: 'Задача', icon: SquareCheckBig }
   ];
 </script>
 

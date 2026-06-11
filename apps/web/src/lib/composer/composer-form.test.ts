@@ -8,11 +8,12 @@ import {
 } from './composer-form';
 
 describe('composer form', () => {
-  it('blocks assignment submit without assignee', () => {
-    const values = setComposerKind(createComposerFormValues({ activeMemberId: 'member_mom' }), 'assignment');
+  it('blocks task submit without owner', () => {
+    const values = setComposerKind(createComposerFormValues({ activeMemberId: 'member_mom' }), 'task');
     values.title = 'Вынести мусор';
+    values.owner = '';
 
-    expect(validateComposerForm(values)).toContain('Выберите исполнителя поручения');
+    expect(validateComposerForm(values)).toContain('Выберите, для кого задача');
   });
 
   it('blocks events where end time is earlier than start time', () => {
@@ -48,6 +49,30 @@ describe('composer form', () => {
           { id: 'check-1', title: 'AA', done: false },
           { id: 'check-2', title: 'AAA', done: false }
         ]
+      }
+    });
+  });
+
+  it('turns a task for another member into an assignment payload', () => {
+    const values = setComposerKind(createComposerFormValues({ activeMemberId: 'member_mom' }), 'task');
+    values.title = 'Вынести мусор';
+    values.owner = 'member_child';
+    values.date = '2026-06-11';
+    values.dueTime = '18:30';
+    values.approvalRequired = true;
+    values.points = '5';
+
+    const result = createComposerItemInput(values, 'Europe/Amsterdam');
+
+    expect(result).toMatchObject({
+      ok: true,
+      input: {
+        kind: 'assignment',
+        title: 'Вынести мусор',
+        assignees: ['member_child'],
+        visibility: 'assignees',
+        approvalRequired: true,
+        points: 5
       }
     });
   });

@@ -65,10 +65,12 @@
     </select>
   </label>
 
-  <label>
-    <span>Название</span>
-    <input bind:value={values.title} maxlength="80" placeholder="Например, годовщина" />
-  </label>
+  {#if !isBirthday}
+    <label>
+      <span>Название</span>
+      <input bind:value={values.title} maxlength="80" placeholder="Например, годовщина" />
+    </label>
+  {/if}
 
   <div class="special-date-form__date-grid">
     <label>
@@ -120,7 +122,7 @@
     <div class="special-date-form__birthday">
       <label>
         <span>Имя</span>
-        <input bind:value={values.personName} maxlength="60" placeholder="Владимир" />
+        <input bind:value={values.personName} maxlength="60" placeholder="Владимир" required />
       </label>
       <label>
         <span>Статус</span>

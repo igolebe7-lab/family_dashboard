@@ -26,6 +26,10 @@ export type TodayTimelineItem = {
   icon: IconName;
 };
 
+export type TodayAllDayItem = Omit<TodayTimelineItem, 'time'> & {
+  label: string;
+};
+
 export type TodayAttentionItem = {
   id: string;
   body: string;
@@ -37,7 +41,7 @@ export type TodayAttentionItem = {
 };
 
 export type TodayQuickAction = {
-  id: 'task' | 'assignment' | 'event';
+  id: 'task' | 'event';
   label: string;
   icon: IconName;
   color: AccentColor;
@@ -102,6 +106,7 @@ export type TodayViewModel = {
   weekTimes: string[];
   weekEvents: TodayWeekEvent[];
   familyMembers: TodayFamilyMember[];
+  allDayItems: TodayAllDayItem[];
   timelineItems: TodayTimelineItem[];
   attentionItems: TodayAttentionItem[];
   attentionCount: number;
@@ -563,12 +568,12 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
     weekTimes,
     weekEvents,
     familyMembers: FAMILY_MEMBERS,
+    allDayItems: [],
     timelineItems,
     attentionItems,
     attentionCount: attentionItems.length,
     quickActions: [
-      { id: 'task', label: '+ Дело', icon: 'square-check-big', color: 'green' },
-      { id: 'assignment', label: '+ Поручение', icon: 'message-square-text', color: 'lavender' },
+      { id: 'task', label: '+ Задача', icon: 'square-check-big', color: 'green' },
       { id: 'event', label: '+ Событие', icon: 'calendar-days', color: 'peach' }
     ],
     feedItems,

@@ -2,12 +2,13 @@ import type { CreateItemInput } from '$lib/api/items.api';
 import type { ItemCategory } from '$lib/constants/categories';
 import type { ItemKind, ItemPriority, ItemVisibility } from '$lib/types/domain';
 
-export type ComposerKind = Extract<ItemKind, 'event' | 'task' | 'assignment'>;
+export type ComposerKind = Extract<ItemKind, 'event' | 'task'>;
 export type ComposerReminder = 'none' | 'at_time' | 'before_15' | 'before_60' | 'before_day';
 export type ComposerRepeat = 'none' | 'daily' | 'weekly' | 'monthly';
 
 export type ComposerFormValues = {
   kind: ComposerKind;
+  activeMemberId: string;
   title: string;
   description: string;
   category: ItemCategory;
@@ -42,10 +43,11 @@ export function createComposerFormValues(input: {
 
   return {
     kind: input.kind ?? 'event',
+    activeMemberId: input.activeMemberId ?? '',
     title: '',
     description: '',
-    category: input.kind === 'assignment' ? 'home' : 'family',
-    visibility: input.kind === 'assignment' ? 'assignees' : 'family',
+    category: input.kind === 'task' ? 'home' : 'family',
+    visibility: input.kind === 'task' ? 'private' : 'family',
     priority: 'normal',
     date,
     startTime: '09:00',
@@ -59,7 +61,7 @@ export function createComposerFormValues(input: {
     locationText: '',
     reminder: 'none',
     repeat: 'none',
-    approvalRequired: input.kind === 'assignment',
+    approvalRequired: false,
     points: ''
   };
 }
@@ -100,7 +102,7 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
     };
   }
 
-  if (values.kind === 'task') {
+  if (values.kind === 'task' && values.owner === values.activeMemberId) {
     return {
       ok: true,
       input: {
@@ -118,7 +120,8 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
     input: {
       ...base,
       kind: 'assignment',
-      assignees: [values.assignee],
+      visibility: 'assignees',
+      assignees: [values.owner],
       dueAt: createDateTimeIso(values.date, values.dueTime),
       approvalRequired: values.approvalRequired,
       points: values.points ? Number(values.points) : undefined
@@ -149,13 +152,8 @@ export function validateComposerForm(values: ComposerFormValues): string[] {
   }
 
   if (values.kind === 'task') {
-    if (!values.owner) errors.push('Выберите, для кого дело');
-    if (!isValidTimeInput(values.dueTime)) errors.push('Проверьте время дела');
-  }
-
-  if (values.kind === 'assignment') {
-    if (!values.assignee) errors.push('Выберите исполнителя поручения');
-    if (!isValidTimeInput(values.dueTime)) errors.push('Проверьте срок поручения');
+    if (!values.owner) errors.push('Выберите, для кого задача');
+    if (!isValidTimeInput(values.dueTime)) errors.push('Проверьте время задачи');
     if (values.points && Number(values.points) < 0) errors.push('Баллы не могут быть отрицательными');
   }
 
@@ -171,20 +169,11 @@ export function setComposerKind(values: ComposerFormValues, kind: ComposerKind):
     };
   }
 
-  if (kind === 'task') {
-    return {
-      ...values,
-      kind,
-      visibility: values.visibility === 'assignees' ? 'private' : values.visibility
-    };
-  }
-
   return {
     ...values,
-    kind,
+    kind: 'task',
     category: 'home',
-    visibility: 'assignees',
-    approvalRequired: true
+    visibility: values.visibility === 'assignees' ? 'private' : values.visibility
   };
 }
 

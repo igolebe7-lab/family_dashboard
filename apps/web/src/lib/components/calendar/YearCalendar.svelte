@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import type {
     YearCalendarDay,
     YearCalendarMonth,
@@ -12,11 +13,35 @@
   export let monthHref: ((month: YearCalendarMonth) => string) | undefined = undefined;
 
   const weekdayLabels = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
+  let calendarElement: HTMLElement;
+  let scrolledYear: number | null = null;
+
+  $: if (compact && calendarElement && scrolledYear !== model.year) {
+    void scrollCurrentMonthIntoView();
+  }
+
+  async function scrollCurrentMonthIntoView(): Promise<void> {
+    scrolledYear = model.year;
+    await tick();
+
+    const now = new Date();
+    if (now.getFullYear() !== model.year) return;
+
+    const currentMonth = calendarElement.querySelector<HTMLElement>(
+      `[data-month="${now.getMonth() + 1}"]`
+    );
+    currentMonth?.scrollIntoView({ block: 'start' });
+  }
 </script>
 
-<section class:year-calendar--compact={compact} class="year-calendar" aria-label={`Календарь на ${model.year} год`}>
+<section
+  bind:this={calendarElement}
+  class:year-calendar--compact={compact}
+  class="year-calendar"
+  aria-label={`Календарь на ${model.year} год`}
+>
   {#each model.months as month (month.month)}
-    <article class="year-month" aria-label={`${month.label} ${model.year}`}>
+    <article class="year-month" data-month={month.month} aria-label={`${month.label} ${model.year}`}>
       <header class="year-month__header">
         <h2>{month.label}</h2>
         {#if monthHref}

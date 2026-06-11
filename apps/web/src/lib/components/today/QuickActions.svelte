@@ -8,9 +8,7 @@
   export let onselect: ((kind: ComposerKind) => void) | undefined = undefined;
 
   function getComposerKind(actionId: string): ComposerKind {
-    if (actionId === 'task') return 'task';
-    if (actionId === 'assignment') return 'assignment';
-    return 'event';
+    return actionId === 'event' ? 'event' : 'task';
   }
 </script>
 

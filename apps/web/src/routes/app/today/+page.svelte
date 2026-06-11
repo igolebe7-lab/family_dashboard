@@ -150,7 +150,11 @@
   <MemberAvatarRow members={today.familyMembers} />
   <section class="today-mobile-surface" aria-label="Сегодня, внимание и быстрые действия">
     <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-mobile" />
-    <TodayTimeline items={today.timelineItems} labelledBy="today-timeline-title-mobile" />
+    <TodayTimeline
+      allDayItems={today.allDayItems}
+      items={today.timelineItems}
+      labelledBy="today-timeline-title-mobile"
+    />
     <AttentionPanel items={today.attentionItems} labelledBy="attention-title-mobile" />
     <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" onselect={openComposer} />
   </section>

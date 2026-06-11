@@ -9,6 +9,7 @@ import {
   createTodayViewModel,
   formatDateKey,
   type TodayAttentionItem,
+  type TodayAllDayItem,
   type TodayFamilyMember,
   type TodayTimelineItem,
   type TodayViewModel,
@@ -65,9 +66,14 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
   const weekEvents = weekOccurrences
     .map((occurrence) => mapOccurrenceToWeekEvent(occurrence, memberById))
     .sort(compareWeekEvents);
-  const timelineItems = weekOccurrences
-    .filter((occurrence) => getOccurrenceDateKey(occurrence) === todayKey)
-    .map((occurrence) => mapOccurrenceToTimelineItem(occurrence, memberById))
+  const todayOccurrences = weekOccurrences.filter((occurrence) => getOccurrenceDateKey(occurrence) === todayKey);
+  const allDayItems = todayOccurrences
+    .filter((occurrence) => occurrence.allDay)
+    .map((occurrence) => mapOccurrenceToAllDayItem(occurrence, memberById, input.members?.length ?? 0))
+    .sort((left, right) => left.title.localeCompare(right.title));
+  const timelineItems = todayOccurrences
+    .filter((occurrence) => !occurrence.allDay)
+    .map((occurrence) => mapOccurrenceToTimelineItem(occurrence, memberById, input.members?.length ?? 0))
     .sort((left, right) => left.time.localeCompare(right.time));
   const attentionItems = createAttentionItems(weekOccurrences, memberById, date);
   const familyMembers =
@@ -76,6 +82,7 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
   return {
     ...base,
     familyMembers,
+    allDayItems,
     weekEvents,
     timelineItems,
     attentionItems,
@@ -225,7 +232,7 @@ function mapOccurrenceToWeekEvent(
   occurrence: ItemOccurrence,
   memberById: Map<string, FamilyMember>
 ): TodayWeekEvent {
-  const member = getOccurrenceMember(occurrence, memberById);
+  const member = getOccurrenceMember(occurrence, memberById, memberById.size);
   const category = getCategoryMeta(occurrence.categorySnapshot);
 
   return {
@@ -244,14 +251,37 @@ function mapOccurrenceToWeekEvent(
 
 function mapOccurrenceToTimelineItem(
   occurrence: ItemOccurrence,
-  memberById: Map<string, FamilyMember>
+  memberById: Map<string, FamilyMember>,
+  familyMemberCount: number
 ): TodayTimelineItem {
-  const member = getOccurrenceMember(occurrence, memberById);
+  const member = getOccurrenceMember(occurrence, memberById, familyMemberCount);
   const category = getCategoryMeta(occurrence.categorySnapshot);
 
   return {
     id: occurrence.id,
     time: getOccurrenceTime(occurrence),
+    title: occurrence.titleSnapshot,
+    subtitle: member.name,
+    memberName: member.name,
+    memberInitial: member.initial,
+    memberPortrait: member.portrait,
+    color: category.color,
+    category: occurrence.categorySnapshot,
+    icon: category.icon as IconName
+  };
+}
+
+function mapOccurrenceToAllDayItem(
+  occurrence: ItemOccurrence,
+  memberById: Map<string, FamilyMember>,
+  familyMemberCount: number
+): TodayAllDayItem {
+  const member = getOccurrenceMember(occurrence, memberById, familyMemberCount);
+  const category = getCategoryMeta(occurrence.categorySnapshot);
+
+  return {
+    id: occurrence.id,
+    label: 'Весь день',
     title: occurrence.titleSnapshot,
     subtitle: member.name,
     memberName: member.name,
@@ -279,9 +309,15 @@ function mapFamilyMemberToTodayMember(member: FamilyMember, index: number): Toda
 
 function getOccurrenceMember(
   occurrence: ItemOccurrence,
-  memberById: Map<string, FamilyMember>
+  memberById: Map<string, FamilyMember>,
+  familyMemberCount = memberById.size
 ): MemberDisplay {
-  const member = occurrence.visibleTo.map((memberId) => memberById.get(memberId)).find(Boolean);
+  if (isFamilyWideOccurrence(occurrence, familyMemberCount)) {
+    return DEFAULT_MEMBER;
+  }
+
+  const memberIds = getPreferredOccurrenceMemberIds(occurrence);
+  const member = memberIds.map((memberId) => memberById.get(memberId)).find(Boolean);
 
   if (!member) return DEFAULT_MEMBER;
 
@@ -293,6 +329,17 @@ function getOccurrenceMember(
     name: member.displayName,
     portrait: PORTRAITS_BY_COLOR[color] ?? DEFAULT_MEMBER.portrait
   };
+}
+
+function isFamilyWideOccurrence(occurrence: ItemOccurrence, familyMemberCount: number): boolean {
+  if (familyMemberCount <= 0) return false;
+  const uniqueVisible = new Set(occurrence.visibleTo.filter(Boolean));
+  return occurrence.kind === 'event' && uniqueVisible.size >= familyMemberCount;
+}
+
+function getPreferredOccurrenceMemberIds(occurrence: ItemOccurrence): string[] {
+  if (occurrence.completedBy) return [occurrence.completedBy];
+  return occurrence.visibleTo;
 }
 
 function getMemberColor(member: FamilyMember, index: number): AccentColor {

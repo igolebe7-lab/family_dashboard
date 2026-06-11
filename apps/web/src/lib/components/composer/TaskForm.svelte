@@ -7,6 +7,8 @@
 
   export let values: ComposerFormValues;
   export let members: FamilyMember[] = [];
+
+  $: isAssignment = Boolean(values.owner && values.owner !== values.activeMemberId);
 </script>
 
 <div class="composer-form-grid">
@@ -56,7 +58,7 @@
 
   <label>
     <span>Видимость</span>
-    <select bind:value={values.visibility}>
+    <select bind:value={values.visibility} disabled={isAssignment}>
       <option value="private">Личное</option>
       <option value="family">Вся семья</option>
       <option value="adults">Только взрослые</option>
@@ -65,6 +67,18 @@
 
   <ReminderPicker bind:value={values.reminder} />
   <RepeatRuleEditor bind:value={values.repeat} />
+
+  {#if isAssignment}
+    <label class="composer-checkbox">
+      <input bind:checked={values.approvalRequired} type="checkbox" />
+      <span>Нужно подтверждение</span>
+    </label>
+
+    <label>
+      <span>Баллы</span>
+      <input bind:value={values.points} min="0" max="100" type="number" placeholder="0" />
+    </label>
+  {/if}
 
   <label class="composer-field--wide">
     <span>Чеклист</span>

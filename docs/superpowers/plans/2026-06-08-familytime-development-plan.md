@@ -239,7 +239,7 @@
 - [x] Load attention items: done waiting approval, overdue/open assignments, prep reminders.
 - [x] Show family avatar row with member colors.
 - [x] Show timeline cards with category icon, time, title, member label/avatar.
-- [x] Provide quick actions for `+ Дело`, `+ Поручение`, `+ Событие`.
+- [x] Provide quick actions for `+ Задача` and `+ Событие`; `+ Задача` maps to task or assignment by selected performer.
 - [x] Add empty states for no events/tasks/attention.
 
 **Automated checks:**
@@ -349,6 +349,18 @@
 - Today refreshes its visible occurrence range after successful composer create without full page reload.
 - Minimal `/login` route is added so mobile/manual smoke can authenticate against PocketBase without
   localStorage injection or desktop devtools.
+
+**Stage 8C corrective scope — 2026-06-11:**
+
+- [x] Mobile Safari: prevent input zoom, horizontal sheet panning, unstable backdrop redraw and form overflow.
+- [x] Merge product-level `Дело` and `Поручение` into one `+ Задача` flow while preserving backend `task`/`assignment`.
+- [x] Close composer after successful create and refresh Today/Calendar.
+- [x] Move all-day occurrences into a dedicated all-day strip instead of `00:00`.
+- [x] Make Today cards tappable and open a read-only detail sheet.
+- [x] Make Calendar open at the current month/year and keep mobile calendar controls sticky.
+- [ ] Show lightweight Calendar date markers for task/event/assignment records.
+- [x] Derive birthday titles from person/member data instead of asking for a manual title.
+- [ ] Persist in-progress modal drafts through short Safari backgrounding via session storage.
 
 **Automated checks:**
 

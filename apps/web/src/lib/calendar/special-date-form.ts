@@ -48,9 +48,11 @@ export function createSpecialDateFormValues(
 }
 
 export function createSpecialDateInput(values: SpecialDateFormValues): DayAnnotationInput {
+  const title = values.kind === 'birthday' ? createBirthdayTitle(values.personName) : values.title.trim();
+
   return {
     kind: values.kind,
-    title: values.title.trim(),
+    title,
     description: optionalString(values.description),
     month: values.month,
     day: values.day,
@@ -68,11 +70,20 @@ export function createSpecialDateInput(values: SpecialDateFormValues): DayAnnota
 export function validateSpecialDateForm(values: SpecialDateFormValues): string[] {
   const errors: string[] = [];
 
-  if (!values.title.trim()) errors.push('Добавьте название');
+  if (values.kind === 'birthday') {
+    if (!values.personName.trim()) errors.push('Добавьте имя именинника');
+  } else if (!values.title.trim()) {
+    errors.push('Добавьте название');
+  }
   if (!isValidMonthDay(values.month, values.day, values.year)) errors.push('Проверьте дату');
   if (values.recurrence === 'one_time' && !Number.isInteger(values.year)) errors.push('Проверьте год');
 
   return errors;
+}
+
+function createBirthdayTitle(personName: string): string {
+  const name = personName.trim();
+  return name ? `День рождения ${name}` : 'День рождения';
 }
 
 function createValuesFromAnnotation(annotation: DayAnnotation): SpecialDateFormValues {
