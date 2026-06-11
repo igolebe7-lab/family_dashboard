@@ -103,6 +103,7 @@
       type="button"
       aria-label="Закрыть детали"
       on:click={() => (selectedItem = null)}
+      on:touchmove|preventDefault
     ></button>
     <div
       class={`today-detail-sheet today-detail-sheet--${selectedItem.color}`}
@@ -110,7 +111,6 @@
       aria-modal="true"
       aria-label={selectedItem.title}
     >
-      <div class="today-detail-sheet__handle" aria-hidden="true"></div>
       <p>{'time' in selectedItem ? selectedItem.time : selectedItem.label}</p>
       <h3>{selectedItem.title}</h3>
       <dl class="today-detail-sheet__meta">

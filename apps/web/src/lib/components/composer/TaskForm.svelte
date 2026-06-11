@@ -29,7 +29,7 @@
       <option value="">Выберите</option>
       {#if hasActiveMemberOption}
         <option value={values.activeMemberId}>
-          Для себя{activeMember ? ` · ${activeMember.displayName}` : ''}
+          Текущий профиль{activeMember ? ` · ${activeMember.displayName}` : ''}
         </option>
       {/if}
       <option value={FAMILY_TARGET}>Вся семья</option>
