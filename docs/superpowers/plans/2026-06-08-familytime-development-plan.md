@@ -315,6 +315,13 @@
 - Public holidays are read-only and use cached data when provider is unavailable.
 - Direct refresh `/app/calendar` works after static build fallback.
 
+**Closure note — 2026-06-11:**
+
+- Stage 7 implementation is closed on `feature/familytime-implementation` at `1f0fbee`.
+- Fresh local checks passed: `pnpm check`, `pnpm test`, `pnpm build`.
+- Playwright smoke passed for desktop Calendar → Today month navigation and mobile Today/Calendar Stage 7 surfaces.
+- Remaining work continues in Stage 8: Composer for event, task and assignment.
+
 ## Stage 8: Composer for event, task, assignment
 
 **Цель:** одна точка создания с корректной валидацией и мобильным bottom sheet.
