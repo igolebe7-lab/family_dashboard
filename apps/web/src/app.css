@@ -364,20 +364,22 @@ h3 {
 }
 
 .bottom-nav {
-  position: sticky;
+  position: fixed;
   z-index: 20;
   bottom: 1rem;
+  left: 50%;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.25rem;
-  width: min(100%, 42rem);
+  width: min(calc(100% - 1.6rem), 42rem);
   max-width: 42rem;
-  margin: 1.35rem auto 0;
+  margin: 0;
   border: 1px solid rgb(238 231 220 / 0.52);
   border-radius: 2rem;
   background: rgb(255 255 255 / 0.98);
   box-shadow: 0 18px 48px rgb(28 24 18 / 0.14);
   padding: 0.62rem 0.7rem 0.72rem;
+  transform: translateX(-50%);
   backdrop-filter: blur(22px);
 }
 
@@ -2581,6 +2583,7 @@ h3 {
   .bottom-nav {
     position: static;
     margin-top: 2rem;
+    transform: none;
   }
 
   .app-screen--calendar .mobile-shell {
