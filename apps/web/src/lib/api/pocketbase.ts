@@ -92,7 +92,7 @@ export function requireCollectionMethod<T extends keyof PocketBaseCollectionLike
     throw new Error(`PocketBase collection method is unavailable: ${String(method)}`);
   }
 
-  return value as NonNullable<PocketBaseCollectionLike[T]>;
+  return value.bind(collection) as NonNullable<PocketBaseCollectionLike[T]>;
 }
 
 export function asRecord(value: unknown): Record<string, unknown> {

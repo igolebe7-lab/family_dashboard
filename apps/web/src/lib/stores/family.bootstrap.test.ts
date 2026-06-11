@@ -49,6 +49,35 @@ describe('bootstrapFamilyContext', () => {
     });
   });
 
+  it('prefers the member linked to the authenticated user over alphabetical order', async () => {
+    const store = createFamilyStore();
+    const child: FamilyMember = {
+      id: 'member_child',
+      family: 'family_1',
+      displayName: 'Аня',
+      role: 'teen',
+      managedBy: [],
+      active: true
+    };
+    const parent: FamilyMember = {
+      ...member,
+      id: 'member_parent',
+      displayName: 'Мама'
+    };
+
+    const context = await bootstrapFamilyContext(store, {
+      listFamilies: vi.fn().mockResolvedValue([family]),
+      listMembersForFamily: vi.fn().mockResolvedValue([child, parent]),
+      preferredUserId: 'user_1'
+    });
+
+    expect(context).toEqual({
+      familyId: 'family_1',
+      memberId: 'member_parent'
+    });
+    expect(get(store).activeMember).toEqual(parent);
+  });
+
   it('keeps a ready empty state when the user has no families yet', async () => {
     const store = createFamilyStore();
 

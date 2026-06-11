@@ -1,5 +1,6 @@
 import { refreshAuth } from '$lib/api/auth.api';
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
+import type { BootstrapFamilyDependencies } from './family.bootstrap';
 import { familyStore, type createFamilyStore } from './family.store';
 import { bootstrapFamilyContext } from './family.bootstrap';
 import { sessionStore, type createSessionStore } from './session.store';
@@ -9,7 +10,10 @@ type SessionStoreApi = ReturnType<typeof createSessionStore>;
 
 export type BootstrapClientAppDependencies = {
   refreshAuth?: typeof refreshAuth;
-  bootstrapFamilyContext?: (store: FamilyStoreApi) => Promise<ActiveFamilyContext | null>;
+  bootstrapFamilyContext?: (
+    store: FamilyStoreApi,
+    dependencies?: BootstrapFamilyDependencies
+  ) => Promise<ActiveFamilyContext | null>;
 };
 
 export async function bootstrapClientApp(
@@ -32,7 +36,7 @@ export async function bootstrapClientApp(
     }
 
     session.setSession(authSession);
-    return bootstrapFamily(family);
+    return bootstrapFamily(family, { preferredUserId: authSession.user.id });
   } catch (error) {
     session.setError('Не удалось восстановить сессию');
     throw error;

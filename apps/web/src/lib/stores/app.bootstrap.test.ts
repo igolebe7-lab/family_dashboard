@@ -30,7 +30,7 @@ describe('bootstrapClientApp', () => {
 
     expect(result).toEqual(context);
     expect(refreshAuth).toHaveBeenCalledOnce();
-    expect(bootstrapFamilyContext).toHaveBeenCalledWith(familyStore);
+    expect(bootstrapFamilyContext).toHaveBeenCalledWith(familyStore, { preferredUserId: 'user_1' });
     expect(get(sessionStore)).toMatchObject({
       status: 'ready',
       isAuthenticated: true,

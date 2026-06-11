@@ -11,6 +11,7 @@ type FamilyStoreApi = ReturnType<typeof createFamilyStore>;
 export type BootstrapFamilyDependencies = {
   listFamilies?: () => Promise<Family[]>;
   listMembersForFamily?: (familyId: string) => Promise<FamilyMember[]>;
+  preferredUserId?: string;
 };
 
 export async function bootstrapFamilyContext(
@@ -34,6 +35,13 @@ export async function bootstrapFamilyContext(
 
     const members = await loadMembers(activeFamily.id);
     store.setMembers(members);
+    const preferredMember = dependencies.preferredUserId
+      ? members.find((member) => member.user === dependencies.preferredUserId)
+      : undefined;
+
+    if (preferredMember) {
+      store.setActiveMember(preferredMember);
+    }
 
     return getActiveFamilyContext(get(store));
   } catch (error) {
