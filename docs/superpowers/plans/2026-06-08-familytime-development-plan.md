@@ -347,6 +347,8 @@
 - Composer uses CSS-only sheet/modal transitions for now; GSAP is not needed.
 - Reminder selection is persisted as `items.reminder_offset_minutes` and consumed by later notification stages.
 - Today refreshes its visible occurrence range after successful composer create without full page reload.
+- Minimal `/login` route is added so mobile/manual smoke can authenticate against PocketBase without
+  localStorage injection or desktop devtools.
 
 **Automated checks:**
 

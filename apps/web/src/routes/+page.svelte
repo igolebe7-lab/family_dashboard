@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
+  import { getCurrentSession } from '$lib/api/auth.api';
   import { createShellViewModel } from '$lib/app-shell';
   import { onMount } from 'svelte';
 
@@ -8,7 +9,7 @@
 
   onMount(() => {
     if (browser) {
-      void goto(shell.primaryRoute, { replaceState: true });
+      void goto(getCurrentSession() ? shell.primaryRoute : '/login', { replaceState: true });
     }
   });
 </script>
@@ -18,6 +19,6 @@
     <p class="eyebrow">FamilyTime</p>
     <h1 id="route-fallback-title">{shell.title}</h1>
     <p>{shell.message}</p>
-    <a class="primary-link" href={shell.primaryRoute}>Открыть Сегодня</a>
+    <a class="primary-link" href="/login">Войти</a>
   </section>
 </main>
