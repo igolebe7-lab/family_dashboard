@@ -32,6 +32,8 @@ export type TodayTimelineItem = {
   description?: string;
   locationText?: string;
   participantNames?: string[];
+  actionKind?: 'mark_assignment_done';
+  actionLabel?: string;
 };
 
 export type TodayAllDayItem = Omit<TodayTimelineItem, 'time'> & {
@@ -40,12 +42,15 @@ export type TodayAllDayItem = Omit<TodayTimelineItem, 'time'> & {
 
 export type TodayAttentionItem = {
   id: string;
+  occurrenceId?: string;
   body: string;
   memberInitial: string;
   memberName: string;
   memberPortrait: TodayFamilyMember['portrait'];
   color: AccentColor;
+  actionKind?: 'approve_assignment' | 'open' | 'add_task';
   actionLabel: string;
+  secondaryActionLabel?: string;
 };
 
 export type TodayQuickAction = {
@@ -539,12 +544,15 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
   const attentionItems: TodayAttentionItem[] = [
     {
       id: 'trash-approval',
+      occurrenceId: 'trash-approval',
       body: 'Миша отметил «Вынести мусор» как готово',
       memberInitial: 'М',
       memberName: 'Миша',
       memberPortrait: 'misha',
       color: 'green',
-      actionLabel: 'Проверить'
+      actionKind: 'approve_assignment',
+      actionLabel: 'Подтвердить',
+      secondaryActionLabel: 'Вернуть'
     },
     {
       id: 'sport-prep',
@@ -553,6 +561,7 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
       memberName: 'Аня',
       memberPortrait: 'anya',
       color: 'peach',
+      actionKind: 'add_task',
       actionLabel: 'Добавить дело'
     }
   ];

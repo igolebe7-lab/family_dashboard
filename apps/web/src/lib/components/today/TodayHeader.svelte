@@ -17,11 +17,11 @@
     <p>{dateLabel}</p>
   </div>
 
-  <button class="icon-button" type="button" aria-label="Открыть уведомления">
+  <a class="icon-button" href="/app/notifications" aria-label="Открыть уведомления">
     <Bell size={23} strokeWidth={2.2} aria-hidden="true" />
     {#if notificationCount > 0}
       <span class="notification-dot" aria-hidden="true"></span>
       <span class="sr-only">Новых уведомлений: {notificationCount}</span>
     {/if}
-  </button>
+  </a>
 </header>

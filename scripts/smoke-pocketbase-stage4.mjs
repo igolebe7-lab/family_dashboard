@@ -32,12 +32,13 @@ function assert(condition, message) {
 }
 
 async function request(path, options = {}) {
-  const { token, body, method = body ? 'POST' : 'GET', expectOk = true } = options;
+  const { token, body, headers = {}, method = body ? 'POST' : 'GET', expectOk = true } = options;
   const response = await fetch(`${PB_URL}${path}`, {
     method,
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(body ? { 'Content-Type': 'application/json' } : {})
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...headers
     },
     body: body ? JSON.stringify(body) : undefined
   });
@@ -103,7 +104,7 @@ function relationIds(value) {
 }
 
 function isSmokeUser(user) {
-  return /^(parent|child)\.\d+@familytime\.local$/.test(user.email ?? '');
+  return /^(parent|parent\.helper|child)\.\d+@familytime\.local$/.test(user.email ?? '');
 }
 
 function isSmokeFamily(family) {
@@ -187,8 +188,17 @@ const childUser = await createRecord('users', superToken, {
   verified: true
 });
 
+const helperParentEmail = `parent.helper.${suffix}@familytime.local`;
+const helperParentUser = await createRecord('users', superToken, {
+  email: helperParentEmail,
+  password: parentPassword,
+  passwordConfirm: parentPassword,
+  verified: true
+});
+
 const parentAuth = await auth('users', parentEmail, parentPassword);
 const childAuth = await auth('users', childEmail, childPassword);
+const helperParentAuth = await auth('users', helperParentEmail, parentPassword);
 
 const family = await createRecord('families', parentAuth.token, {
   name: `Smoke Family ${suffix}`,
@@ -215,6 +225,17 @@ const childMember = await createRecord('family_members', parentAuth.token, {
   color_key: 'blue',
   color_hex: '#7BA7E8',
   managed_by: [parentMember.id],
+  created_by: parentMember.id,
+  active: true
+});
+
+const helperParentMember = await createRecord('family_members', parentAuth.token, {
+  family: family.id,
+  user: helperParentUser.id,
+  display_name: 'Папа',
+  role: 'parent',
+  color_key: 'blue',
+  color_hex: '#7BA7E8',
   created_by: parentMember.id,
   active: true
 });
@@ -325,6 +346,144 @@ const assignmentNotifications = await listRecords(
 );
 assert(assignmentNotifications.totalItems === 1, 'assignment notification was not created for child');
 
+const parentDoneAssignment = await createRecord('items', parentAuth.token, {
+  family: family.id,
+  kind: 'assignment',
+  title: 'Проверить дневник',
+  created_by: parentMember.id,
+  assignees: [childMember.id],
+  category: 'school',
+  priority: 'normal',
+  visibility: 'assignees',
+  due_at: '2026-06-09T19:00:00.000Z',
+  timezone: 'Europe/Amsterdam',
+  approval_required: true,
+  archived: false
+});
+const parentDoneOccurrences = await listRecords(
+  'item_occurrences',
+  parentAuth.token,
+  `item="${parentDoneAssignment.id}"`
+);
+const parentDoneOccurrenceId = parentDoneOccurrences.items[0].id;
+const parentDoneResult = await request(
+  `/api/collections/item_occurrences/records/${parentDoneOccurrenceId}`,
+  {
+    token: parentAuth.token,
+    method: 'PATCH',
+    headers: { 'X-Family-Member-Id': parentMember.id },
+    body: { status: 'done' }
+  }
+);
+assert(parentDoneResult.data.status === 'done', 'parent could not mark child assignment done');
+assert(
+  parentDoneResult.data.completed_by === parentMember.id,
+  'parent done transition did not record completed_by'
+);
+
+const parentApprovedResult = await request(
+  `/api/collections/item_occurrences/records/${parentDoneOccurrenceId}`,
+  {
+    token: parentAuth.token,
+    method: 'PATCH',
+    headers: { 'X-Family-Member-Id': parentMember.id },
+    body: { status: 'approved' }
+  }
+);
+assert(parentApprovedResult.data.status === 'approved', 'parent could not approve assignment');
+assert(
+  parentApprovedResult.data.approved_by === parentMember.id,
+  'approval transition did not record approved_by'
+);
+
+const childDoneAssignment = await createRecord('items', parentAuth.token, {
+  family: family.id,
+  kind: 'assignment',
+  title: 'Полить цветы',
+  created_by: parentMember.id,
+  assignees: [childMember.id],
+  category: 'home',
+  priority: 'normal',
+  visibility: 'assignees',
+  due_at: '2026-06-09T19:30:00.000Z',
+  timezone: 'Europe/Amsterdam',
+  approval_required: true,
+  archived: false
+});
+const childDoneOccurrences = await listRecords(
+  'item_occurrences',
+  childAuth.token,
+  `item="${childDoneAssignment.id}"`
+);
+const childDoneOccurrenceId = childDoneOccurrences.items[0].id;
+await request(`/api/collections/item_occurrences/records/${childDoneOccurrenceId}`, {
+  token: childAuth.token,
+  method: 'PATCH',
+  headers: { 'X-Family-Member-Id': childMember.id },
+  body: { status: 'done' }
+});
+const childDoneActivity = await listRecords(
+  'item_activity',
+  parentAuth.token,
+  `occurrence="${childDoneOccurrenceId}" && action="assignment.done"`
+);
+assert(childDoneActivity.totalItems === 1, 'child done activity was not recorded');
+const waitingApprovalNotifications = await listRecords(
+  'notifications',
+  parentAuth.token,
+  `occurrence="${childDoneOccurrenceId}" && type="assignment.done_waiting_approval"`
+);
+assert(
+  waitingApprovalNotifications.totalItems === 1,
+  'parent notification was not created for child done assignment'
+);
+await request(`/api/collections/item_occurrences/records/${childDoneOccurrenceId}`, {
+  token: parentAuth.token,
+  method: 'PATCH',
+  headers: { 'X-Family-Member-Id': parentMember.id },
+  body: { status: 'approved' }
+});
+const childApprovedActivity = await listRecords(
+  'item_activity',
+  parentAuth.token,
+  `occurrence="${childDoneOccurrenceId}" && action="assignment.approved"`
+);
+assert(childApprovedActivity.totalItems === 1, 'approval activity was not recorded');
+const approvedNotifications = await listRecords(
+  'notifications',
+  childAuth.token,
+  `occurrence="${childDoneOccurrenceId}" && type="assignment.approved"`
+);
+assert(approvedNotifications.totalItems === 1, 'child approval notification was not created');
+
+const helperAssignment = await createRecord('items', helperParentAuth.token, {
+  family: family.id,
+  kind: 'assignment',
+  title: 'Собрать форму',
+  created_by: helperParentMember.id,
+  assignees: [childMember.id],
+  category: 'sport',
+  priority: 'normal',
+  visibility: 'assignees',
+  due_at: '2026-06-09T20:30:00.000Z',
+  timezone: 'Europe/Amsterdam',
+  approval_required: true,
+  archived: false
+});
+assert(
+  helperAssignment.visible_to.includes(parentMember.id),
+  'managed child parent was not included in assignees visibility'
+);
+const managedParentVisibleList = await listRecords(
+  'items',
+  parentAuth.token,
+  `id="${helperAssignment.id}"`
+);
+assert(
+  managedParentVisibleList.totalItems === 1,
+  'parent cannot list assignment for managed child created by another parent'
+);
+
 const adultsTask = await createRecord('items', parentAuth.token, {
   family: family.id,
   kind: 'task',
@@ -386,6 +545,13 @@ console.log(
         'invalid event rejected',
         'assignment without assignee rejected',
         'assignment notification created',
+        'parent can mark child assignment done',
+        'assignment approval records approver',
+        'child done notifies parent for approval',
+        'child done writes activity feed event',
+        'parent approval writes activity feed event',
+        'parent approval notifies child',
+        'managed child parent sees assignee-visible assignment',
         'child cannot list adults/private items'
       ],
       cleanup: {

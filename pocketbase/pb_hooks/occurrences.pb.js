@@ -1,25 +1,12 @@
 onRecordUpdateRequest((event) => {
-  const allowedTransitions = {
-    assigned: ['accepted', 'in_progress', 'done', 'skipped', 'cancelled'],
-    accepted: ['in_progress', 'done', 'skipped', 'cancelled'],
-    in_progress: ['done', 'skipped', 'cancelled'],
-    done: ['approved', 'rejected'],
-    rejected: ['in_progress', 'done']
-  };
+  const authHelpers = require(`${__hooks}/_shared/auth.pb.js`);
+  const lifecycle = require(`${__hooks}/_shared/occurrence-lifecycle.pb.js`);
+  const auth = authHelpers.requireAuth(event);
 
-  const existing = event.record.original();
-  const previousStatus = existing.get('status');
-  const nextStatus = event.record.get('status');
-  const canTransition =
-    previousStatus === nextStatus ||
-    (allowedTransitions[previousStatus] || []).includes(nextStatus);
-
-  if (!canTransition) {
-    throw newApiError(400, 'Недопустимый переход статуса поручения', {
-      from: previousStatus,
-      to: nextStatus
-    });
-  }
-
+  lifecycle.validateBeforeUpdate($app, event, auth, authHelpers.hasSuperuserAuth(event));
   event.next();
+}, 'item_occurrences');
+
+onRecordAfterUpdateSuccess((event) => {
+  require(`${__hooks}/_shared/occurrence-lifecycle.pb.js`).afterUpdate($app, event.record);
 }, 'item_occurrences');

@@ -12,6 +12,10 @@
   export let loadDetails:
     | ((item: TodayTimelineItem | TodayAllDayItem) => Promise<Partial<TodayTimelineItem | TodayAllDayItem>>)
     | undefined = undefined;
+  export let busyOccurrenceId: string | null = null;
+  export let oncompleteAssignment:
+    | ((item: TodayTimelineItem) => void | Promise<void>)
+    | undefined = undefined;
 
   let selectedItem: TodayTimelineItem | TodayAllDayItem | null = null;
   let selectedLoading = false;
@@ -90,6 +94,16 @@
             </span>
             <ChevronRight class="today-timeline-item__chevron" size={22} strokeWidth={2.1} aria-hidden="true" />
           </button>
+          {#if item.actionKind === 'mark_assignment_done'}
+            <button
+              class="today-timeline-item__action"
+              type="button"
+              disabled={busyOccurrenceId === item.id}
+              on:click={() => oncompleteAssignment?.(item)}
+            >
+              {busyOccurrenceId === item.id ? 'Отмечаем...' : item.actionLabel}
+            </button>
+          {/if}
         </article>
       {/each}
     </div>

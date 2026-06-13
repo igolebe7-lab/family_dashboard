@@ -154,9 +154,12 @@ function mapWaitingApprovalAttention(
 
   return {
     id: `attention-approval-${occurrence.id}`,
+    occurrenceId: occurrence.id,
     body: `${member.name} отметил «${occurrence.titleSnapshot}» как готово`,
     ...memberToAttentionMember(member),
-    actionLabel: 'Проверить'
+    actionKind: 'approve_assignment',
+    actionLabel: 'Подтвердить',
+    secondaryActionLabel: 'Вернуть'
   };
 }
 
@@ -170,6 +173,7 @@ function mapOverdueAttention(
     id: `attention-overdue-${occurrence.id}`,
     body: `Просрочено: ${member.name} — «${occurrence.titleSnapshot}»`,
     ...memberToAttentionMember(member),
+    actionKind: 'open',
     actionLabel: 'Открыть'
   };
 }
@@ -184,6 +188,7 @@ function mapPrepReminderAttention(
     id: `attention-prep-${occurrence.id}`,
     body: `Завтра у ${toGenitiveName(member.name)} «${occurrence.titleSnapshot}» — подготовиться`,
     ...memberToAttentionMember(member),
+    actionKind: 'add_task',
     actionLabel: 'Добавить дело'
   };
 }
@@ -271,7 +276,8 @@ function mapOccurrenceToTimelineItem(
     color: category.color,
     category: occurrence.categorySnapshot,
     categoryLabel: category.label,
-    icon: category.icon as IconName
+    icon: category.icon as IconName,
+    ...getTimelineAction(occurrence)
   };
 }
 
@@ -299,6 +305,22 @@ function mapOccurrenceToAllDayItem(
     categoryLabel: category.label,
     icon: category.icon as IconName
   };
+}
+
+function getTimelineAction(
+  occurrence: ItemOccurrence
+): Pick<TodayTimelineItem, 'actionKind' | 'actionLabel'> {
+  if (
+    occurrence.kind === 'assignment' &&
+    ['assigned', 'accepted', 'in_progress', 'rejected', 'overdue'].includes(occurrence.status)
+  ) {
+    return {
+      actionKind: 'mark_assignment_done',
+      actionLabel: 'Я сделал'
+    };
+  }
+
+  return {};
 }
 
 function mapFamilyMemberToTodayMember(member: FamilyMember, index: number): TodayFamilyMember {

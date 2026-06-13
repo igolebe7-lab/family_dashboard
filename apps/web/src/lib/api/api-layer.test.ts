@@ -11,7 +11,13 @@ import {
 import { login, logout } from './auth.api';
 import { createFamily } from './families.api';
 import { createItem } from './items.api';
-import { listOccurrencesInRange } from './occurrences.api';
+import {
+  approveOccurrence,
+  listOccurrenceMarkersInRange,
+  listOccurrencesInRange,
+  markOccurrenceDone,
+  rejectOccurrence
+} from './occurrences.api';
 import {
   createDayAnnotation,
   deleteDayAnnotation,
@@ -19,6 +25,13 @@ import {
   updateDayAnnotation
 } from './day-annotations.api';
 import { createMember, updateMember } from './members.api';
+import { listActivity } from './activity.api';
+import {
+  listNotifications,
+  listUnreadNotifications,
+  markAllNotificationsRead,
+  markNotificationRead
+} from './notifications.api';
 
 type FakeCollectionService = {
   authWithPassword?: ReturnType<typeof vi.fn>;
@@ -273,6 +286,147 @@ describe('PocketBase API layer', () => {
     resetPocketBaseClient();
   });
 
+  it('updates assignment occurrence status through explicit approval helpers', async () => {
+    const updatedRecord = {
+      id: 'occ_trash',
+      family: 'family_1',
+      item: 'item_trash',
+      visible_to: ['member_parent', 'member_child'],
+      kind: 'assignment' satisfies ItemKind,
+      title_snapshot: 'Вынести мусор',
+      category_snapshot: 'home' satisfies ItemCategory,
+      due_at: '2026-06-10T09:00:00.000Z',
+      all_day: false,
+      status: 'done',
+      completed_by: 'member_child',
+      completed_at: '2026-06-10T08:30:00.000Z'
+    };
+    const occurrences = {
+      update: vi.fn().mockResolvedValue(updatedRecord)
+    };
+    const client = createFakeClient({ [COLLECTIONS.itemOccurrences]: occurrences });
+    setPocketBaseClient(client);
+
+    const context = { familyId: 'family_1', memberId: 'member_parent' };
+    const done = await markOccurrenceDone('occ_trash', context);
+    await approveOccurrence('occ_trash', context);
+    await rejectOccurrence('occ_trash', context, 'Нужно чуть поправить');
+
+    expect(occurrences.update).toHaveBeenNthCalledWith(
+      1,
+      'occ_trash',
+      { status: 'done' },
+      { headers: { 'X-Family-Member-Id': 'member_parent' } }
+    );
+    expect(occurrences.update).toHaveBeenNthCalledWith(
+      2,
+      'occ_trash',
+      { status: 'approved' },
+      { headers: { 'X-Family-Member-Id': 'member_parent' } }
+    );
+    expect(occurrences.update).toHaveBeenNthCalledWith(
+      3,
+      'occ_trash',
+      { status: 'rejected', rejection_reason: 'Нужно чуть поправить' },
+      { headers: { 'X-Family-Member-Id': 'member_parent' } }
+    );
+    expect(done.status).toBe('done');
+    expect(done.completedBy).toBe('member_child');
+
+    resetPocketBaseClient();
+  });
+
+  it('loads lightweight occurrence markers page by page for calendar overview', async () => {
+    const occurrences = {
+      getList: vi
+        .fn()
+        .mockResolvedValueOnce({
+          page: 1,
+          perPage: 2,
+          totalItems: 3,
+          totalPages: 2,
+          items: [
+            {
+              id: 'occ_event',
+              kind: 'event',
+              start_at: '2026-06-10T08:00:00.000Z',
+              due_at: ''
+            },
+            {
+              id: 'occ_assignment',
+              kind: 'assignment',
+              start_at: '',
+              due_at: '2026-06-11T18:00:00.000Z'
+            }
+          ]
+        })
+        .mockResolvedValueOnce({
+          page: 2,
+          perPage: 2,
+          totalItems: 3,
+          totalPages: 2,
+          items: [
+            {
+              id: 'occ_task',
+              kind: 'task',
+              start_at: '',
+              due_at: '2026-06-12T12:00:00.000Z'
+            }
+          ]
+        })
+    };
+    const client = createFakeClient({ [COLLECTIONS.itemOccurrences]: occurrences });
+    setPocketBaseClient(client);
+
+    const result = await listOccurrenceMarkersInRange(
+      {
+        familyId: 'family_1',
+        memberId: 'member_1'
+      },
+      {
+        from: '2026-01-01T00:00:00.000Z',
+        to: '2027-01-01T00:00:00.000Z'
+      },
+      { perPage: 2 }
+    );
+
+    expect(occurrences.getList).toHaveBeenCalledTimes(2);
+    expect(occurrences.getList).toHaveBeenNthCalledWith(
+      1,
+      1,
+      2,
+      expect.objectContaining({
+        fields: 'id,kind,start_at,due_at',
+        filter: expect.stringContaining(
+          '(kind = "event" || kind = "task" || kind = "assignment")'
+        ),
+        sort: 'start_at,due_at'
+      })
+    );
+    expect(occurrences.getList.mock.calls[0][2].filter).toContain(
+      '&& ( ( start_at != ""'
+    );
+    expect(result.items).toEqual([
+      {
+        id: 'occ_event',
+        kind: 'event',
+        startAt: '2026-06-10T08:00:00.000Z'
+      },
+      {
+        id: 'occ_assignment',
+        kind: 'assignment',
+        dueAt: '2026-06-11T18:00:00.000Z'
+      },
+      {
+        id: 'occ_task',
+        kind: 'task',
+        dueAt: '2026-06-12T12:00:00.000Z'
+      }
+    ]);
+
+    resetPocketBaseClient();
+  });
+
   it('loads yearly and one-time day annotations for the selected year', async () => {
     const dayAnnotations = {
       getList: vi.fn().mockResolvedValue({
@@ -431,6 +585,102 @@ describe('PocketBase API layer', () => {
     );
     expect(created.personContact).toBe('+7 999 000-00-00');
     expect(updated.personContact).toBeUndefined();
+
+    resetPocketBaseClient();
+  });
+
+  it('loads activity feed and notification inbox records with member context', async () => {
+    const activity = {
+      getList: vi.fn().mockResolvedValue({
+        page: 1,
+        perPage: 30,
+        totalItems: 1,
+        totalPages: 1,
+        items: [
+          {
+            id: 'activity_1',
+            family: 'family_1',
+            actor: 'member_child',
+            action: 'assignment.done',
+            summary: 'Готово: Вынести мусор',
+            created: '2026-06-13T10:00:00.000Z'
+          }
+        ]
+      })
+    };
+    const notifications = {
+      getList: vi.fn().mockResolvedValue({
+        page: 1,
+        perPage: 50,
+        totalItems: 1,
+        totalPages: 1,
+        items: [
+          {
+            id: 'note_1',
+            family: 'family_1',
+            recipient_member: 'member_parent',
+            type: 'assignment.done_waiting_approval',
+            title: 'Поручение ждёт проверки',
+            body: 'Вынести мусор',
+            occurrence: 'occ_1',
+            read_at: '',
+            created: '2026-06-13T10:01:00.000Z'
+          }
+        ]
+      }),
+      update: vi.fn().mockResolvedValue({
+        id: 'note_1',
+        family: 'family_1',
+        recipient_member: 'member_parent',
+        type: 'assignment.done_waiting_approval',
+        title: 'Поручение ждёт проверки',
+        body: 'Вынести мусор',
+        occurrence: 'occ_1',
+        read_at: '2026-06-13T10:05:00.000Z',
+        created: '2026-06-13T10:01:00.000Z'
+      })
+    };
+    const client = createFakeClient({
+      [COLLECTIONS.itemActivity]: activity,
+      [COLLECTIONS.notifications]: notifications
+    });
+    setPocketBaseClient(client);
+
+    const context = { familyId: 'family_1', memberId: 'member_parent' };
+    const feed = await listActivity(context);
+    const inbox = await listNotifications(context);
+    const unread = await listUnreadNotifications(context);
+    const read = await markNotificationRead('note_1', context, '2026-06-13T10:05:00.000Z');
+    await markAllNotificationsRead(context, '2026-06-13T10:05:00.000Z');
+
+    expect(activity.getList).toHaveBeenCalledWith(
+      1,
+      30,
+      expect.objectContaining({
+        filter: 'family = "family_1"',
+        sort: '-created',
+        headers: { 'X-Family-Member-Id': 'member_parent' }
+      })
+    );
+    expect(notifications.getList).toHaveBeenCalledWith(
+      1,
+      50,
+      expect.objectContaining({
+        filter: 'family = "family_1"',
+        sort: '-created',
+        headers: { 'X-Family-Member-Id': 'member_parent' }
+      })
+    );
+    expect(notifications.getList.mock.calls[1][2].filter).toContain('read_at = ""');
+    expect(notifications.update).toHaveBeenCalledWith(
+      'note_1',
+      { read_at: '2026-06-13T10:05:00.000Z' },
+      { headers: { 'X-Family-Member-Id': 'member_parent' } }
+    );
+    expect(feed[0].summary).toBe('Готово: Вынести мусор');
+    expect(inbox[0].title).toBe('Поручение ждёт проверки');
+    expect(unread).toHaveLength(1);
+    expect(read.readAt).toBe('2026-06-13T10:05:00.000Z');
 
     resetPocketBaseClient();
   });

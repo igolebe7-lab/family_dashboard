@@ -2223,6 +2223,23 @@ h3 {
   text-align: left;
 }
 
+.today-timeline-item__action {
+  grid-column: 2;
+  justify-self: start;
+  min-height: 2.2rem;
+  border: 1px solid color-mix(in srgb, currentColor 18%, white);
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 10%, white);
+  color: currentColor;
+  font-size: 0.76rem;
+  font-weight: 560;
+  padding: 0 0.82rem;
+}
+
+.today-timeline-item__action:disabled {
+  opacity: 0.68;
+}
+
 .today-timeline-item__icon {
   display: grid;
   width: 2.18rem;
@@ -2443,7 +2460,7 @@ h3 {
   overflow-wrap: anywhere;
 }
 
-.today-attention-card button {
+.today-attention-card__icon-button {
   position: absolute;
   right: 0.62rem;
   bottom: 0.62rem;
@@ -2459,9 +2476,55 @@ h3 {
   box-shadow: 0 10px 20px rgb(28 24 18 / 0.07);
 }
 
+.today-attention-card__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-top: 0.1rem;
+}
+
+.today-attention-card__action {
+  min-height: 2.1rem;
+  min-width: 0;
+  flex: 1 1 0;
+  border: 1px solid color-mix(in srgb, currentColor 18%, white);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.76);
+  color: currentColor;
+  font-size: 0.72rem;
+  font-weight: 560;
+  padding: 0 0.56rem;
+}
+
+.today-attention-card__action--primary {
+  background: color-mix(in srgb, currentColor 13%, white);
+}
+
+.today-attention-card__action:disabled {
+  opacity: 0.64;
+}
+
 .today-attention-card__copy {
   min-width: 0;
   padding-right: 0.95rem;
+}
+
+.today-action-message {
+  border: 1px solid rgb(219 238 209 / 0.9);
+  border-radius: 1rem;
+  background: rgb(237 247 232 / 0.88);
+  color: var(--color-green);
+  font-size: 0.78rem;
+  font-weight: 520;
+  line-height: 1.35;
+  padding: 0.64rem 0.78rem;
+}
+
+.today-action-message--error {
+  border-color: rgb(255 220 210 / 0.95);
+  background: rgb(255 238 232 / 0.92);
+  color: #a64c36;
 }
 
 .today-quick-actions {
@@ -2683,6 +2746,270 @@ h3 {
   background: transparent;
   color: var(--color-text-muted);
   padding: 0 0.65rem;
+}
+
+.assignments-page {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.assignments-page--desktop {
+  gap: 1.25rem;
+}
+
+.assignments-list,
+.inbox-list,
+.feed-page-list {
+  display: grid;
+  min-width: 0;
+  gap: 0.78rem;
+}
+
+.assignments-list--desktop,
+.feed-page-list--desktop {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.assignment-card {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: 0.82rem;
+  min-width: 0;
+  border: 1px solid rgb(238 231 220 / 0.78);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.92);
+  color: var(--color-text);
+  box-shadow: 0 15px 36px rgb(35 38 47 / 0.06);
+  padding: 0.92rem;
+}
+
+.assignment-card--green {
+  border-color: color-mix(in srgb, var(--color-green) 26%, white);
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), color-mix(in srgb, var(--color-green) 11%, white));
+}
+
+.assignment-card--yellow {
+  border-color: color-mix(in srgb, var(--color-yellow) 28%, white);
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), color-mix(in srgb, var(--color-yellow) 13%, white));
+}
+
+.assignment-card--peach {
+  border-color: color-mix(in srgb, var(--color-peach) 26%, white);
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), color-mix(in srgb, var(--color-peach) 12%, white));
+}
+
+.assignment-card--blue {
+  border-color: color-mix(in srgb, var(--color-blue) 24%, white);
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), color-mix(in srgb, var(--color-blue) 10%, white));
+}
+
+.assignment-card__avatar {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.86);
+  box-shadow: inset 0 0 0 1px rgb(36 40 52 / 0.06);
+  color: var(--color-text);
+  font-weight: 640;
+}
+
+.assignment-card__body,
+.assignment-card__topline {
+  display: grid;
+  min-width: 0;
+}
+
+.assignment-card__body {
+  gap: 0.62rem;
+}
+
+.assignment-card__topline {
+  gap: 0.28rem;
+}
+
+.assignment-card__topline strong,
+.inbox-card strong,
+.feed-page-card strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-md);
+  font-weight: 610;
+  line-height: 1.18;
+}
+
+.assignment-card__topline span,
+.assignment-card__topline small,
+.inbox-card p,
+.inbox-card time,
+.feed-page-card p,
+.feed-page-card time {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.35;
+}
+
+.assignment-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.48rem;
+}
+
+.assignment-card__button,
+.inbox-card button {
+  display: inline-flex;
+  min-height: 2.55rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+  border: 1px solid rgb(36 40 52 / 0.08);
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 0.9);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: 0 0.82rem;
+}
+
+.assignment-card__button--primary {
+  border-color: color-mix(in srgb, var(--color-green) 34%, white);
+  background: var(--color-green);
+  color: white;
+}
+
+.assignment-card__button:disabled,
+.inbox-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.child-mode {
+  display: grid;
+  width: min(100%, 44rem);
+  min-height: 100vh;
+  gap: 1rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2rem;
+}
+
+.child-mode__hero,
+.child-mode__section {
+  display: grid;
+  min-width: 0;
+  gap: 0.82rem;
+}
+
+.child-mode__hero {
+  border-radius: 1.8rem;
+  background:
+    radial-gradient(circle at 85% 10%, rgb(129 198 112 / 0.22), transparent 11rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--color-yellow) 18%, white), rgb(255 255 255 / 0.94));
+  box-shadow: var(--shadow-card);
+  padding: 1.12rem;
+}
+
+.child-mode__hero h1 {
+  font-size: clamp(2rem, 10vw, 3rem);
+}
+
+.child-mode__hero .section-kicker {
+  display: block;
+}
+
+.child-mode__hero p:not(.section-kicker) {
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  font-weight: 520;
+}
+
+.child-mode__section {
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.68);
+  padding: 0.9rem;
+}
+
+.child-schedule {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.child-schedule article {
+  display: grid;
+  grid-template-columns: 4.4rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.72rem;
+  border-radius: var(--radius-md);
+  background: rgb(255 255 255 / 0.84);
+  padding: 0.76rem;
+}
+
+.child-schedule time {
+  color: var(--color-green);
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+}
+
+.child-schedule strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 590;
+}
+
+.inbox-card,
+.feed-page-card {
+  display: grid;
+  min-width: 0;
+  gap: 0.72rem;
+  border: 1px solid rgb(238 231 220 / 0.78);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 12px 30px rgb(35 38 47 / 0.045);
+  padding: 0.92rem;
+}
+
+.inbox-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.inbox-card > div,
+.feed-page-card {
+  min-width: 0;
+}
+
+.inbox-card--unread {
+  border-color: color-mix(in srgb, var(--color-peach) 34%, white);
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.95), color-mix(in srgb, var(--color-peach) 10%, white));
+}
+
+.feed-page-card--green {
+  border-color: color-mix(in srgb, var(--color-green) 25%, white);
+}
+
+.feed-page-card--yellow {
+  border-color: color-mix(in srgb, var(--color-yellow) 28%, white);
+}
+
+.feed-page-card--peach {
+  border-color: color-mix(in srgb, var(--color-peach) 27%, white);
+}
+
+.feed-page-card--blue {
+  border-color: color-mix(in srgb, var(--color-blue) 24%, white);
+}
+
+.page-empty-state {
+  min-width: 0;
+  border: 1px dashed rgb(173 165 151 / 0.36);
+  border-radius: var(--radius-md);
+  background: rgb(255 255 255 / 0.58);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.42;
+  padding: 0.9rem;
 }
 
 .today-week-toolbar__view .today-week-toolbar__active {
@@ -3296,12 +3623,22 @@ h3 {
     box-shadow: 0 8px 18px rgb(35 38 47 / 0.03);
   }
 
-  .today-attention-card button {
+  .today-attention-card__icon-button {
     position: absolute;
     right: 0.62rem;
     bottom: 0.62rem;
     width: 2rem;
     height: 2rem;
+  }
+
+  .today-attention-card__actions {
+    gap: 0.34rem;
+  }
+
+  .today-attention-card__action {
+    min-height: 1.9rem;
+    font-size: 0.64rem;
+    padding: 0 0.42rem;
   }
 
   .today-attention-card__copy {

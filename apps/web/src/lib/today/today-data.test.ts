@@ -129,10 +129,13 @@ describe('today data adapter', () => {
     expect(model.attentionItems).toEqual([
       expect.objectContaining({
         id: 'attention-approval-occ_trash',
+        occurrenceId: 'occ_trash',
+        actionKind: 'approve_assignment',
         body: 'Миша отметил «Вынести мусор» как готово',
         memberName: 'Миша',
         color: 'green',
-        actionLabel: 'Проверить'
+        actionLabel: 'Подтвердить',
+        secondaryActionLabel: 'Вернуть'
       }),
       expect.objectContaining({
         id: 'attention-overdue-occ_room',
@@ -150,6 +153,23 @@ describe('today data adapter', () => {
       })
     ]);
     expect(model.attentionCount).toBe(3);
+  });
+
+  it('adds a soft Done action for active assignment occurrences', () => {
+    const model = createTodayViewModelFromOccurrences({
+      date: new Date('2026-06-10T12:00:00.000+02:00'),
+      occurrences: [overdueAssignmentOccurrence],
+      members
+    });
+
+    expect(model.timelineItems).toEqual([
+      expect.objectContaining({
+        id: 'occ_room',
+        kind: 'assignment',
+        actionKind: 'mark_assignment_done',
+        actionLabel: 'Я сделал'
+      })
+    ]);
   });
 
   it('loads occurrences for the visible week range through the API boundary', async () => {

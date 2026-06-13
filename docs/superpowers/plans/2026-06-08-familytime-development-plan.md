@@ -379,6 +379,16 @@
 - [x] Persist composer and special-date form drafts in `sessionStorage` until submit or explicit cancel/close.
 - [x] Keep new family UI aligned with Today visual patterns: soft panels, round avatar halos, warm surfaces and compact mobile layout.
 
+**Stage 8C.3 approval flow and visibility corrections — 2026-06-13:**
+
+- [x] Add explicit occurrence status API helpers for `done`, `approved` and `rejected` transitions.
+- [x] Enforce assignment occurrence transitions server-side in PocketBase hooks, including `completed_by`, `approved_by`, `rejected_by` and timestamps.
+- [x] Allow a parent/owner to mark a managed child's assignment as `done` on the child's behalf.
+- [x] Notify parent reviewers when a child marks an assignment done and approval is required.
+- [x] Add soft Today UI actions: `Я сделал` on active assignment cards and `Подтвердить` / `Вернуть` in `Нужно внимание`.
+- [x] Include managed-child parents in `assignees` visibility so parent review works even when another parent created the assignment.
+- [x] Load Calendar year markers through a lightweight marker API with selected fields and paginated yearly range loading.
+
 **Automated checks:**
 
 - form validation tests
@@ -397,19 +407,21 @@
 **Цель:** закрыть ключевой семейный сценарий поручений.
 
 **Files:**
-- Create: `apps/web/src/routes/(app)/assignments/+page.svelte`
-- Create: `apps/web/src/routes/(child)/child/+page.svelte`
-- Create: `apps/web/src/lib/components/items/AssignmentCard.svelte`
+- Create: `apps/web/src/routes/app/assignments/+page.svelte`
+- Create: `apps/web/src/routes/child/+page.svelte`
+- Create: `apps/web/src/lib/components/assignments/AssignmentCard.svelte`
 - Create: `apps/web/src/lib/components/items/StatusBadge.svelte`
 - Modify: `pocketbase/pb_hooks/occurrences.pb.js`
 - Modify: `pocketbase/pb_hooks/items.pb.js`
 
-- [ ] Implement assignment status transitions from ТЗ.
-- [ ] Parent creates assignment for child.
-- [ ] Child sees simplified dashboard and statuses.
-- [ ] Child action `Я сделал` transitions to `done`.
-- [ ] Parent receives notification and approves/rejects.
-- [ ] Approval updates occurrence and activity feed.
+- [x] Stage 9.1: Add full `/app/assignments` screen with status groups, parent review actions and assignment fallback state.
+- [x] Stage 9.2: Add `/child` simplified mode with child-facing statuses, `Я сделал` action and today schedule.
+- [x] Implement assignment status transitions from ТЗ.
+- [x] Parent creates assignment for child.
+- [x] Child sees simplified dashboard and statuses.
+- [x] Child action `Я сделал` transitions to `done`.
+- [x] Parent receives notification and approves/rejects.
+- [x] Approval updates occurrence and activity feed.
 
 **Automated checks:**
 
@@ -428,8 +440,8 @@
 **Цель:** сделать интерфейс живым без polling и без утечек подписок.
 
 **Files:**
-- Create: `apps/web/src/routes/(app)/feed/+page.svelte`
-- Create: `apps/web/src/routes/(app)/notifications/+page.svelte`
+- Create: `apps/web/src/routes/app/feed/+page.svelte`
+- Create: `apps/web/src/routes/app/notifications/+page.svelte`
 - Create: `apps/web/src/lib/components/feed/ActivityFeed.svelte`
 - Create: `apps/web/src/lib/components/feed/ActivityFeedItem.svelte`
 - Create: `apps/web/src/lib/components/notifications/NotificationBell.svelte`
@@ -437,11 +449,14 @@
 - Create: `apps/web/src/lib/stores/realtime.store.ts`
 - Create: `apps/web/src/lib/stores/notifications.store.ts`
 
-- [ ] Subscribe to notifications for current recipient member.
-- [ ] Subscribe to `item_activity` for active family.
+- [x] Stage 10.1: Add notification inbox UI with unread list, single mark-as-read and mark-all-read API support.
+- [x] Stage 10.2: Connect family feed UI and Today feed to real `item_activity` records.
+- [x] Stage 10.3: Cover parent creates → child done → parent approve → feed + notification through PocketBase smoke assertions.
+- [ ] Stage 10.4: Subscribe to notifications for current recipient member.
+- [ ] Stage 10.4: Subscribe to `item_activity` for active family.
 - [ ] Subscribe to `item_occurrences` only for Today/Calendar visible range.
 - [ ] Unsubscribe on route/range/family/member changes.
-- [ ] Add badge and mark-all-read.
+- [x] Add badge entry point and mark-all-read.
 
 **Automated checks:**
 

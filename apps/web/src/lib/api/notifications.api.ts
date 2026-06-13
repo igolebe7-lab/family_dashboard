@@ -5,6 +5,7 @@ import {
   type ActiveFamilyContext,
   asRecord,
   asString,
+  escapeFilterValue,
   getPocketBaseClient,
   memberRequestOptions,
   requireActiveContext,
@@ -14,16 +15,41 @@ import {
 export async function listUnreadNotifications(
   context: Partial<ActiveFamilyContext>
 ): Promise<NotificationRecord[]> {
+  return listNotifications(context, { unreadOnly: true });
+}
+
+export async function listNotifications(
+  context: Partial<ActiveFamilyContext>,
+  options: { unreadOnly?: boolean; limit?: number } = {}
+): Promise<NotificationRecord[]> {
   const activeContext = requireActiveContext(context);
   const notifications = getPocketBaseClient().collection(COLLECTIONS.notifications);
-  const getFullList = requireCollectionMethod(notifications, 'getFullList');
-  const records = await getFullList({
-    filter: `family = "${activeContext.familyId}" && read_at = ""`,
-    sort: '-created',
-    ...memberRequestOptions(activeContext)
-  });
+  const getList = requireCollectionMethod(notifications, 'getList');
+  const filter = [
+    `family = "${escapeFilterValue(activeContext.familyId)}"`,
+    options.unreadOnly ? 'read_at = ""' : ''
+  ]
+    .filter(Boolean)
+    .join(' && ');
+  const result = asRecord(
+    await getList(1, options.limit ?? 50, {
+      filter,
+      sort: '-created',
+      requestKey: null,
+      ...memberRequestOptions(activeContext)
+    })
+  );
 
-  return records.map(mapNotificationRecord);
+  return Array.isArray(result.items) ? result.items.map(mapNotificationRecord) : [];
+}
+
+export async function markAllNotificationsRead(
+  context: Partial<ActiveFamilyContext>,
+  readAt = new Date().toISOString()
+): Promise<NotificationRecord[]> {
+  const unread = await listUnreadNotifications(context);
+
+  return Promise.all(unread.map((record) => markNotificationRead(record.id, context, readAt)));
 }
 
 export async function markNotificationRead(

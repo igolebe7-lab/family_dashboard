@@ -5,6 +5,10 @@
 
   export let items: TodayAttentionItem[] = [];
   export let labelledBy = 'attention-title';
+  export let busyItemId: string | null = null;
+  export let onapprove: ((item: TodayAttentionItem) => void | Promise<void>) | undefined = undefined;
+  export let onreject: ((item: TodayAttentionItem) => void | Promise<void>) | undefined = undefined;
+  export let onopen: ((item: TodayAttentionItem) => void | Promise<void>) | undefined = undefined;
 </script>
 
 <section class="today-attention" aria-labelledby={labelledBy}>
@@ -27,9 +31,35 @@
           <div class="today-attention-card__copy">
             <p>{item.body}</p>
           </div>
-          <button type="button" aria-label={item.actionLabel}>
-            <ChevronRight size={22} strokeWidth={2.2} aria-hidden="true" />
-          </button>
+          {#if item.actionKind === 'approve_assignment'}
+            <div class="today-attention-card__actions">
+              <button
+                class="today-attention-card__action today-attention-card__action--primary"
+                type="button"
+                disabled={busyItemId === item.id}
+                on:click={() => onapprove?.(item)}
+              >
+                {busyItemId === item.id ? '...' : item.actionLabel}
+              </button>
+              <button
+                class="today-attention-card__action"
+                type="button"
+                disabled={busyItemId === item.id}
+                on:click={() => onreject?.(item)}
+              >
+                {item.secondaryActionLabel ?? 'Вернуть'}
+              </button>
+            </div>
+          {:else}
+            <button
+              class="today-attention-card__icon-button"
+              type="button"
+              aria-label={item.actionLabel}
+              on:click={() => onopen?.(item)}
+            >
+              <ChevronRight size={22} strokeWidth={2.2} aria-hidden="true" />
+            </button>
+          {/if}
         </article>
       {/each}
     </div>

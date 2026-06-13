@@ -17,7 +17,18 @@ function canCreateAssignmentFor(actorMember, assigneeMember) {
   return isAdultRole(actorMember.get('role')) && assigneeMember.get('role') !== 'child';
 }
 
+function canManageMember(actorMember, targetMember) {
+  if (!actorMember || !targetMember) return false;
+  if (actorMember.get('family') !== targetMember.get('family')) return false;
+  if (actorMember.get('role') === 'owner') return true;
+  if (actorMember.get('role') !== 'parent') return false;
+  return require(`${__hooks}/_shared/auth.pb.js`)
+    .getRecordArray(targetMember, 'managed_by')
+    .includes(actorMember.id);
+}
+
 module.exports = {
+  canManageMember,
   canCreateAssignmentFor,
   isAdultRole,
   requireSameFamily

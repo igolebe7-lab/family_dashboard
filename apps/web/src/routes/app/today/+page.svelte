@@ -17,7 +17,9 @@
   import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { parseTodayCalendarSearch } from '$lib/calendar/today-navigation';
+  import { listActivity } from '$lib/api/activity.api';
   import { getItem } from '$lib/api/items.api';
+  import { approveOccurrence, markOccurrenceDone, rejectOccurrence } from '$lib/api/occurrences.api';
   import type { ComposerKind } from '$lib/composer/composer-form';
   import { getIcon } from '$lib/design/icon-registry';
   import { calendarStore } from '$lib/stores/calendar.store';
@@ -29,7 +31,9 @@
   import {
     createTodayViewModel,
     formatDateKey,
+    type TodayAttentionItem,
     type TodayAllDayItem,
+    type TodayFeedItem,
     type TodayTimelineItem,
     type TodayViewModel
   } from '$lib/today/today-view-model';
@@ -54,9 +58,13 @@
   let currentSessionState: SessionState | undefined;
   let loadedContextKey: string | null = null;
   let loadedAnnotationsKey: string | null = null;
+  let loadedActivityKey: string | null = null;
   let publicHolidayAnnotations: DayAnnotation[] = [];
   let composerOpen = false;
   let composerKind: ComposerKind = 'event';
+  let busyOccurrenceId: string | null = null;
+  let actionMessage: string | null = null;
+  let actionError: string | null = null;
 
   $: loadedTodayAnnotations = mergeDayAnnotations(
     $dayAnnotationsStore.projectedAnnotations,
@@ -119,6 +127,45 @@
     }
   }
 
+  async function loadActivityFromFamilyState(familyState: FamilyState): Promise<void> {
+    const context = getActiveFamilyContext(familyState);
+    if (!context) return;
+
+    const activityKey = `${context.familyId}:${context.memberId}`;
+    if (loadedActivityKey === activityKey) return;
+    loadedActivityKey = activityKey;
+
+    try {
+      const records = await listActivity(context, 8);
+      today = {
+        ...today,
+        feedItems: records.map((record): TodayFeedItem => {
+          const actor = familyState.members.find((member) => member.id === record.actor);
+          return {
+            id: record.id,
+            actor: actor?.displayName ?? 'Семья',
+            body: record.summary,
+            timeLabel: formatFeedTime(record.created),
+            icon:
+              record.action === 'assignment.approved'
+                ? 'badge-check'
+                : record.action === 'assignment.rejected'
+                  ? 'rotate-ccw'
+                  : 'message-square-text',
+            color:
+              record.action === 'assignment.approved'
+                ? 'green'
+                : record.action === 'assignment.rejected'
+                  ? 'peach'
+                  : 'blue'
+          };
+        })
+      };
+    } catch (activityError) {
+      console.warn('Failed to load Today activity feed.', activityError);
+    }
+  }
+
   function openComposer(kind: ComposerKind): void {
     composerKind = kind;
     composerOpen = true;
@@ -151,7 +198,45 @@
   async function refreshTodayAfterCreate(): Promise<void> {
     if (!currentFamilyState) return;
     loadedContextKey = null;
+    loadedActivityKey = null;
     await loadTodayFromFamilyState(currentFamilyState);
+    await loadActivityFromFamilyState(currentFamilyState);
+  }
+
+  async function runOccurrenceAction(
+    occurrenceId: string | undefined,
+    action: (id: string, context: NonNullable<ReturnType<typeof getActiveFamilyContext>>) => Promise<unknown>,
+    successMessage: string
+  ): Promise<void> {
+    const context = currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null;
+    if (!context || !occurrenceId) return;
+
+    busyOccurrenceId = occurrenceId;
+    actionError = null;
+    actionMessage = null;
+
+    try {
+      await action(occurrenceId, context);
+      actionMessage = successMessage;
+      await refreshTodayAfterCreate();
+    } catch (error) {
+      actionError = 'Не удалось обновить поручение. Проверьте подключение и права доступа.';
+      console.warn('Failed to update assignment occurrence.', error);
+    } finally {
+      busyOccurrenceId = null;
+    }
+  }
+
+  function completeAssignment(item: TodayTimelineItem): Promise<void> {
+    return runOccurrenceAction(item.id, markOccurrenceDone, 'Отметили как готово.');
+  }
+
+  function approveAssignment(item: TodayAttentionItem): Promise<void> {
+    return runOccurrenceAction(item.occurrenceId, approveOccurrence, 'Поручение подтверждено.');
+  }
+
+  function rejectAssignment(item: TodayAttentionItem): Promise<void> {
+    return runOccurrenceAction(item.occurrenceId, rejectOccurrence, 'Поручение мягко возвращено на доработку.');
   }
 
   async function loadTimelineDetails(item: TodayTimelineItem | TodayAllDayItem) {
@@ -192,6 +277,7 @@
       if (familyState.status !== 'ready') return;
       void loadTodayFromFamilyState(familyState);
       void loadDayAnnotationsFromFamilyState(familyState);
+      void loadActivityFromFamilyState(familyState);
     });
     sessionUnsubscribe = sessionStore.subscribe((sessionState) => {
       currentSessionState = sessionState;
@@ -202,6 +288,17 @@
     familyUnsubscribe?.();
     sessionUnsubscribe?.();
   });
+</script>
+
+<script lang="ts" context="module">
+  function formatFeedTime(value: string): string {
+    if (!value) return 'сейчас';
+
+    return new Intl.DateTimeFormat('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(value));
+  }
 </script>
 
 <MobileShell {activeRoute} labelledBy="today-title-mobile">
@@ -226,8 +323,18 @@
       items={today.timelineItems}
       labelledBy="today-timeline-title-mobile"
       loadDetails={loadTimelineDetails}
+      {busyOccurrenceId}
+      oncompleteAssignment={completeAssignment}
     />
-    <AttentionPanel items={today.attentionItems} labelledBy="attention-title-mobile" />
+    {#if actionError}<p class="today-action-message today-action-message--error">{actionError}</p>{/if}
+    {#if actionMessage}<p class="today-action-message">{actionMessage}</p>{/if}
+    <AttentionPanel
+      items={today.attentionItems}
+      labelledBy="attention-title-mobile"
+      busyItemId={busyOccurrenceId ? `attention-approval-${busyOccurrenceId}` : null}
+      onapprove={approveAssignment}
+      onreject={rejectAssignment}
+    />
     <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" onselect={openComposer} />
   </section>
 
@@ -268,7 +375,15 @@
   />
 
   <svelte:fragment slot="aside">
-    <AttentionPanel items={today.attentionItems} labelledBy="attention-title-desktop" />
+    {#if actionError}<p class="today-action-message today-action-message--error">{actionError}</p>{/if}
+    {#if actionMessage}<p class="today-action-message">{actionMessage}</p>{/if}
+    <AttentionPanel
+      items={today.attentionItems}
+      labelledBy="attention-title-desktop"
+      busyItemId={busyOccurrenceId ? `attention-approval-${busyOccurrenceId}` : null}
+      onapprove={approveAssignment}
+      onreject={rejectAssignment}
+    />
     <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-desktop" onselect={openComposer} />
 
     <section class="today-feed" aria-labelledby="today-feed-title">

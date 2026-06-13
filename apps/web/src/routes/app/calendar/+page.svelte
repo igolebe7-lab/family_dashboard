@@ -17,7 +17,10 @@
     updateDayAnnotation,
     type DayAnnotationInput
   } from '$lib/api/day-annotations.api';
-  import { listOccurrencesInRange } from '$lib/api/occurrences.api';
+  import {
+    listOccurrenceMarkersInRange,
+    type OccurrenceMarker
+  } from '$lib/api/occurrences.api';
   import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
@@ -26,7 +29,7 @@
   import type { YearCalendarDay, YearCalendarMonth } from '$lib/calendar/year-calendar';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
-  import type { DayAnnotation, ItemOccurrence } from '$lib/types/domain';
+  import type { DayAnnotation } from '$lib/types/domain';
 
   const activeRoute = '/app/calendar';
   type SpecialDateFormMode = 'closed' | 'create' | 'edit';
@@ -91,7 +94,7 @@
     try {
       const yearStart = new Date(selectedYear, 0, 1).toISOString();
       const yearEnd = new Date(selectedYear + 1, 0, 1).toISOString();
-      const result = await listOccurrencesInRange(context, {
+      const result = await listOccurrenceMarkersInRange(context, {
         from: yearStart,
         to: yearEnd
       });
@@ -216,7 +219,7 @@
     return new Date(year, 0, 1);
   }
 
-  function createCalendarRecordMarkers(occurrences: ItemOccurrence[]): Array<{
+  function createCalendarRecordMarkers(occurrences: OccurrenceMarker[]): Array<{
     dateKey: string;
     kind: 'event' | 'task' | 'assignment';
     count: number;

@@ -1,4 +1,5 @@
 import Backpack from '@lucide/svelte/icons/backpack';
+import BadgeCheck from '@lucide/svelte/icons/badge-check';
 import Bell from '@lucide/svelte/icons/bell';
 import BriefcaseBusiness from '@lucide/svelte/icons/briefcase-business';
 import Calendar from '@lucide/svelte/icons/calendar';
@@ -10,6 +11,7 @@ import MapPinned from '@lucide/svelte/icons/map-pinned';
 import MessageSquareText from '@lucide/svelte/icons/message-square-text';
 import Palette from '@lucide/svelte/icons/palette';
 import Plus from '@lucide/svelte/icons/plus';
+import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
 import Sparkles from '@lucide/svelte/icons/sparkles';
 import SquareCheckBig from '@lucide/svelte/icons/square-check-big';
@@ -20,6 +22,7 @@ import WalletCards from '@lucide/svelte/icons/wallet-cards';
 
 export const ICONS = {
   backpack: Backpack,
+  'badge-check': BadgeCheck,
   bell: Bell,
   'briefcase-business': BriefcaseBusiness,
   calendar: Calendar,
@@ -31,6 +34,7 @@ export const ICONS = {
   'message-square-text': MessageSquareText,
   palette: Palette,
   plus: Plus,
+  'rotate-ccw': RotateCcw,
   'shopping-bag': ShoppingBag,
   sparkles: Sparkles,
   'square-check-big': SquareCheckBig,

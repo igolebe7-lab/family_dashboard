@@ -88,7 +88,7 @@ function buildVisibleMemberIds(app, item) {
   }
 
   if (visibility === 'assignees') {
-    return explicitMemberIds;
+    return uniqueIds([...explicitMemberIds, ...collectManagingParentIds(app, item)]);
   }
 
   return uniqueIds([item.get('created_by'), item.get('owner')].filter(Boolean));
@@ -112,6 +112,21 @@ function collectExplicitMemberIds(item) {
     ...authHelpers.getRecordArray(item, 'assignees'),
     ...authHelpers.getRecordArray(item, 'participants')
   ].filter(Boolean));
+}
+
+function collectManagingParentIds(app, item) {
+  const authHelpers = require(`${__hooks}/_shared/auth.pb.js`);
+  return uniqueIds([
+    ...authHelpers.getRecordArray(item, 'assignees'),
+    ...authHelpers.getRecordArray(item, 'participants')
+  ].flatMap((memberId) => {
+    try {
+      const member = app.findRecordById('family_members', memberId);
+      return authHelpers.getRecordArray(member, 'managed_by');
+    } catch (_) {
+      return [];
+    }
+  }));
 }
 
 function uniqueIds(ids) {
