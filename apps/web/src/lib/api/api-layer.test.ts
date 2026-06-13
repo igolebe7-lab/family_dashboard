@@ -18,10 +18,12 @@ import {
   listDayAnnotationsForYear,
   updateDayAnnotation
 } from './day-annotations.api';
+import { createMember, updateMember } from './members.api';
 
 type FakeCollectionService = {
   authWithPassword?: ReturnType<typeof vi.fn>;
   create?: ReturnType<typeof vi.fn>;
+  update?: ReturnType<typeof vi.fn>;
   getList?: ReturnType<typeof vi.fn>;
 };
 
@@ -113,6 +115,57 @@ describe('PocketBase API layer', () => {
       timezone: 'Europe/Amsterdam',
       ownerUser: 'user_1'
     });
+
+    resetPocketBaseClient();
+  });
+
+  it('creates and links family members through member context', async () => {
+    const createdRecord = {
+      id: 'member_dad',
+      family: 'family_1',
+      display_name: 'Папа',
+      role: 'parent',
+      color_key: 'blue',
+      managed_by: [],
+      active: true
+    };
+    const members = {
+      create: vi.fn().mockResolvedValue(createdRecord),
+      update: vi.fn().mockResolvedValue({
+        ...createdRecord,
+        user: 'user_1'
+      })
+    };
+    const client = createFakeClient({ [COLLECTIONS.familyMembers]: members });
+    setPocketBaseClient(client);
+
+    const context = { familyId: 'family_1', memberId: 'member_mom' };
+    await createMember(
+      {
+        displayName: 'Папа',
+        role: 'parent',
+        colorKey: 'blue'
+      },
+      context
+    );
+    const linked = await updateMember('member_dad', { user: 'user_1' }, context);
+
+    expect(members.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        family: 'family_1',
+        display_name: 'Папа',
+        role: 'parent',
+        color_key: 'blue',
+        created_by: 'member_mom'
+      }),
+      { headers: { 'X-Family-Member-Id': 'member_mom' } }
+    );
+    expect(members.update).toHaveBeenCalledWith(
+      'member_dad',
+      { user: 'user_1' },
+      { headers: { 'X-Family-Member-Id': 'member_mom' } }
+    );
+    expect(linked.user).toBe('user_1');
 
     resetPocketBaseClient();
   });

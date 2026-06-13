@@ -35,12 +35,32 @@
   let saving = false;
   let previousBodyOverflow = '';
   let previousBodyOverscrollBehavior = '';
+  let draftReady = false;
+
+  const draftKey = 'familytime:composer:draft';
 
   onMount(() => {
     previousBodyOverflow = document.body.style.overflow;
     previousBodyOverscrollBehavior = document.body.style.overscrollBehavior;
     document.body.style.overflow = 'hidden';
     document.body.style.overscrollBehavior = 'none';
+
+    const rawDraft = sessionStorage.getItem(draftKey);
+    if (rawDraft) {
+      try {
+        const draft = JSON.parse(rawDraft) as ComposerFormValues;
+        values = {
+          ...values,
+          ...draft,
+          activeMemberId: context?.memberId ?? draft.activeMemberId,
+          familyMemberIds: draft.familyMemberIds ?? values.familyMemberIds
+        };
+        activeKind = values.kind;
+      } catch (error) {
+        console.warn('Failed to restore composer draft.', error);
+      }
+    }
+    draftReady = true;
   });
 
   onDestroy(() => {
@@ -50,6 +70,9 @@
 
   $: if (values.kind !== activeKind) {
     values = setComposerKind(values, activeKind);
+  }
+  $: if (draftReady) {
+    sessionStorage.setItem(draftKey, JSON.stringify(values));
   }
   $: {
     const familyMemberIds = members.map((member) => member.id).filter(Boolean);
@@ -74,6 +97,11 @@
     successMessage = null;
   }
 
+  function closeComposer(clearDraft = true): void {
+    if (clearDraft) sessionStorage.removeItem(draftKey);
+    onclose?.();
+  }
+
   async function submitForm(): Promise<void> {
     submitError = null;
     successMessage = null;
@@ -96,6 +124,7 @@
       await createItem(result.input, context);
       successMessage = getSuccessMessage(values.kind);
       await oncreated?.();
+      sessionStorage.removeItem(draftKey);
       values = createComposerFormValues({
         activeMemberId: context.memberId,
         date: selectedDate,
@@ -116,14 +145,14 @@
   }
 </script>
 
-<div class="composer-backdrop" role="presentation" on:click={() => onclose?.()}></div>
+<div class="composer-backdrop" role="presentation" on:click={() => closeComposer()}></div>
 <div class="composer-sheet" aria-labelledby={titleId} role="dialog" aria-modal="true">
   <header class="composer-sheet__header">
     <div>
       <p class="section-kicker">Создание</p>
       <h2 id={titleId}>Новая запись</h2>
     </div>
-    <button type="button" aria-label="Закрыть форму" on:click={() => onclose?.()}>
+    <button type="button" aria-label="Закрыть форму" on:click={() => closeComposer()}>
       <X size={19} strokeWidth={2.2} aria-hidden="true" />
     </button>
   </header>
@@ -154,7 +183,7 @@
     {/if}
 
     <div class="composer-sheet__actions">
-      <button class="button button--ghost" disabled={saving} type="button" on:click={() => onclose?.()}>
+      <button class="button button--ghost" disabled={saving} type="button" on:click={() => closeComposer()}>
         Отмена
       </button>
       <button class="button button--primary" disabled={saving} type="submit">

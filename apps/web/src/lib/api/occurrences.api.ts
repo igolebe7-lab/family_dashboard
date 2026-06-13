@@ -35,6 +35,7 @@ export async function listOccurrencesInRange(
     await getList(1, 200, {
       filter: buildOccurrenceRangeFilter(activeContext.familyId, range),
       sort: 'start_at,due_at',
+      requestKey: null,
       ...memberRequestOptions(activeContext)
     })
   );

@@ -49,6 +49,7 @@ export async function listDayAnnotationsForYear(
     await getList(1, 200, {
       filter: buildDayAnnotationsYearFilter(activeContext.familyId, year),
       sort: 'month,day,title',
+      requestKey: null,
       ...memberRequestOptions(activeContext)
     })
   );

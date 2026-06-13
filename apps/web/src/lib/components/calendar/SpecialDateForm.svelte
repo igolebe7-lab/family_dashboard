@@ -1,5 +1,6 @@
 <script lang="ts">
   import X from '@lucide/svelte/icons/x';
+  import { onMount } from 'svelte';
   import type { DayAnnotationInput } from '$lib/api/day-annotations.api';
   import {
     createSpecialDateFormValues,
@@ -19,16 +20,48 @@
 
   let values = createSpecialDateFormValues({ annotation, selectedDate });
   let validationErrors: string[] = [];
+  let draftReady = false;
+
+  const draftKey = 'familytime:special-date:draft';
 
   $: isBirthday = values.kind === 'birthday';
   $: canDelete = Boolean(annotation && !annotation.readonly);
   $: submitLabel = annotation ? 'Сохранить' : 'Создать';
+  $: if (draftReady && !annotation) {
+    sessionStorage.setItem(draftKey, JSON.stringify(values));
+  }
+
+  onMount(() => {
+    if (annotation) {
+      draftReady = true;
+      return;
+    }
+
+    const rawDraft = sessionStorage.getItem(draftKey);
+    if (rawDraft) {
+      try {
+        values = {
+          ...values,
+          ...JSON.parse(rawDraft)
+        };
+      } catch (error) {
+        console.warn('Failed to restore special date draft.', error);
+      }
+    }
+    draftReady = true;
+  });
 
   async function submitForm(): Promise<void> {
     validationErrors = validateSpecialDateForm(values);
     if (validationErrors.length > 0) return;
 
     await onsave?.(createSpecialDateInput(values));
+    sessionStorage.removeItem(draftKey);
+  }
+
+  function cancelForm(): void {
+    sessionStorage.removeItem(draftKey);
+    oncancel?.();
   }
 </script>
 
@@ -38,7 +71,7 @@
       <p class="section-kicker">{annotation ? 'Редактирование' : 'Новая дата'}</p>
       <h2 id={titleId}>{annotation ? 'Особая дата' : 'Добавить дату'}</h2>
     </div>
-    <button type="button" aria-label="Закрыть форму" on:click={() => oncancel?.()}>
+    <button type="button" aria-label="Закрыть форму" on:click={cancelForm}>
       <X size={19} strokeWidth={2.2} aria-hidden="true" />
     </button>
   </header>
@@ -146,7 +179,7 @@
         Удалить
       </button>
     {/if}
-    <button class="button button--ghost" disabled={saving} type="button" on:click={() => oncancel?.()}>
+    <button class="button button--ghost" disabled={saving} type="button" on:click={cancelForm}>
       Отмена
     </button>
     <button class="button button--primary" disabled={saving} type="submit">{saving ? 'Сохраняем' : submitLabel}</button>

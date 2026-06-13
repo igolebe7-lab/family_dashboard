@@ -26,6 +26,10 @@ export type CreateMemberInput = {
   isChildLoginEnabled?: boolean;
 };
 
+export type UpdateMemberInput = Partial<CreateMemberInput> & {
+  active?: boolean;
+};
+
 export async function listMembersForFamily(familyId: string): Promise<FamilyMember[]> {
   const members = getPocketBaseClient().collection(COLLECTIONS.familyMembers);
   const getFullList = requireCollectionMethod(members, 'getFullList');
@@ -79,6 +83,23 @@ export async function createMember(
   return mapFamilyMemberRecord(record);
 }
 
+export async function updateMember(
+  id: string,
+  input: UpdateMemberInput,
+  context: Partial<ActiveFamilyContext>
+): Promise<FamilyMember> {
+  const activeContext = requireActiveContext(context);
+  const members = getPocketBaseClient().collection(COLLECTIONS.familyMembers);
+  const update = requireCollectionMethod(members, 'update');
+  const record = await update(
+    id,
+    mapMemberInput(input),
+    memberRequestOptions(activeContext)
+  );
+
+  return mapFamilyMemberRecord(record);
+}
+
 export function mapFamilyMemberRecord(value: unknown): FamilyMember {
   const record = asRecord(value);
 
@@ -94,4 +115,20 @@ export function mapFamilyMemberRecord(value: unknown): FamilyMember {
     managedBy: asStringArray(record.managed_by),
     active: asBoolean(record.active)
   };
+}
+
+function mapMemberInput(input: UpdateMemberInput): Record<string, unknown> {
+  const record = {
+    user: input.user,
+    display_name: input.displayName,
+    role: input.role,
+    color_key: input.colorKey,
+    color_hex: input.colorHex,
+    birthday: input.birthday,
+    managed_by: input.managedBy,
+    is_child_login_enabled: input.isChildLoginEnabled,
+    active: input.active
+  };
+
+  return Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined));
 }

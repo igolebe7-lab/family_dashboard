@@ -11,10 +11,21 @@
   export let selectedDateKey: string | undefined = undefined;
   export let onselectDay: ((day: YearCalendarDay) => void) | undefined = undefined;
   export let monthHref: ((month: YearCalendarMonth) => string) | undefined = undefined;
+  export let recordMarkers: Array<{
+    dateKey: string;
+    kind: 'event' | 'task' | 'assignment';
+    count: number;
+  }> = [];
 
   const weekdayLabels = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
   let calendarElement: HTMLElement;
   let scrolledYear: number | null = null;
+
+  $: recordMarkersByDate = recordMarkers.reduce((markersByDate, marker) => {
+    const existing = markersByDate.get(marker.dateKey) ?? [];
+    markersByDate.set(marker.dateKey, [...existing, marker]);
+    return markersByDate;
+  }, new Map<string, typeof recordMarkers>());
 
   $: if (compact && calendarElement && scrolledYear !== model.year) {
     void scrollCurrentMonthIntoView();
@@ -94,6 +105,19 @@
                       <b>+{day.hiddenAnnotationCount}</b>
                     {/if}
                   </span>
+                {/if}
+                {#if recordMarkersByDate.has(day.dateKey)}
+                  {@const markers = recordMarkersByDate.get(day.dateKey)}
+                  {#if markers}
+                    <span class="year-day__record-markers" aria-hidden="true">
+                      {#each markers as marker (`${marker.kind}-${marker.count}`)}
+                        <i class={`year-record-marker year-record-marker--${marker.kind}`}></i>
+                        {#if marker.count > 1}
+                          <b>{marker.count}</b>
+                        {/if}
+                      {/each}
+                    </span>
+                  {/if}
                 {/if}
               </button>
             {/each}

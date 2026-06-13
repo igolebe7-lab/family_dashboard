@@ -358,9 +358,9 @@
 - [x] Move all-day occurrences into a dedicated all-day strip instead of `00:00`.
 - [x] Make Today cards tappable and open a read-only detail sheet.
 - [x] Make Calendar open at the current month/year and keep mobile calendar controls sticky.
-- [ ] Show lightweight Calendar date markers for task/event/assignment records.
+- [x] Show lightweight Calendar date markers for task/event/assignment records.
 - [x] Derive birthday titles from person/member data instead of asking for a manual title.
-- [ ] Persist in-progress modal drafts through short Safari backgrounding via session storage.
+- [x] Persist in-progress modal drafts through short Safari backgrounding via session storage.
 
 **Stage 8C.1 phone QA corrections — 2026-06-11:**
 
@@ -370,6 +370,14 @@
 - [x] Tighten mobile horizontal overflow guards for iPhone Safari.
 - [x] Scroll Calendar to the current month with sticky header offset and add bottom room for the floating button.
 - [x] Make Today day view use the selected URL date instead of always using the real current day.
+
+**Stage 8C.2 profile and persistence corrections — 2026-06-11:**
+
+- [x] Add `/app/family` UI for creating a family member such as `Папа` and linking that member to the current account.
+- [x] Add explicit active-profile switcher for adult contexts so adults can choose which family member they are acting as.
+- [x] Add Calendar year markers for event, task and assignment occurrence types without replacing special-date markers.
+- [x] Persist composer and special-date form drafts in `sessionStorage` until submit or explicit cancel/close.
+- [x] Keep new family UI aligned with Today visual patterns: soft panels, round avatar halos, warm surfaces and compact mobile layout.
 
 **Automated checks:**
 

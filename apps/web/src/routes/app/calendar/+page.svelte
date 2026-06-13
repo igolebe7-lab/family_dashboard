@@ -17,6 +17,7 @@
     updateDayAnnotation,
     type DayAnnotationInput
   } from '$lib/api/day-annotations.api';
+  import { listOccurrencesInRange } from '$lib/api/occurrences.api';
   import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
@@ -25,7 +26,7 @@
   import type { YearCalendarDay, YearCalendarMonth } from '$lib/calendar/year-calendar';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
-  import type { DayAnnotation } from '$lib/types/domain';
+  import type { DayAnnotation, ItemOccurrence } from '$lib/types/domain';
 
   const activeRoute = '/app/calendar';
   type SpecialDateFormMode = 'closed' | 'create' | 'edit';
@@ -38,6 +39,7 @@
   let formError: string | null = null;
   let formSaving = false;
   let publicHolidayAnnotations: DayAnnotation[] = [];
+  let calendarRecordMarkers: Array<{ dateKey: string; kind: 'event' | 'task' | 'assignment'; count: number }> = [];
   let composerOpen = false;
   let composerKind: ComposerKind = 'event';
 
@@ -84,6 +86,19 @@
       });
     } catch (error) {
       console.warn('Failed to load Calendar public holidays, keeping local family annotations.', error);
+    }
+
+    try {
+      const yearStart = new Date(selectedYear, 0, 1).toISOString();
+      const yearEnd = new Date(selectedYear + 1, 0, 1).toISOString();
+      const result = await listOccurrencesInRange(context, {
+        from: yearStart,
+        to: yearEnd
+      });
+      calendarRecordMarkers = createCalendarRecordMarkers(result.items);
+    } catch (error) {
+      console.warn('Failed to load Calendar record markers.', error);
+      calendarRecordMarkers = [];
     }
   }
 
@@ -201,6 +216,51 @@
     return new Date(year, 0, 1);
   }
 
+  function createCalendarRecordMarkers(occurrences: ItemOccurrence[]): Array<{
+    dateKey: string;
+    kind: 'event' | 'task' | 'assignment';
+    count: number;
+  }> {
+    const markerByDateKind = new Map<
+      string,
+      { dateKey: string; kind: 'event' | 'task' | 'assignment'; count: number }
+    >();
+
+    for (const occurrence of occurrences) {
+      if (!['event', 'task', 'assignment'].includes(occurrence.kind)) continue;
+      const value = occurrence.startAt ?? occurrence.dueAt;
+      if (!value) continue;
+
+      const dateKey = formatDateKey(new Date(value));
+      const kind = occurrence.kind as 'event' | 'task' | 'assignment';
+      const markerKey = `${dateKey}:${kind}`;
+      const existing = markerByDateKind.get(markerKey);
+      if (existing) {
+        existing.count += 1;
+        continue;
+      }
+
+      markerByDateKind.set(markerKey, {
+        dateKey,
+        kind,
+        count: 1
+      });
+    }
+
+    const kindOrder = { event: 0, task: 1, assignment: 2 };
+    return Array.from(markerByDateKind.values()).sort(
+      (left, right) =>
+        left.dateKey.localeCompare(right.dateKey) || kindOrder[left.kind] - kindOrder[right.kind]
+    );
+  }
+
+  function formatDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   onMount(() => {
     familyUnsubscribe = familyStore.subscribe((familyState) => {
       currentFamilyState = familyState;
@@ -241,7 +301,14 @@
     </button>
   </div>
 
-  <YearCalendar model={yearModel} compact {selectedDateKey} onselectDay={selectDay} monthHref={getMonthHref} />
+  <YearCalendar
+    model={yearModel}
+    compact
+    {selectedDateKey}
+    recordMarkers={calendarRecordMarkers}
+    onselectDay={selectDay}
+    monthHref={getMonthHref}
+  />
   <DayDetailSheet
     day={selectedDay}
     onedit={openEditSpecialDate}
@@ -296,7 +363,13 @@
     </button>
   </div>
 
-  <YearCalendar model={yearModel} {selectedDateKey} onselectDay={selectDay} monthHref={getMonthHref} />
+  <YearCalendar
+    model={yearModel}
+    {selectedDateKey}
+    recordMarkers={calendarRecordMarkers}
+    onselectDay={selectDay}
+    monthHref={getMonthHref}
+  />
 
   <svelte:fragment slot="aside">
     <DayDetailSheet

@@ -5,6 +5,7 @@
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import ComposerSheet from '$lib/components/composer/ComposerSheet.svelte';
+  import ActiveProfileSwitcher from '$lib/components/family/ActiveProfileSwitcher.svelte';
   import MemberAvatarRow from '$lib/components/family/MemberAvatarRow.svelte';
   import AttentionPanel from '$lib/components/today/AttentionPanel.svelte';
   import DesktopHeader from '$lib/components/today/DesktopHeader.svelte';
@@ -22,6 +23,7 @@
   import { calendarStore } from '$lib/stores/calendar.store';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
+  import { sessionStore, type SessionState } from '$lib/stores/session.store';
   import { createTodayAllDayInfoViewModel } from '$lib/today/today-all-day';
   import { loadTodayViewModelFromOccurrences } from '$lib/today/today-data';
   import {
@@ -32,6 +34,7 @@
     type TodayViewModel
   } from '$lib/today/today-view-model';
   import type { DayAnnotation } from '$lib/types/domain';
+  import type { FamilyMember } from '$lib/types/domain';
 
   const fixtureMode =
     browser && new URLSearchParams(window.location.search).get('fixture') === 'desktop-reference';
@@ -46,7 +49,9 @@
     fixtureMode ? { fixture: 'desktop-reference' } : selectedTodayDate
   );
   let familyUnsubscribe: Unsubscriber | undefined;
+  let sessionUnsubscribe: Unsubscriber | undefined;
   let currentFamilyState: FamilyState | undefined;
+  let currentSessionState: SessionState | undefined;
   let loadedContextKey: string | null = null;
   let loadedAnnotationsKey: string | null = null;
   let publicHolidayAnnotations: DayAnnotation[] = [];
@@ -63,6 +68,10 @@
     date: selectedTodayDate,
     annotations: todayAnnotations
   });
+  $: canSwitchActiveProfile = canAuthenticatedAdultSwitchProfiles(
+    currentFamilyState?.members ?? [],
+    currentSessionState?.user?.id
+  );
 
   async function loadTodayFromFamilyState(familyState: FamilyState) {
     const context = getActiveFamilyContext(familyState);
@@ -115,6 +124,30 @@
     composerOpen = true;
   }
 
+  function setActiveMember(member: FamilyMember): void {
+    familyStore.setActiveMember(member);
+    loadedContextKey = null;
+    if (currentFamilyState) {
+      void loadTodayFromFamilyState({
+        ...currentFamilyState,
+        activeMember: member
+      });
+    }
+  }
+
+  function canAuthenticatedAdultSwitchProfiles(
+    members: FamilyMember[],
+    currentUserId: string | undefined
+  ): boolean {
+    if (!currentUserId || members.length <= 1) return false;
+
+    return members.some(
+      (member) =>
+        member.user === currentUserId &&
+        (member.role === 'owner' || member.role === 'parent' || member.role === 'adult')
+    );
+  }
+
   async function refreshTodayAfterCreate(): Promise<void> {
     if (!currentFamilyState) return;
     loadedContextKey = null;
@@ -160,10 +193,14 @@
       void loadTodayFromFamilyState(familyState);
       void loadDayAnnotationsFromFamilyState(familyState);
     });
+    sessionUnsubscribe = sessionStore.subscribe((sessionState) => {
+      currentSessionState = sessionState;
+    });
   });
 
   onDestroy(() => {
     familyUnsubscribe?.();
+    sessionUnsubscribe?.();
   });
 </script>
 
@@ -176,6 +213,12 @@
   />
 
   <MemberAvatarRow members={today.familyMembers} />
+  <ActiveProfileSwitcher
+    members={currentFamilyState?.members ?? []}
+    activeMember={currentFamilyState?.activeMember ?? null}
+    canSwitch={canSwitchActiveProfile}
+    onchange={setActiveMember}
+  />
   <section class="today-mobile-surface" aria-label="Сегодня, внимание и быстрые действия">
     <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-mobile" />
     <TodayTimeline
