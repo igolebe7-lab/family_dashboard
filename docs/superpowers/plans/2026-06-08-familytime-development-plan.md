@@ -35,11 +35,11 @@
 - Copy: `docs/references/ui/image-2-mobile-calendar-week.png`
 - Copy: `docs/references/ui/image-3-desktop-week-dashboard.png`
 
-- [ ] Инициализировать git.
-- [ ] Добавить remote `origin https://github.com/igolebe7-lab/family_dashboard.git`.
-- [ ] Исключить `.serena/`, `.DS_Store`, build outputs, env files, `node_modules`, `pb_data`, PocketBase binary.
-- [ ] Сохранить анализ текущих файлов и целевую архитектуру.
-- [ ] Сделать initial planning commit.
+- [x] Инициализировать git.
+- [x] Добавить remote `origin https://github.com/igolebe7-lab/family_dashboard.git`.
+- [x] Исключить `.serena/`, `.DS_Store`, build outputs, env files, `node_modules`, `pb_data`, PocketBase binary.
+- [x] Сохранить анализ текущих файлов и целевую архитектуру.
+- [x] Сделать initial planning commit.
 
 **Manual test gate:**
 
@@ -65,12 +65,12 @@
 - Create: `apps/web/static/manifest.webmanifest`
 - Create: `apps/web/src/service-worker.ts` or selected SvelteKit-compatible PWA plugin config
 
-- [ ] Scaffold SvelteKit app in `apps/web` with TypeScript.
-- [ ] Configure root workspace scripts: `dev`, `check`, `lint`, `test`, `build`.
-- [ ] Configure `@sveltejs/adapter-static` with SPA fallback `200.html`.
-- [ ] Disable SSR at root layout with `export const ssr = false`.
-- [ ] Add warm background, base typography and initial app shell.
-- [ ] Add PWA manifest with Russian description and `start_url: /app/today`.
+- [x] Scaffold SvelteKit app in `apps/web` with TypeScript.
+- [x] Configure root workspace scripts: `dev`, `check`, `lint`, `test`, `build`.
+- [x] Configure `@sveltejs/adapter-static` with SPA fallback `200.html`.
+- [x] Disable SSR at root layout with `export const ssr = false`.
+- [x] Add warm background, base typography and initial app shell.
+- [x] Add PWA manifest with Russian description and `start_url: /app/today`.
 
 **Automated checks:**
 
@@ -105,11 +105,11 @@
 - Create: `apps/web/src/lib/components/app/Sidebar.svelte`
 - Create: `apps/web/src/lib/components/app/FloatingCreateButton.svelte`
 
-- [ ] Перенести CSS variables из `TECHNICAL_SPEC.md` в `tokens.css`.
-- [ ] Настроить Tailwind на CSS variables, не плодить случайные hex в компонентах.
-- [ ] Сделать responsive shell: mobile bottom nav, desktop sidebar + central + right slot.
-- [ ] Добавить focus-visible states, aria-label для icon buttons, крупные tap targets.
-- [ ] Импортировать из Lucide только используемые иконки.
+- [x] Перенести CSS variables из `TECHNICAL_SPEC.md` в `tokens.css`.
+- [x] Настроить Tailwind на CSS variables, не плодить случайные hex в компонентах.
+- [x] Сделать responsive shell: mobile bottom nav, desktop sidebar + central + right slot.
+- [x] Добавить focus-visible states, aria-label для icon buttons, крупные tap targets.
+- [x] Импортировать из Lucide только используемые иконки.
 
 **Automated checks:**
 
@@ -135,11 +135,11 @@
 - Create: `apps/web/src/lib/utils/date.ts`
 - Create: `apps/web/src/lib/utils/validation.ts`
 
-- [ ] Описать roles: `owner`, `parent`, `adult`, `teen`, `child`, `guest`.
-- [ ] Описать item kinds, statuses, visibility, categories, priorities, notification types.
-- [ ] Описать `Family`, `FamilyMember`, `Item`, `ItemOccurrence`, `Notification`, `ActivityRecord`.
-- [ ] Добавить zod schemas для composer MVP forms.
-- [ ] Добавить pure permission helpers, совпадающие с будущими server hooks.
+- [x] Описать roles: `owner`, `parent`, `adult`, `teen`, `child`, `guest`.
+- [x] Описать item kinds, statuses, visibility, categories, priorities, notification types.
+- [x] Описать `Family`, `FamilyMember`, `Item`, `ItemOccurrence`, `Notification`, `ActivityRecord`.
+- [x] Добавить zod schemas для composer MVP forms.
+- [x] Добавить pure permission helpers, совпадающие с будущими server hooks.
 
 **Automated checks:**
 
@@ -164,12 +164,12 @@
 - Create: `pocketbase/pb_hooks/occurrences.pb.js`
 - Create: `docs/technical/data-model.md`
 
-- [ ] Создать collections из ТЗ: `families`, `family_members`, `items`, `item_occurrences`, `item_comments`, `item_activity`, `notifications`, `invitations`.
-- [ ] Добавить conservative API rules: пользователь видит только семьи, где он member.
-- [ ] Добавить hook validation для `items.kind = event`: title, start/end, `end_at >= start_at`, participants default.
-- [ ] Добавить hook validation для `assignment`: минимум один assignee, assignee не равен единственному author, child assignment permission.
-- [ ] Добавить hook materialization: каждый dated item создаёт минимум один `item_occurrences`.
-- [ ] Добавить activity records и notification creation в hooks.
+- [x] Создать collections из ТЗ: `families`, `family_members`, `items`, `item_occurrences`, `item_comments`, `item_activity`, `notifications`, `invitations`.
+- [x] Добавить conservative API rules: пользователь видит только семьи, где он member.
+- [x] Добавить hook validation для `items.kind = event`: title, start/end, `end_at >= start_at`, participants default.
+- [x] Добавить hook validation для `assignment`: минимум один assignee, assignee не равен единственному author, child assignment permission.
+- [x] Добавить hook materialization: каждый dated item создаёт минимум один `item_occurrences`.
+- [x] Добавить activity records и notification creation в hooks.
 
 **Automated checks:**
 
@@ -199,12 +199,15 @@
 - Create: `apps/web/src/lib/api/activity.api.ts`
 - Create: `apps/web/src/lib/stores/session.store.ts`
 - Create: `apps/web/src/lib/stores/family.store.ts`
+- Create: `apps/web/src/lib/stores/family.bootstrap.ts`
+- Create: `apps/web/src/lib/stores/app.bootstrap.ts`
 
-- [ ] Configure PocketBase base URL via env.
-- [ ] Wrap auth login/register/logout/token refresh in `auth.api.ts`.
-- [ ] Implement active family/member state.
-- [ ] Implement loading/error states for all API calls.
-- [ ] Ensure API functions always require active family/member where needed.
+- [x] Configure PocketBase base URL via env.
+- [x] Wrap auth login/register/logout/token refresh in `auth.api.ts`.
+- [x] Implement active family/member state.
+- [x] Implement loading/error states for API-facing session/family state.
+- [x] Ensure API functions always require active family/member where needed.
+- [x] Bootstrap client session on app load and hydrate active family/member context when auth is valid.
 
 **Automated checks:**
 
@@ -232,12 +235,12 @@
 - Create: `apps/web/src/lib/components/today/QuickActions.svelte`
 - Create: `apps/web/src/lib/components/today/TodayEmptyState.svelte`
 
-- [ ] Load today occurrences by local family timezone day range.
-- [ ] Load attention items: done waiting approval, overdue/open assignments, prep reminders.
-- [ ] Show family avatar row with member colors.
-- [ ] Show timeline cards with category icon, time, title, member label/avatar.
-- [ ] Provide quick actions for `+ Дело`, `+ Поручение`, `+ Событие`.
-- [ ] Add empty states for no events/tasks/attention.
+- [x] Load today occurrences by local family timezone day range.
+- [x] Load attention items: done waiting approval, overdue/open assignments, prep reminders.
+- [x] Show family avatar row with member colors.
+- [x] Show timeline cards with category icon, time, title, member label/avatar.
+- [x] Provide quick actions for `+ Задача` and `+ Событие`; `+ Задача` maps to task or assignment by selected performer.
+- [x] Add empty states for no events/tasks/attention.
 
 **Automated checks:**
 
@@ -251,43 +254,73 @@
 - Attention card appears for assignment waiting approval.
 - Keyboard and screen-reader labels are present for notification bell and quick actions.
 
-## Stage 7: Calendar MVP
+## Stage 7: Calendar Year Navigator and Day Annotations
 
-**Цель:** agenda/day/week/month с range-based loading.
+**Цель:** убрать дублирование между `Сегодня` и `Календарь`: `Сегодня` становится рабочим day/week/month календарём, а `Календарь` — годовым навигатором с особыми датами, днями рождения, праздниками, выходными и переходом в Today.
 
 **Files:**
-- Create: `apps/web/src/routes/(app)/calendar/+page.svelte`
-- Create: `apps/web/src/lib/stores/calendar.store.ts`
-- Create: `apps/web/src/lib/components/calendar/CalendarViewport.svelte`
-- Create: `apps/web/src/lib/components/calendar/CalendarHeader.svelte`
-- Create: `apps/web/src/lib/components/calendar/CalendarViewSwitcher.svelte`
-- Create: `apps/web/src/lib/components/calendar/WeekStrip.svelte`
-- Create: `apps/web/src/lib/components/calendar/DayTimeline.svelte`
-- Create: `apps/web/src/lib/components/calendar/WeekGrid.svelte`
-- Create: `apps/web/src/lib/components/calendar/MonthGrid.svelte`
-- Create: `apps/web/src/lib/components/calendar/AgendaList.svelte`
-- Create: `apps/web/src/lib/components/calendar/CalendarFilters.svelte`
-- Create: `apps/web/src/lib/components/calendar/OccurrenceCard.svelte`
+- Modify: `apps/web/src/routes/app/today/+page.svelte`
+- Modify: `apps/web/src/routes/app/calendar/+page.svelte`
+- Modify: `apps/web/src/lib/stores/calendar.store.ts`
+- Create: `apps/web/src/lib/stores/day-annotations.store.ts`
+- Create: `apps/web/src/lib/api/day-annotations.api.ts`
+- Create: `apps/web/src/lib/calendar/holiday-sync.ts`
+- Create: `apps/web/src/lib/components/calendar/YearCalendar.svelte`
+- Create: `apps/web/src/lib/components/today/TodayMonthGrid.svelte`
+- Create: `apps/web/src/lib/components/calendar/MonthMiniGrid.svelte`
+- Create: `apps/web/src/lib/components/calendar/DayAnnotationMarkers.svelte`
+- Create: `apps/web/src/lib/components/calendar/DayDetailSheet.svelte`
+- Create: `apps/web/src/lib/components/calendar/SpecialDateForm.svelte`
+- Create: `apps/web/src/lib/day-annotations/day-annotations.ts`
+- Create: `apps/web/src/lib/today/today-month-calendar.ts`
+- Create/Modify: `pocketbase/pb_migrations/*`
+- Create/Modify: `pocketbase/pb_hooks/day_annotations.pb.js`
 
-- [ ] Implement visible range calculation per view.
-- [ ] Fetch `item_occurrences` only for visible range.
-- [ ] Add category/member filters.
-- [ ] Implement mobile day/week timeline.
-- [ ] Implement desktop week grid.
-- [ ] Keep year view route/state reserved but not implemented in MVP.
+- [x] Implement visible range calculation per view.
+- [x] Fetch `item_occurrences` only for visible range.
+- [x] Add category/member filters.
+- [x] Re-scope product decision: Today owns day/week/month; Calendar owns year/global navigation.
+- [x] Move active day/week/month work into Today and stop expanding Calendar as a duplicate workspace.
+- [x] Add client `day_annotations` domain model and recurrence projection for birthdays, public holidays, family dates, observances and memorial dates.
+- [x] Add frontend API/store loading for `day_annotations` by selected year.
+- [x] Add PocketBase `day_annotations` schema, rules and hooks.
+- [x] Implement external birthday data/API fields: optional relation/status, optional contact/phone and optional note.
+- [x] Implement manual special date create/edit/delete with color and yearly/one-time recurrence.
+- [x] Add Calendar year/month view model with week numbers, weekends and annotation marker overflow.
+- [x] Implement Calendar year overview with months, days, week numbers, weekends and annotation markers.
+- [x] Match Calendar year overview to accepted Today UI patterns: warm surfaces, compact typography, soft buttons/chips, stable internal scroll and circular markers.
+- [x] Implement Calendar day detail sheet for selected day annotations.
+- [x] Implement navigation from Calendar day to Today with selected date and day view.
+- [x] Implement navigation from Calendar month to Today month view after Today month UI exists.
+- [x] Implement all-day information strip in Today for selected day annotations.
+- [x] Polish Today date label when viewing a non-current selected date from Calendar.
+- [x] Implement weekly cached public holiday sync for current and next year.
 
 **Automated checks:**
 
-- unit tests for range calculation and filters
+- unit tests for annotation recurrence projection
+- unit tests for holiday sync normalization
+- unit tests for Calendar year/month view model
 - `pnpm check`
+- `pnpm test`
 - `pnpm build`
 
 **Manual local test gate:**
 
-- 390x844 viewport compare to `image-2-mobile-calendar-week.png`.
-- 1440x900 viewport compare to `image-3-desktop-week-dashboard.png`.
-- Navigate previous/next week: API requests change range, not all-year loading.
+- 390x844 Today keeps accepted UI and shows all-day info without mixing it into tasks.
+- 390x844 Calendar shows year/month overview, not duplicate day/week agenda.
+- 1440x900 Calendar shows year overview without scrolling sidebars unexpectedly.
+- Create external birthday with only name/date; optional relation/contact can be empty.
+- Yearly special date appears in the next year.
+- Public holidays are read-only and use cached data when provider is unavailable.
 - Direct refresh `/app/calendar` works after static build fallback.
+
+**Closure note — 2026-06-11:**
+
+- Stage 7 implementation is closed on `feature/familytime-implementation` at `1f0fbee`.
+- Fresh local checks passed: `pnpm check`, `pnpm test`, `pnpm build`.
+- Playwright smoke passed for desktop Calendar → Today month navigation and mobile Today/Calendar Stage 7 surfaces.
+- Remaining work continues in Stage 8: Composer for event, task and assignment.
 
 ## Stage 8: Composer for event, task, assignment
 
@@ -302,12 +335,59 @@
 - Create: `apps/web/src/lib/components/composer/ReminderPicker.svelte`
 - Create: `apps/web/src/lib/components/composer/RepeatRuleEditor.svelte`
 
-- [ ] Mobile: bottom sheet; desktop: modal or side panel.
-- [ ] Event form includes title, category, participants, start/end, all-day, reminder, location, visibility, description.
-- [ ] Task form includes title, owner, due date/time, priority, category, checklist, visibility, reminder, description.
-- [ ] Assignment form includes title, assignee, due date/time, approval required, repeat, points, category, description, reminder.
-- [ ] Add loading/error/success states.
-- [ ] Use GSAP only for sheet open/close if CSS is insufficient; dynamic import and cleanup required.
+- [x] Mobile: bottom sheet; desktop: modal or side panel.
+- [x] Event form includes title, category, participants, start/end, all-day, reminder, location, visibility, description.
+- [x] Task form includes title, owner, due date/time, priority, category, checklist, visibility, reminder, description.
+- [x] Assignment form includes title, assignee, due date/time, approval required, repeat, points, category, description, reminder.
+- [x] Add loading/error/success states.
+- [x] Use GSAP only for sheet open/close if CSS is insufficient; dynamic import and cleanup required.
+
+**Implementation note — 2026-06-11:**
+
+- Composer uses CSS-only sheet/modal transitions for now; GSAP is not needed.
+- Reminder selection is persisted as `items.reminder_offset_minutes` and consumed by later notification stages.
+- Today refreshes its visible occurrence range after successful composer create without full page reload.
+- Minimal `/login` route is added so mobile/manual smoke can authenticate against PocketBase without
+  localStorage injection or desktop devtools.
+
+**Stage 8C corrective scope — 2026-06-11:**
+
+- [x] Mobile Safari: prevent input zoom, horizontal sheet panning, unstable backdrop redraw and form overflow.
+- [x] Merge product-level `Дело` and `Поручение` into one `+ Задача` flow while preserving backend `task`/`assignment`.
+- [x] Close composer after successful create and refresh Today/Calendar.
+- [x] Move all-day occurrences into a dedicated all-day strip instead of `00:00`.
+- [x] Make Today cards tappable and open a read-only detail sheet.
+- [x] Make Calendar open at the current month/year and keep mobile calendar controls sticky.
+- [x] Show lightweight Calendar date markers for task/event/assignment records.
+- [x] Derive birthday titles from person/member data instead of asking for a manual title.
+- [x] Persist in-progress modal drafts through short Safari backgrounding via session storage.
+
+**Stage 8C.1 phone QA corrections — 2026-06-11:**
+
+- [x] Add explicit `Для себя` fallback and `Вся семья` target to `+ Задача`.
+- [x] Add `Вся семья` participant shortcut to events and expand it to active family members before save.
+- [x] Load full item details for Today detail sheet when an occurrence card is tapped.
+- [x] Tighten mobile horizontal overflow guards for iPhone Safari.
+- [x] Scroll Calendar to the current month with sticky header offset and add bottom room for the floating button.
+- [x] Make Today day view use the selected URL date instead of always using the real current day.
+
+**Stage 8C.2 profile and persistence corrections — 2026-06-11:**
+
+- [x] Add `/app/family` UI for creating a family member such as `Папа` and linking that member to the current account.
+- [x] Add explicit active-profile switcher for adult contexts so adults can choose which family member they are acting as.
+- [x] Add Calendar year markers for event, task and assignment occurrence types without replacing special-date markers.
+- [x] Persist composer and special-date form drafts in `sessionStorage` until submit or explicit cancel/close.
+- [x] Keep new family UI aligned with Today visual patterns: soft panels, round avatar halos, warm surfaces and compact mobile layout.
+
+**Stage 8C.3 approval flow and visibility corrections — 2026-06-13:**
+
+- [x] Add explicit occurrence status API helpers for `done`, `approved` and `rejected` transitions.
+- [x] Enforce assignment occurrence transitions server-side in PocketBase hooks, including `completed_by`, `approved_by`, `rejected_by` and timestamps.
+- [x] Allow a parent/owner to mark a managed child's assignment as `done` on the child's behalf.
+- [x] Notify parent reviewers when a child marks an assignment done and approval is required.
+- [x] Add soft Today UI actions: `Я сделал` on active assignment cards and `Подтвердить` / `Вернуть` in `Нужно внимание`.
+- [x] Include managed-child parents in `assignees` visibility so parent review works even when another parent created the assignment.
+- [x] Load Calendar year markers through a lightweight marker API with selected fields and paginated yearly range loading.
 
 **Automated checks:**
 
@@ -327,19 +407,22 @@
 **Цель:** закрыть ключевой семейный сценарий поручений.
 
 **Files:**
-- Create: `apps/web/src/routes/(app)/assignments/+page.svelte`
-- Create: `apps/web/src/routes/(child)/child/+page.svelte`
-- Create: `apps/web/src/lib/components/items/AssignmentCard.svelte`
+- Create: `apps/web/src/routes/app/assignments/+page.svelte`
+- Create: `apps/web/src/routes/child/+page.svelte`
+- Create: `apps/web/src/lib/components/assignments/AssignmentCard.svelte`
 - Create: `apps/web/src/lib/components/items/StatusBadge.svelte`
 - Modify: `pocketbase/pb_hooks/occurrences.pb.js`
 - Modify: `pocketbase/pb_hooks/items.pb.js`
 
-- [ ] Implement assignment status transitions from ТЗ.
-- [ ] Parent creates assignment for child.
-- [ ] Child sees simplified dashboard and statuses.
-- [ ] Child action `Я сделал` transitions to `done`.
-- [ ] Parent receives notification and approves/rejects.
-- [ ] Approval updates occurrence and activity feed.
+- [x] Stage 9.1: Add full `/app/assignments` screen with status groups, parent review actions and assignment fallback state.
+- [x] Stage 9.2: Add `/child` simplified mode with child-facing statuses, `Я сделал` action and today schedule.
+- [x] Stage 9.3 / 10.0: Close onboarding gap: `/register`, first family creation, automatic owner `family_member`, managed child creation, and invite/link flow for a second adult account.
+- [x] Implement assignment status transitions from ТЗ.
+- [x] Parent creates assignment for child.
+- [x] Child sees simplified dashboard and statuses.
+- [x] Child action `Я сделал` transitions to `done`.
+- [x] Parent receives notification and approves/rejects.
+- [x] Approval updates occurrence and activity feed.
 
 **Automated checks:**
 
@@ -358,8 +441,8 @@
 **Цель:** сделать интерфейс живым без polling и без утечек подписок.
 
 **Files:**
-- Create: `apps/web/src/routes/(app)/feed/+page.svelte`
-- Create: `apps/web/src/routes/(app)/notifications/+page.svelte`
+- Create: `apps/web/src/routes/app/feed/+page.svelte`
+- Create: `apps/web/src/routes/app/notifications/+page.svelte`
 - Create: `apps/web/src/lib/components/feed/ActivityFeed.svelte`
 - Create: `apps/web/src/lib/components/feed/ActivityFeedItem.svelte`
 - Create: `apps/web/src/lib/components/notifications/NotificationBell.svelte`
@@ -367,11 +450,14 @@
 - Create: `apps/web/src/lib/stores/realtime.store.ts`
 - Create: `apps/web/src/lib/stores/notifications.store.ts`
 
-- [ ] Subscribe to notifications for current recipient member.
-- [ ] Subscribe to `item_activity` for active family.
-- [ ] Subscribe to `item_occurrences` only for Today/Calendar visible range.
-- [ ] Unsubscribe on route/range/family/member changes.
-- [ ] Add badge and mark-all-read.
+- [x] Stage 10.1: Add notification inbox UI with unread list, single mark-as-read and mark-all-read API support.
+- [x] Stage 10.2: Connect family feed UI and Today feed to real `item_activity` records.
+- [x] Stage 10.3: Cover parent creates → child done → parent approve → feed + notification through PocketBase smoke assertions.
+- [x] Stage 10.4: Subscribe to notifications for current recipient member.
+- [x] Stage 10.5: Subscribe to `item_activity` for active family.
+- [x] Stage 10.6: Subscribe to `item_occurrences` only for Today/Calendar visible range.
+- [x] Unsubscribe on route/range/family/member changes.
+- [x] Add badge entry point and mark-all-read.
 
 **Automated checks:**
 

@@ -1,0 +1,53 @@
+import Backpack from '@lucide/svelte/icons/backpack';
+import BadgeCheck from '@lucide/svelte/icons/badge-check';
+import Bell from '@lucide/svelte/icons/bell';
+import BriefcaseBusiness from '@lucide/svelte/icons/briefcase-business';
+import Calendar from '@lucide/svelte/icons/calendar';
+import CalendarDays from '@lucide/svelte/icons/calendar-days';
+import CircleUserRound from '@lucide/svelte/icons/circle-user-round';
+import Dumbbell from '@lucide/svelte/icons/dumbbell';
+import House from '@lucide/svelte/icons/house';
+import ListChecks from '@lucide/svelte/icons/list-checks';
+import MapPinned from '@lucide/svelte/icons/map-pinned';
+import MessageSquareText from '@lucide/svelte/icons/message-square-text';
+import Palette from '@lucide/svelte/icons/palette';
+import Plus from '@lucide/svelte/icons/plus';
+import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
+import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
+import Sparkles from '@lucide/svelte/icons/sparkles';
+import SquareCheckBig from '@lucide/svelte/icons/square-check-big';
+import Stethoscope from '@lucide/svelte/icons/stethoscope';
+import Trees from '@lucide/svelte/icons/trees';
+import UsersRound from '@lucide/svelte/icons/users-round';
+import WalletCards from '@lucide/svelte/icons/wallet-cards';
+
+export const ICONS = {
+  backpack: Backpack,
+  'badge-check': BadgeCheck,
+  bell: Bell,
+  'briefcase-business': BriefcaseBusiness,
+  calendar: Calendar,
+  'calendar-days': CalendarDays,
+  'circle-user-round': CircleUserRound,
+  dumbbell: Dumbbell,
+  house: House,
+  'list-checks': ListChecks,
+  'map-pinned': MapPinned,
+  'message-square-text': MessageSquareText,
+  palette: Palette,
+  plus: Plus,
+  'rotate-ccw': RotateCcw,
+  'shopping-bag': ShoppingBag,
+  sparkles: Sparkles,
+  'square-check-big': SquareCheckBig,
+  stethoscope: Stethoscope,
+  trees: Trees,
+  'users-round': UsersRound,
+  'wallet-cards': WalletCards
+} as const;
+
+export type IconName = keyof typeof ICONS;
+
+export function getIcon(icon: IconName) {
+  return ICONS[icon];
+}

@@ -32,6 +32,14 @@ pnpm test
 pnpm build
 ```
 
+Frontend PocketBase URL is configured with:
+
+```bash
+PUBLIC_POCKETBASE_URL=http://127.0.0.1:8090
+```
+
+If the variable is not set, the local development default is `http://127.0.0.1:8090`.
+
 Локальный PocketBase после установки бинарника:
 
 ```bash

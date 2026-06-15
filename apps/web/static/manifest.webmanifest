@@ -1,0 +1,19 @@
+{
+  "name": "FamilyTime",
+  "short_name": "FamilyTime",
+  "description": "Семейный календарь, дела и поручения",
+  "start_url": "/app/today",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fffaf3",
+  "theme_color": "#73b95f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

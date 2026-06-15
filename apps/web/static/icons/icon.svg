@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FamilyTime">
+  <rect width="512" height="512" rx="116" fill="#fffaf3" />
+  <circle cx="178" cy="202" r="62" fill="#f3eafa" stroke="#a883dd" stroke-width="18" />
+  <circle cx="334" cy="202" r="62" fill="#eaf3fd" stroke="#7daee3" stroke-width="18" />
+  <circle cx="220" cy="316" r="50" fill="#edf7e8" stroke="#73b95f" stroke-width="16" />
+  <circle cx="315" cy="318" r="50" fill="#fff0e8" stroke="#ff8a63" stroke-width="16" />
+  <path
+    d="M128 388c35-46 74-69 116-69s81 23 116 69"
+    fill="none"
+    stroke="#242936"
+    stroke-linecap="round"
+    stroke-width="22"
+  />
+</svg>
