@@ -19,12 +19,14 @@
   import { parseTodayCalendarSearch } from '$lib/calendar/today-navigation';
   import { listActivity } from '$lib/api/activity.api';
   import { getItem } from '$lib/api/items.api';
+  import { listUnreadNotifications } from '$lib/api/notifications.api';
   import { approveOccurrence, markOccurrenceDone, rejectOccurrence } from '$lib/api/occurrences.api';
   import type { ComposerKind } from '$lib/composer/composer-form';
   import { getIcon } from '$lib/design/icon-registry';
   import { calendarStore } from '$lib/stores/calendar.store';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
+  import { createRealtimeStore } from '$lib/stores/realtime.store';
   import { sessionStore, type SessionState } from '$lib/stores/session.store';
   import { createTodayAllDayInfoViewModel } from '$lib/today/today-all-day';
   import { loadTodayViewModelFromOccurrences } from '$lib/today/today-data';
@@ -39,6 +41,10 @@
   } from '$lib/today/today-view-model';
   import type { DayAnnotation } from '$lib/types/domain';
   import type { FamilyMember } from '$lib/types/domain';
+  import {
+    getWeekRange as getDateWeekRange,
+    toIsoRange as toDateIsoRange
+  } from '$lib/utils/date';
 
   const fixtureMode =
     browser && new URLSearchParams(window.location.search).get('fixture') === 'desktop-reference';
@@ -48,6 +54,7 @@
   const selectedCalendarView = navigationState?.view ?? 'week';
   const selectedTodayDateKey = navigationState?.dateKey ?? formatDateKey(selectedTodayDate);
   const activeRoute = '/app/today';
+  const routeRealtimeStore = createRealtimeStore();
 
   let today: TodayViewModel = createTodayViewModel(
     fixtureMode ? { fixture: 'desktop-reference' } : selectedTodayDate
@@ -59,7 +66,9 @@
   let loadedContextKey: string | null = null;
   let loadedAnnotationsKey: string | null = null;
   let loadedActivityKey: string | null = null;
+  let loadedNotificationsKey: string | null = null;
   let publicHolidayAnnotations: DayAnnotation[] = [];
+  let unreadNotificationCount = 0;
   let composerOpen = false;
   let composerKind: ComposerKind = 'event';
   let busyOccurrenceId: string | null = null;
@@ -80,6 +89,7 @@
     currentFamilyState?.members ?? [],
     currentSessionState?.user?.id
   );
+  $: notificationCount = unreadNotificationCount > 0 ? unreadNotificationCount : today.attentionCount;
 
   async function loadTodayFromFamilyState(familyState: FamilyState) {
     const context = getActiveFamilyContext(familyState);
@@ -166,6 +176,49 @@
     }
   }
 
+  async function loadUnreadNotificationsFromFamilyState(familyState: FamilyState): Promise<void> {
+    const context = getActiveFamilyContext(familyState);
+    if (!context) return;
+
+    const notificationsKey = `${context.familyId}:${context.memberId}`;
+    if (loadedNotificationsKey === notificationsKey) return;
+    loadedNotificationsKey = notificationsKey;
+
+    try {
+      const records = await listUnreadNotifications(context);
+      unreadNotificationCount = records.length;
+    } catch (notificationsError) {
+      console.warn('Failed to load unread notifications.', notificationsError);
+    }
+  }
+
+  async function syncRealtimeForFamilyState(familyState: FamilyState): Promise<void> {
+    const context = getActiveFamilyContext(familyState);
+    if (!context) {
+      routeRealtimeStore.stopAll();
+      return;
+    }
+
+    const weekRange = toDateIsoRange(getDateWeekRange(selectedTodayDate));
+    const occurrenceRange = {
+      from: weekRange.start,
+      to: weekRange.end
+    };
+
+    await routeRealtimeStore.syncNotifications(context, () => {
+      loadedNotificationsKey = null;
+      if (currentFamilyState) void loadUnreadNotificationsFromFamilyState(currentFamilyState);
+    });
+    await routeRealtimeStore.syncActivity(context, () => {
+      loadedActivityKey = null;
+      if (currentFamilyState) void loadActivityFromFamilyState(currentFamilyState);
+    });
+    await routeRealtimeStore.syncOccurrences(context, occurrenceRange, () => {
+      loadedContextKey = null;
+      if (currentFamilyState) void loadTodayFromFamilyState(currentFamilyState);
+    });
+  }
+
   function openComposer(kind: ComposerKind): void {
     composerKind = kind;
     composerOpen = true;
@@ -174,11 +227,17 @@
   function setActiveMember(member: FamilyMember): void {
     familyStore.setActiveMember(member);
     loadedContextKey = null;
+    loadedActivityKey = null;
+    loadedNotificationsKey = null;
     if (currentFamilyState) {
-      void loadTodayFromFamilyState({
+      const nextFamilyState = {
         ...currentFamilyState,
         activeMember: member
-      });
+      };
+      void loadTodayFromFamilyState(nextFamilyState);
+      void loadActivityFromFamilyState(nextFamilyState);
+      void loadUnreadNotificationsFromFamilyState(nextFamilyState);
+      void syncRealtimeForFamilyState(nextFamilyState);
     }
   }
 
@@ -199,8 +258,10 @@
     if (!currentFamilyState) return;
     loadedContextKey = null;
     loadedActivityKey = null;
+    loadedNotificationsKey = null;
     await loadTodayFromFamilyState(currentFamilyState);
     await loadActivityFromFamilyState(currentFamilyState);
+    await loadUnreadNotificationsFromFamilyState(currentFamilyState);
   }
 
   async function runOccurrenceAction(
@@ -278,6 +339,8 @@
       void loadTodayFromFamilyState(familyState);
       void loadDayAnnotationsFromFamilyState(familyState);
       void loadActivityFromFamilyState(familyState);
+      void loadUnreadNotificationsFromFamilyState(familyState);
+      void syncRealtimeForFamilyState(familyState);
     });
     sessionUnsubscribe = sessionStore.subscribe((sessionState) => {
       currentSessionState = sessionState;
@@ -287,6 +350,7 @@
   onDestroy(() => {
     familyUnsubscribe?.();
     sessionUnsubscribe?.();
+    routeRealtimeStore.stopAll();
   });
 </script>
 
@@ -306,7 +370,7 @@
     titleId="today-title-mobile"
     greeting={today.greeting}
     dateLabel={today.dateLabel}
-    notificationCount={today.attentionCount}
+    {notificationCount}
   />
 
   <MemberAvatarRow members={today.familyMembers} />
@@ -353,11 +417,11 @@
 </MobileShell>
 
 <DesktopShell {activeRoute} labelledBy="today-title-desktop">
-  <DesktopHeader
+    <DesktopHeader
     titleId="today-title-desktop"
     greeting={today.greeting}
     dateLabel={today.dateLabel}
-    notificationCount={today.attentionCount}
+      {notificationCount}
   />
 
   <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-desktop" />

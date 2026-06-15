@@ -416,6 +416,7 @@
 
 - [x] Stage 9.1: Add full `/app/assignments` screen with status groups, parent review actions and assignment fallback state.
 - [x] Stage 9.2: Add `/child` simplified mode with child-facing statuses, `Я сделал` action and today schedule.
+- [x] Stage 9.3 / 10.0: Close onboarding gap: `/register`, first family creation, automatic owner `family_member`, managed child creation, and invite/link flow for a second adult account.
 - [x] Implement assignment status transitions from ТЗ.
 - [x] Parent creates assignment for child.
 - [x] Child sees simplified dashboard and statuses.
@@ -452,10 +453,10 @@
 - [x] Stage 10.1: Add notification inbox UI with unread list, single mark-as-read and mark-all-read API support.
 - [x] Stage 10.2: Connect family feed UI and Today feed to real `item_activity` records.
 - [x] Stage 10.3: Cover parent creates → child done → parent approve → feed + notification through PocketBase smoke assertions.
-- [ ] Stage 10.4: Subscribe to notifications for current recipient member.
-- [ ] Stage 10.4: Subscribe to `item_activity` for active family.
-- [ ] Subscribe to `item_occurrences` only for Today/Calendar visible range.
-- [ ] Unsubscribe on route/range/family/member changes.
+- [x] Stage 10.4: Subscribe to notifications for current recipient member.
+- [x] Stage 10.5: Subscribe to `item_activity` for active family.
+- [x] Stage 10.6: Subscribe to `item_occurrences` only for Today/Calendar visible range.
+- [x] Unsubscribe on route/range/family/member changes.
 - [x] Add badge entry point and mark-all-read.
 
 **Automated checks:**

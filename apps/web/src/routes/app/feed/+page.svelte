@@ -6,9 +6,12 @@
   import { listActivity } from '$lib/api/activity.api';
   import { mapActivityToFeedItem, type FeedViewItem } from '$lib/assignments/assignments-view';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
+  import { createRealtimeStore } from '$lib/stores/realtime.store';
 
   const activeRoute = '/app/feed';
+  const routeRealtimeStore = createRealtimeStore();
   let familyUnsubscribe: Unsubscriber | undefined;
+  let currentFamilyState: FamilyState | undefined;
   let items: FeedViewItem[] = [
     {
       id: 'demo_feed',
@@ -34,14 +37,29 @@
     }
   }
 
+  async function syncRealtime(familyState: FamilyState | undefined): Promise<void> {
+    const context = familyState ? getActiveFamilyContext(familyState) : null;
+    if (!context || familyState?.status !== 'ready') {
+      routeRealtimeStore.stopActivity();
+      return;
+    }
+
+    await routeRealtimeStore.syncActivity(context, () => {
+      void loadFeed(currentFamilyState);
+    });
+  }
+
   onMount(() => {
     familyUnsubscribe = familyStore.subscribe((familyState) => {
+      currentFamilyState = familyState;
       void loadFeed(familyState);
+      void syncRealtime(familyState);
     });
   });
 
   onDestroy(() => {
     familyUnsubscribe?.();
+    routeRealtimeStore.stopAll();
   });
 </script>
 

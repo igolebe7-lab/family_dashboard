@@ -1077,6 +1077,7 @@ Post-MVP, но коллекцию можно подготовить.
 | Поле | Тип | Обяз. | Описание |
 |---|---|---:|---|
 | `family` | relation -> families | да | Семья |
+| `member` | relation -> family_members | нет | Предсозданный профиль, который будет связан при принятии |
 | `code` | text | да | Invite code |
 | `role` | select | да | Роль после входа |
 | `email` | email/text | нет | Email приглашённого |

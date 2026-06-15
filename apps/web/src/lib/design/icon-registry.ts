@@ -4,6 +4,7 @@ import Bell from '@lucide/svelte/icons/bell';
 import BriefcaseBusiness from '@lucide/svelte/icons/briefcase-business';
 import Calendar from '@lucide/svelte/icons/calendar';
 import CalendarDays from '@lucide/svelte/icons/calendar-days';
+import CircleUserRound from '@lucide/svelte/icons/circle-user-round';
 import Dumbbell from '@lucide/svelte/icons/dumbbell';
 import House from '@lucide/svelte/icons/house';
 import ListChecks from '@lucide/svelte/icons/list-checks';
@@ -27,6 +28,7 @@ export const ICONS = {
   'briefcase-business': BriefcaseBusiness,
   calendar: Calendar,
   'calendar-days': CalendarDays,
+  'circle-user-round': CircleUserRound,
   dumbbell: Dumbbell,
   house: House,
   'list-checks': ListChecks,

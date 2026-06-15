@@ -104,11 +104,18 @@ function relationIds(value) {
 }
 
 function isSmokeUser(user) {
-  return /^(parent|parent\.helper|child)\.\d+@familytime\.local$/.test(user.email ?? '');
+  return /^(parent|parent\.helper|child|invited|debug|ui\.owner|ui\.invited|stage8)\.\d+@familytime\.local$/.test(
+    user.email ?? ''
+  );
 }
 
 function isSmokeFamily(family) {
-  return typeof family.slug === 'string' && family.slug.startsWith('smoke-family-');
+  return (
+    typeof family.slug === 'string' &&
+    (family.slug.startsWith('smoke-family-') ||
+      family.slug.startsWith('ui-family-') ||
+      family.slug.startsWith('stage8-family-'))
+  );
 }
 
 function isUiSmokeItem(item) {
@@ -195,10 +202,18 @@ const helperParentUser = await createRecord('users', superToken, {
   passwordConfirm: parentPassword,
   verified: true
 });
+const invitedEmail = `invited.${suffix}@familytime.local`;
+const invitedUser = await createRecord('users', superToken, {
+  email: invitedEmail,
+  password: parentPassword,
+  passwordConfirm: parentPassword,
+  verified: true
+});
 
 const parentAuth = await auth('users', parentEmail, parentPassword);
 const childAuth = await auth('users', childEmail, childPassword);
 const helperParentAuth = await auth('users', helperParentEmail, parentPassword);
+const invitedAuth = await auth('users', invitedEmail, parentPassword);
 
 const family = await createRecord('families', parentAuth.token, {
   name: `Smoke Family ${suffix}`,
@@ -239,6 +254,43 @@ const helperParentMember = await createRecord('family_members', parentAuth.token
   created_by: parentMember.id,
   active: true
 });
+
+const invitedMember = await createRecord('family_members', parentAuth.token, {
+  family: family.id,
+  display_name: 'Бабушка',
+  role: 'adult',
+  color_key: 'lavender',
+  color_hex: '#BFA7E8',
+  created_by: parentMember.id,
+  active: true
+});
+
+const invitationCode = `INV${suffix}`;
+const invitation = await createRecord('invitations', parentAuth.token, {
+  family: family.id,
+  member: invitedMember.id,
+  code: invitationCode,
+  role: 'adult',
+  created_by: parentMember.id,
+  expires_at: '2026-06-30T10:00:00.000Z'
+});
+const invitationPreview = await request('/familytime/invitations/preview', {
+  token: invitedAuth.token,
+  body: { code: invitationCode }
+});
+assert(invitationPreview.data.code === invitationCode, 'invited adult cannot preview invitation');
+const acceptedInvitation = await request('/familytime/invitations/accept', {
+  token: invitedAuth.token,
+  body: { code: invitationCode }
+});
+assert(
+  acceptedInvitation.data.member.user === invitedUser.id,
+  'invited adult was not linked to invited profile'
+);
+assert(
+  acceptedInvitation.data.invitation.used_by_user === invitedUser.id,
+  'accepted invitation did not record used_by_user'
+);
 
 const validEvent = await createRecord('items', parentAuth.token, {
   family: family.id,
@@ -551,6 +603,7 @@ console.log(
         'child done writes activity feed event',
         'parent approval writes activity feed event',
         'parent approval notifies child',
+        'invited adult can preview and accept profile invitation',
         'managed child parent sees assignee-visible assignment',
         'child cannot list adults/private items'
       ],

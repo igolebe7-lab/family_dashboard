@@ -1,6 +1,6 @@
 function requireAuth(event) {
   const requestInfo = getRequestInfo(event);
-  const auth = event.auth || requestInfo.auth;
+  const auth = event.auth || event.Auth || requestInfo.auth || requestInfo.Auth;
   if (!auth) {
     throw newApiError(401, 'Требуется вход', {});
   }

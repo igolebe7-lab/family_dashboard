@@ -1,9 +1,41 @@
 <script lang="ts">
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
+  import CircleUserRound from '@lucide/svelte/icons/circle-user-round';
+  import LogOut from '@lucide/svelte/icons/log-out';
+  import { goto } from '$app/navigation';
+  import { onDestroy, onMount } from 'svelte';
+  import type { Unsubscriber } from 'svelte/store';
   import { getIcon, type IconName } from '$lib/design/icon-registry';
-  import { desktopNavigation } from '$lib/constants/routes';
+  import { APP_ROUTE_DEFINITIONS, desktopNavigation } from '$lib/constants/routes';
+  import { logout } from '$lib/api/auth.api';
+  import { familyStore } from '$lib/stores/family.store';
+  import { sessionStore, type SessionState } from '$lib/stores/session.store';
 
   export let activeRoute: string;
+
+  let sessionState: SessionState | undefined;
+  let sessionUnsubscribe: Unsubscriber | undefined;
+
+  $: accountLabel =
+    sessionState?.user?.name || sessionState?.user?.email?.split('@')[0] || 'Аккаунт';
+  $: accountEmail = sessionState?.user?.email ?? '';
+
+  async function handleLogout(): Promise<void> {
+    logout();
+    sessionStore.clear();
+    familyStore.clear();
+    await goto('/login', { replaceState: true });
+  }
+
+  onMount(() => {
+    sessionUnsubscribe = sessionStore.subscribe((state) => {
+      sessionState = state;
+    });
+  });
+
+  onDestroy(() => {
+    sessionUnsubscribe?.();
+  });
 </script>
 
 <aside class="sidebar" aria-label="Разделы приложения">
@@ -71,5 +103,24 @@
       <span class="progress-line" aria-hidden="true"><span></span></span>
       <span>78%</span>
     </div>
+  </section>
+
+  <section class="sidebar-account" aria-label="Аккаунт">
+    <a
+      class:sidebar-account__profile--active={activeRoute === APP_ROUTE_DEFINITIONS.profile.href}
+      class="sidebar-account__profile"
+      href={APP_ROUTE_DEFINITIONS.profile.href}
+      aria-current={activeRoute === APP_ROUTE_DEFINITIONS.profile.href ? 'page' : undefined}
+    >
+      <CircleUserRound size={20} aria-hidden="true" />
+      <span>
+        <strong>{accountLabel}</strong>
+        {#if accountEmail}<small>{accountEmail}</small>{/if}
+      </span>
+    </a>
+    <button class="sidebar-account__logout" type="button" on:click={handleLogout}>
+      <LogOut size={18} aria-hidden="true" />
+      <span>Выйти</span>
+    </button>
   </section>
 </aside>

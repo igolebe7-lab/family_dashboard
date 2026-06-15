@@ -36,6 +36,12 @@ export const APP_ROUTE_DEFINITIONS = {
     icon: 'users-round',
     description: 'Профили и настройки семьи'
   },
+  profile: {
+    label: 'Профиль',
+    href: '/app/profile',
+    icon: 'circle-user-round',
+    description: 'Данные аккаунта и выход'
+  },
   feed: {
     label: 'Лента',
     href: '/app/feed',
@@ -50,7 +56,8 @@ export const primaryNavigation = [
   APP_ROUTE_DEFINITIONS.today,
   APP_ROUTE_DEFINITIONS.calendar,
   APP_ROUTE_DEFINITIONS.assignments,
-  APP_ROUTE_DEFINITIONS.family
+  APP_ROUTE_DEFINITIONS.family,
+  APP_ROUTE_DEFINITIONS.profile
 ] as const;
 
 export const desktopNavigation = [
@@ -59,7 +66,8 @@ export const desktopNavigation = [
   APP_ROUTE_DEFINITIONS.assignments,
   APP_ROUTE_DEFINITIONS.tasks,
   APP_ROUTE_DEFINITIONS.feed,
-  APP_ROUTE_DEFINITIONS.family
+  APP_ROUTE_DEFINITIONS.family,
+  APP_ROUTE_DEFINITIONS.profile
 ] as const;
 
 export const ROUTE_GROUPS = {

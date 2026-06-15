@@ -21,6 +21,10 @@ Source of truth: `TECHNICAL_SPEC.md`.
 
 Every family-scoped collection has `family`. API rules and hooks must prevent cross-family access.
 
+`invitations.member` can point to a pre-created unlinked `family_members` profile. When a logged-in
+adult accepts the invite, the server links that profile to the accepting `users` account instead of
+creating a duplicate member.
+
 `items` and `item_occurrences` additionally store `visible_to`, a materialized relation to
 `family_members`. Hooks derive it from item visibility:
 

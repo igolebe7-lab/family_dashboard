@@ -29,9 +29,11 @@
   import type { YearCalendarDay, YearCalendarMonth } from '$lib/calendar/year-calendar';
   import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
+  import { createRealtimeStore } from '$lib/stores/realtime.store';
   import type { DayAnnotation } from '$lib/types/domain';
 
   const activeRoute = '/app/calendar';
+  const routeRealtimeStore = createRealtimeStore();
   type SpecialDateFormMode = 'closed' | 'create' | 'edit';
   let familyUnsubscribe: Unsubscriber | undefined;
   let currentFamilyState: FamilyState | undefined;
@@ -91,18 +93,20 @@
       console.warn('Failed to load Calendar public holidays, keeping local family annotations.', error);
     }
 
+    const yearRange = createYearOccurrenceRange(selectedYear);
+
     try {
-      const yearStart = new Date(selectedYear, 0, 1).toISOString();
-      const yearEnd = new Date(selectedYear + 1, 0, 1).toISOString();
-      const result = await listOccurrenceMarkersInRange(context, {
-        from: yearStart,
-        to: yearEnd
-      });
+      const result = await listOccurrenceMarkersInRange(context, yearRange);
       calendarRecordMarkers = createCalendarRecordMarkers(result.items);
     } catch (error) {
       console.warn('Failed to load Calendar record markers.', error);
       calendarRecordMarkers = [];
     }
+
+    await routeRealtimeStore.syncOccurrences(context, yearRange, () => {
+      loadedYearKey = null;
+      void loadAnnotationsFromFamilyState(currentFamilyState);
+    });
   }
 
   function goPreviousYear(): void {
@@ -219,6 +223,13 @@
     return new Date(year, 0, 1);
   }
 
+  function createYearOccurrenceRange(year: number): { from: string; to: string } {
+    return {
+      from: new Date(year, 0, 1).toISOString(),
+      to: new Date(year + 1, 0, 1).toISOString()
+    };
+  }
+
   function createCalendarRecordMarkers(occurrences: OccurrenceMarker[]): Array<{
     dateKey: string;
     kind: 'event' | 'task' | 'assignment';
@@ -273,6 +284,7 @@
 
   onDestroy(() => {
     familyUnsubscribe?.();
+    routeRealtimeStore.stopAll();
   });
 </script>
 

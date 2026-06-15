@@ -31,8 +31,8 @@
         email: email.trim(),
         password
       });
-      await bootstrapClientApp();
-      await goto('/app/today', { replaceState: true });
+      const context = await bootstrapClientApp();
+      await goto(context ? '/app/today' : '/app/onboarding', { replaceState: true });
     } catch (error) {
       console.warn('Failed to login.', error);
       errorMessage = 'Не удалось войти. Проверьте email, пароль и подключение к серверу.';
@@ -81,6 +81,7 @@
       <button class="button button--primary auth-form__submit" disabled={loading} type="submit">
         {loading ? 'Входим' : 'Войти'}
       </button>
+      <a class="primary-link" href="/register">Создать аккаунт и семью</a>
     </form>
   </section>
 </main>

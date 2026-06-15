@@ -10,6 +10,7 @@ import {
 export type AuthUser = {
   id: string;
   email: string;
+  name: string;
 };
 
 export type AuthSession = {
@@ -25,6 +26,17 @@ export type LoginInput = {
 export type RegisterAdultInput = LoginInput & {
   passwordConfirm: string;
   name?: string;
+};
+
+export type UpdateCurrentUserProfileInput = {
+  email: string;
+  name: string;
+};
+
+export type UpdateCurrentUserPasswordInput = {
+  oldPassword: string;
+  password: string;
+  passwordConfirm: string;
 };
 
 export async function login(input: LoginInput): Promise<AuthSession> {
@@ -82,8 +94,61 @@ export function getCurrentSession(): AuthSession | null {
   };
 }
 
+export async function updateCurrentUserProfile(
+  input: UpdateCurrentUserProfileInput
+): Promise<AuthUser> {
+  const client = getPocketBaseClient();
+  const session = requireAuthenticatedSession();
+  const users = client.collection(COLLECTIONS.users);
+  const update = requireCollectionMethod(users, 'update');
+  const record = await update(session.user.id, {
+    email: input.email.trim(),
+    name: input.name.trim()
+  });
+
+  syncAuthRecord(record);
+
+  return mapAuthUser(record);
+}
+
+export async function updateCurrentUserPassword(
+  input: UpdateCurrentUserPasswordInput
+): Promise<AuthUser> {
+  const client = getPocketBaseClient();
+  const session = requireAuthenticatedSession();
+  const users = client.collection(COLLECTIONS.users);
+  const update = requireCollectionMethod(users, 'update');
+  const record = await update(session.user.id, {
+    oldPassword: input.oldPassword,
+    password: input.password,
+    passwordConfirm: input.passwordConfirm
+  });
+
+  syncAuthRecord(record);
+
+  return mapAuthUser(record);
+}
+
 export function logout(): void {
   getPocketBaseClient().authStore.clear();
+}
+
+function requireAuthenticatedSession(): AuthSession {
+  const session = getCurrentSession();
+
+  if (!session) {
+    throw new Error('authenticated user is required');
+  }
+
+  return session;
+}
+
+function syncAuthRecord(record: unknown): void {
+  const client = getPocketBaseClient();
+
+  if (client.authStore.isValid && client.authStore.token && client.authStore.save) {
+    client.authStore.save(client.authStore.token, record);
+  }
 }
 
 function mapAuthUser(value: unknown): AuthUser {
@@ -91,6 +156,7 @@ function mapAuthUser(value: unknown): AuthUser {
 
   return {
     id: asString(record.id),
-    email: asString(record.email)
+    email: asString(record.email),
+    name: asString(record.name)
   };
 }

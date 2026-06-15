@@ -185,3 +185,17 @@ export type NotificationRecord = {
   deliveredAt?: string;
   created: string;
 };
+
+export type InvitationRecord = {
+  id: string;
+  family: string;
+  member?: string;
+  code: string;
+  role: MemberRole;
+  email?: string;
+  createdBy: string;
+  expiresAt: string;
+  usedByUser?: string;
+  usedAt?: string;
+  revokedAt?: string;
+};

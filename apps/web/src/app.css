@@ -419,6 +419,12 @@ h3 {
   padding: 0 1.2rem;
 }
 
+.auth-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
 .button {
   display: inline-flex;
   min-height: 2.75rem;
@@ -483,8 +489,8 @@ h3 {
   bottom: 1rem;
   left: 50%;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.25rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.18rem;
   width: min(calc(100% - 1.6rem), 42rem);
   max-width: 42rem;
   margin: 0;
@@ -504,7 +510,7 @@ h3 {
   gap: 0.18rem;
   border-radius: 1.35rem;
   color: var(--color-text-muted);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 560;
 }
 
@@ -1613,6 +1619,31 @@ h3 {
   padding: 0.68rem;
 }
 
+.family-member-card__badge {
+  display: inline-flex;
+  min-height: 2.1rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-green-soft);
+  color: var(--color-green);
+  font-size: 0.72rem;
+  font-weight: 650;
+  padding: 0 0.72rem;
+}
+
+.family-member-card__invite {
+  grid-column: 2 / -1;
+  width: 100%;
+  border-radius: 0.8rem;
+  background: rgb(255 255 255 / 0.8);
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  padding: 0.56rem 0.68rem;
+}
+
 .family-member-card__avatar {
   display: grid;
   width: 2.7rem;
@@ -1740,6 +1771,83 @@ h3 {
 .family-message--success {
   background: rgb(237 247 232 / 0.94);
   color: var(--color-green);
+}
+
+.profile-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-page--desktop {
+  align-content: start;
+  gap: 1.1rem;
+}
+
+.profile-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.78rem;
+  border: 1px solid rgb(238 231 220 / 0.76);
+  border-radius: 1.35rem;
+  background: rgb(255 255 255 / 0.78);
+  box-shadow: var(--shadow-soft);
+  padding: 0.9rem;
+}
+
+.profile-summary__avatar {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-green-soft);
+  color: var(--color-green);
+  font-size: 1rem;
+  font-weight: 650;
+  box-shadow:
+    inset 0 0 0 2px rgb(255 255 255 / 0.9),
+    0 0 0 0.42rem rgb(237 247 232 / 0.64);
+}
+
+.profile-summary strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 590;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-summary p {
+  margin-top: 0.16rem;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-form .button {
+  width: 100%;
+}
+
+.profile-logout {
+  display: inline-flex;
+  min-height: 2.85rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(238 231 220 / 0.86);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.82);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 580;
+  padding: 0 1rem;
 }
 
 .today-header {
@@ -3942,6 +4050,65 @@ h3 {
     height: 100%;
     border-radius: inherit;
     background: var(--color-green);
+  }
+
+  .sidebar-account {
+    display: grid;
+    gap: 0.48rem;
+    border-top: 1px solid rgb(238 231 220 / 0.72);
+    padding-top: 0.7rem;
+  }
+
+  .sidebar-account__profile,
+  .sidebar-account__logout {
+    display: flex;
+    min-width: 0;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.62rem;
+    border-radius: 0.95rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 540;
+    padding: 0 0.75rem;
+  }
+
+  .sidebar-account__profile--active {
+    background: var(--color-green-soft);
+    color: var(--color-green);
+  }
+
+  .sidebar-account__profile span {
+    display: grid;
+    min-width: 0;
+    gap: 0.08rem;
+  }
+
+  .sidebar-account__profile strong,
+  .sidebar-account__profile small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-account__profile strong {
+    color: var(--color-text);
+    font-size: 0.86rem;
+    font-weight: 590;
+  }
+
+  .sidebar-account__profile small {
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    font-weight: 480;
+  }
+
+  .sidebar-account__logout {
+    width: 100%;
+    border: 1px solid rgb(238 231 220 / 0.78);
+    background: rgb(255 255 255 / 0.68);
+    font: inherit;
+    justify-content: flex-start;
   }
 
   .desktop-main,

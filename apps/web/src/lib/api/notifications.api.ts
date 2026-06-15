@@ -65,6 +65,27 @@ export async function markNotificationRead(
   return mapNotificationRecord(record);
 }
 
+export async function subscribeNotifications(
+  context: Partial<ActiveFamilyContext>,
+  onChange: () => void
+): Promise<() => void> {
+  const activeContext = requireActiveContext(context);
+  const notifications = getPocketBaseClient().collection(COLLECTIONS.notifications);
+  const subscribe = requireCollectionMethod(notifications, 'subscribe');
+
+  return subscribe(
+    '*',
+    () => onChange(),
+    {
+      filter: [
+        `family = "${escapeFilterValue(activeContext.familyId)}"`,
+        `recipient_member = "${escapeFilterValue(activeContext.memberId)}"`
+      ].join(' && '),
+      ...memberRequestOptions(activeContext)
+    }
+  );
+}
+
 export function mapNotificationRecord(value: unknown): NotificationRecord {
   const record = asRecord(value);
 

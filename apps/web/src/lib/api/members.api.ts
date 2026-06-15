@@ -30,6 +30,11 @@ export type UpdateMemberInput = Partial<CreateMemberInput> & {
   active?: boolean;
 };
 
+export type CreateOwnerMemberContext = {
+  familyId: string;
+  userId: string;
+};
+
 export async function listMembersForFamily(familyId: string): Promise<FamilyMember[]> {
   const members = getPocketBaseClient().collection(COLLECTIONS.familyMembers);
   const getFullList = requireCollectionMethod(members, 'getFullList');
@@ -79,6 +84,26 @@ export async function createMember(
     },
     memberRequestOptions(activeContext)
   );
+
+  return mapFamilyMemberRecord(record);
+}
+
+export async function createOwnerMember(
+  input: Pick<CreateMemberInput, 'displayName' | 'colorKey' | 'colorHex' | 'birthday'>,
+  context: CreateOwnerMemberContext
+): Promise<FamilyMember> {
+  const members = getPocketBaseClient().collection(COLLECTIONS.familyMembers);
+  const create = requireCollectionMethod(members, 'create');
+  const record = await create({
+    family: context.familyId,
+    user: context.userId,
+    display_name: input.displayName,
+    role: 'owner',
+    color_key: input.colorKey,
+    color_hex: input.colorHex,
+    birthday: input.birthday,
+    active: true
+  });
 
   return mapFamilyMemberRecord(record);
 }

@@ -19,14 +19,14 @@ describe('createSessionStore', () => {
 
     session.setSession({
       token: 'token_1',
-      user: { id: 'user_1', email: 'parent@example.test' }
+      user: { id: 'user_1', email: 'parent@example.test', name: 'Мама' }
     });
     expect(get(session)).toMatchObject({
       status: 'ready',
       error: null,
       isAuthenticated: true,
       token: 'token_1',
-      user: { id: 'user_1', email: 'parent@example.test' }
+      user: { id: 'user_1', email: 'parent@example.test', name: 'Мама' }
     });
 
     session.setError('Не удалось войти');

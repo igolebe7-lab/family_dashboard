@@ -10,8 +10,10 @@
   } from '$lib/api/notifications.api';
   import { mapNotificationInboxItem, type NotificationInboxItem } from '$lib/assignments/assignments-view';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
+  import { createRealtimeStore } from '$lib/stores/realtime.store';
 
   const activeRoute = '/app/today';
+  const routeRealtimeStore = createRealtimeStore();
   let familyUnsubscribe: Unsubscriber | undefined;
   let currentFamilyState: FamilyState | undefined;
   let items: NotificationInboxItem[] = [
@@ -40,6 +42,18 @@
       console.warn('Failed to load notifications.', loadError);
       error = 'Не удалось загрузить уведомления. Показываем сохранённый пример.';
     }
+  }
+
+  async function syncRealtime(familyState: FamilyState | undefined): Promise<void> {
+    const context = familyState ? getActiveFamilyContext(familyState) : null;
+    if (!context || familyState?.status !== 'ready') {
+      routeRealtimeStore.stopNotifications();
+      return;
+    }
+
+    await routeRealtimeStore.syncNotifications(context, () => {
+      void loadNotifications(currentFamilyState);
+    });
   }
 
   async function markOneRead(item: NotificationInboxItem): Promise<void> {
@@ -82,11 +96,13 @@
     familyUnsubscribe = familyStore.subscribe((familyState) => {
       currentFamilyState = familyState;
       void loadNotifications(familyState);
+      void syncRealtime(familyState);
     });
   });
 
   onDestroy(() => {
     familyUnsubscribe?.();
+    routeRealtimeStore.stopAll();
   });
 </script>
 

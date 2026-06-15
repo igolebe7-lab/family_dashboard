@@ -153,6 +153,25 @@ export async function updateOccurrenceStatus(
   return mapOccurrenceRecord(await update(id, body, memberRequestOptions(activeContext)));
 }
 
+export async function subscribeOccurrencesInRange(
+  context: Partial<ActiveFamilyContext>,
+  range: OccurrenceRange,
+  onChange: () => void
+): Promise<() => void> {
+  const activeContext = requireActiveContext(context);
+  const occurrences = getPocketBaseClient().collection(COLLECTIONS.itemOccurrences);
+  const subscribe = requireCollectionMethod(occurrences, 'subscribe');
+
+  return subscribe(
+    '*',
+    () => onChange(),
+    {
+      filter: buildOccurrenceRangeFilter(activeContext.familyId, range),
+      ...memberRequestOptions(activeContext)
+    }
+  );
+}
+
 export function buildOccurrenceRangeFilter(
   familyId: string,
   range: OccurrenceRange,

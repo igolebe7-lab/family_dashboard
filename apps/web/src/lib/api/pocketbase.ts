@@ -9,6 +9,7 @@ export type ActiveFamilyContext = {
 
 export type PocketBaseAuthStoreLike = {
   clear: () => void;
+  save?: (token: string, record: unknown) => void;
   isValid: boolean;
   token: string;
   record: unknown;
@@ -31,11 +32,17 @@ export type PocketBaseCollectionLike = {
   ) => Promise<unknown>;
   getOne?: (id: string, options?: Record<string, unknown>) => Promise<unknown>;
   getFullList?: (options?: Record<string, unknown>) => Promise<unknown[]>;
+  subscribe?: (
+    topic: string,
+    callback: (event: unknown) => void,
+    options?: Record<string, unknown>
+  ) => Promise<() => void> | (() => void);
 };
 
 export type PocketBaseClientLike = {
   authStore: PocketBaseAuthStoreLike;
   collection: (name: string) => PocketBaseCollectionLike;
+  send?: (path: string, options?: Record<string, unknown>) => Promise<unknown>;
 };
 
 let pocketBaseClient: PocketBaseClientLike | undefined;

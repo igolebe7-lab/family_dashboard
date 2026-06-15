@@ -1,12 +1,12 @@
 <script lang="ts">
-  import Link2 from '@lucide/svelte/icons/link-2';
   import Plus from '@lucide/svelte/icons/plus';
   import { onDestroy, onMount } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import ActiveProfileSwitcher from '$lib/components/family/ActiveProfileSwitcher.svelte';
-  import { createMember, listMembers, updateMember } from '$lib/api/members.api';
+  import { createInvitation } from '$lib/api/invitations.api';
+  import { createMember, listMembers } from '$lib/api/members.api';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { sessionStore, type SessionState } from '$lib/stores/session.store';
   import type { FamilyMember } from '$lib/types/domain';
@@ -36,12 +36,20 @@
   let displayName = 'Папа';
   let role: MemberRole = 'parent';
   let colorKey = 'blue';
+  let managedBy = '';
   let saving = false;
   let error: string | null = null;
   let success: string | null = null;
+  let inviteLinks: Record<string, string> = {};
 
   $: context = familyState ? getActiveFamilyContext(familyState) : null;
   $: currentUserId = sessionState?.user?.id;
+  $: adultMembers = (familyState?.members ?? []).filter((member) =>
+    ['owner', 'parent', 'adult'].includes(member.role)
+  );
+  $: if (role === 'child' && !managedBy) {
+    managedBy = familyState?.activeMember?.id ?? adultMembers[0]?.id ?? '';
+  }
   $: canSwitchActiveProfile = canAuthenticatedAdultSwitchProfiles(
     familyState?.members ?? [],
     currentUserId
@@ -95,7 +103,8 @@
         {
           displayName: name,
           role,
-          colorKey
+          colorKey,
+          managedBy: role === 'child' && managedBy ? [managedBy] : []
         },
         context
       );
@@ -103,6 +112,7 @@
       familyStore.setActiveMember(member);
       success = `${name} добавлен в семью.`;
       displayName = '';
+      if (role === 'child') managedBy = familyState?.activeMember?.id ?? adultMembers[0]?.id ?? '';
     } catch (submitError) {
       error = 'Не удалось добавить профиль. Проверьте подключение к серверу.';
       console.warn('Failed to create family member.', submitError);
@@ -111,9 +121,9 @@
     }
   }
 
-  async function linkMember(member: FamilyMember): Promise<void> {
-    if (!context || !currentUserId) {
-      error = 'Нужен вход в аккаунт и активная семья.';
+  async function createInviteForMember(member: FamilyMember): Promise<void> {
+    if (!context) {
+      error = 'Нужна активная семья.';
       return;
     }
 
@@ -122,16 +132,30 @@
     success = null;
 
     try {
-      const linked = await updateMember(member.id, { user: currentUserId }, context);
-      await reloadMembers();
-      familyStore.setActiveMember(linked);
-      success = `${member.displayName} связан с текущим аккаунтом.`;
-    } catch (linkError) {
-      error = 'Не удалось связать профиль с аккаунтом.';
-      console.warn('Failed to link family member.', linkError);
+      const invitation = await createInvitation(
+        {
+          memberId: member.id,
+          role: (member.role === 'owner' ? 'parent' : member.role) as Exclude<MemberRole, 'owner'>,
+          email: undefined
+        },
+        context
+      );
+      const origin = typeof window === 'undefined' ? '' : window.location.origin;
+      inviteLinks = {
+        ...inviteLinks,
+        [member.id]: `${origin}/invite/${invitation.code}`
+      };
+      success = `Ссылка для ${member.displayName} готова.`;
+    } catch (inviteError) {
+      error = 'Не удалось создать приглашение.';
+      console.warn('Failed to create invitation.', inviteError);
     } finally {
       saving = false;
     }
+  }
+
+  function canInviteMember(member: FamilyMember): boolean {
+    return !member.user && ['parent', 'adult', 'teen', 'guest'].includes(member.role);
   }
 
   onMount(() => {
@@ -175,10 +199,17 @@
               <strong>{member.displayName}</strong>
               <p>{getRoleLabel(member.role)}{member.user ? ' · связан с аккаунтом' : ''}</p>
             </div>
-            <button type="button" disabled={saving || member.user === currentUserId} on:click={() => linkMember(member)}>
-              <Link2 size={17} strokeWidth={2.2} aria-hidden="true" />
-              {member.user === currentUserId ? 'Ваш' : 'Связать'}
-            </button>
+            {#if member.user === currentUserId}
+              <span class="family-member-card__badge">Ваш</span>
+            {/if}
+            {#if canInviteMember(member)}
+              <button type="button" disabled={saving} on:click={() => createInviteForMember(member)}>
+                Пригласить
+              </button>
+            {/if}
+            {#if inviteLinks[member.id]}
+              <p class="family-member-card__invite">{inviteLinks[member.id]}</p>
+            {/if}
           </article>
         {/each}
       </div>
@@ -208,6 +239,16 @@
           {/each}
         </select>
       </label>
+      {#if role === 'child'}
+        <label>
+          <span>Кто управляет профилем</span>
+          <select bind:value={managedBy}>
+            {#each adultMembers as member}
+              <option value={member.id}>{member.displayName}</option>
+            {/each}
+          </select>
+        </label>
+      {/if}
       <button class="button button--primary" disabled={saving} type="submit">
         <Plus size={18} strokeWidth={2.3} aria-hidden="true" />
         {saving ? 'Сохраняем' : 'Добавить'}
@@ -240,10 +281,17 @@
               <strong>{member.displayName}</strong>
               <p>{getRoleLabel(member.role)}{member.user ? ' · связан с аккаунтом' : ''}</p>
             </div>
-            <button type="button" disabled={saving || member.user === currentUserId} on:click={() => linkMember(member)}>
-              <Link2 size={17} strokeWidth={2.2} aria-hidden="true" />
-              {member.user === currentUserId ? 'Ваш' : 'Связать'}
-            </button>
+            {#if member.user === currentUserId}
+              <span class="family-member-card__badge">Ваш</span>
+            {/if}
+            {#if canInviteMember(member)}
+              <button type="button" disabled={saving} on:click={() => createInviteForMember(member)}>
+                Пригласить
+              </button>
+            {/if}
+            {#if inviteLinks[member.id]}
+              <p class="family-member-card__invite">{inviteLinks[member.id]}</p>
+            {/if}
           </article>
         {/each}
       </div>
@@ -274,6 +322,16 @@
           {/each}
         </select>
       </label>
+      {#if role === 'child'}
+        <label>
+          <span>Кто управляет профилем</span>
+          <select bind:value={managedBy}>
+            {#each adultMembers as member}
+              <option value={member.id}>{member.displayName}</option>
+            {/each}
+          </select>
+        </label>
+      {/if}
       <button class="button button--primary" disabled={saving} type="submit">
         <Plus size={18} strokeWidth={2.3} aria-hidden="true" />
         {saving ? 'Сохраняем' : 'Добавить'}

@@ -5,6 +5,7 @@ import {
   type ActiveFamilyContext,
   asRecord,
   asString,
+  escapeFilterValue,
   getPocketBaseClient,
   memberRequestOptions,
   requireActiveContext,
@@ -27,6 +28,24 @@ export async function listActivity(
   );
 
   return Array.isArray(result.items) ? result.items.map(mapActivityRecord) : [];
+}
+
+export async function subscribeActivity(
+  context: Partial<ActiveFamilyContext>,
+  onChange: () => void
+): Promise<() => void> {
+  const activeContext = requireActiveContext(context);
+  const activity = getPocketBaseClient().collection(COLLECTIONS.itemActivity);
+  const subscribe = requireCollectionMethod(activity, 'subscribe');
+
+  return subscribe(
+    '*',
+    () => onChange(),
+    {
+      filter: `family = "${escapeFilterValue(activeContext.familyId)}"`,
+      ...memberRequestOptions(activeContext)
+    }
+  );
 }
 
 export function mapActivityRecord(value: unknown): ActivityRecord {

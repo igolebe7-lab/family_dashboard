@@ -8,15 +8,22 @@ import {
   resolvePocketBaseUrl,
   setPocketBaseClient
 } from './pocketbase';
-import { login, logout } from './auth.api';
-import { createFamily } from './families.api';
+import {
+  login,
+  logout,
+  registerAdult,
+  updateCurrentUserPassword,
+  updateCurrentUserProfile
+} from './auth.api';
+import { createFamily, createFamilyWithOwner } from './families.api';
 import { createItem } from './items.api';
 import {
   approveOccurrence,
   listOccurrenceMarkersInRange,
   listOccurrencesInRange,
   markOccurrenceDone,
-  rejectOccurrence
+  rejectOccurrence,
+  subscribeOccurrencesInRange
 } from './occurrences.api';
 import {
   createDayAnnotation,
@@ -25,19 +32,27 @@ import {
   updateDayAnnotation
 } from './day-annotations.api';
 import { createMember, updateMember } from './members.api';
-import { listActivity } from './activity.api';
+import {
+  acceptInvitation,
+  createInvitation,
+  getInvitationPreview
+} from './invitations.api';
+import { listActivity, subscribeActivity } from './activity.api';
 import {
   listNotifications,
   listUnreadNotifications,
   markAllNotificationsRead,
-  markNotificationRead
+  markNotificationRead,
+  subscribeNotifications
 } from './notifications.api';
 
 type FakeCollectionService = {
   authWithPassword?: ReturnType<typeof vi.fn>;
   create?: ReturnType<typeof vi.fn>;
   update?: ReturnType<typeof vi.fn>;
+  getFirstListItem?: ReturnType<typeof vi.fn>;
   getList?: ReturnType<typeof vi.fn>;
+  subscribe?: ReturnType<typeof vi.fn>;
 };
 
 type FakeClient = {
@@ -48,9 +63,13 @@ type FakeClient = {
     record: unknown;
   };
   collection: ReturnType<typeof vi.fn>;
+  send: ReturnType<typeof vi.fn>;
 };
 
-function createFakeClient(services: Record<string, FakeCollectionService>): FakeClient {
+function createFakeClient(
+  services: Record<string, FakeCollectionService>,
+  send: ReturnType<typeof vi.fn> = vi.fn()
+): FakeClient {
   return {
     authStore: {
       clear: vi.fn(),
@@ -58,7 +77,8 @@ function createFakeClient(services: Record<string, FakeCollectionService>): Fake
       token: '',
       record: null
     },
-    collection: vi.fn((name: string) => services[name])
+    collection: vi.fn((name: string) => services[name]),
+    send
   };
 }
 
@@ -90,9 +110,97 @@ describe('PocketBase API layer', () => {
     expect(users.authWithPassword).toHaveBeenCalledWith('parent@example.test', 'secret');
     expect(session).toEqual({
       token: 'token_1',
-      user: { id: 'user_1', email: 'parent@example.test' }
+      user: { id: 'user_1', email: 'parent@example.test', name: '' }
     });
     expect(client.authStore.clear).toHaveBeenCalledOnce();
+
+    resetPocketBaseClient();
+  });
+
+  it('registers an adult auth user through the users collection', async () => {
+    const users = {
+      create: vi.fn().mockResolvedValue({
+        id: 'user_1',
+        email: 'parent@example.test',
+        name: 'Мама'
+      })
+    };
+    const client = createFakeClient({ [COLLECTIONS.users]: users });
+    setPocketBaseClient(client);
+
+    const user = await registerAdult({
+      email: 'parent@example.test',
+      password: 'secret123',
+      passwordConfirm: 'secret123',
+      name: 'Мама'
+    });
+
+    expect(users.create).toHaveBeenCalledWith({
+      email: 'parent@example.test',
+      password: 'secret123',
+      passwordConfirm: 'secret123',
+      name: 'Мама',
+      verified: false
+    });
+    expect(user).toEqual({ id: 'user_1', email: 'parent@example.test', name: 'Мама' });
+
+    resetPocketBaseClient();
+  });
+
+  it('updates current auth profile and password through the users collection', async () => {
+    const users = {
+      update: vi
+        .fn()
+        .mockResolvedValueOnce({
+          id: 'user_1',
+          email: 'new-parent@example.test',
+          name: 'Мама'
+        })
+        .mockResolvedValueOnce({
+          id: 'user_1',
+          email: 'new-parent@example.test',
+          name: 'Мама'
+        })
+    };
+    const client = createFakeClient({ [COLLECTIONS.users]: users });
+    client.authStore.isValid = true;
+    client.authStore.token = 'token_1';
+    client.authStore.record = {
+      id: 'user_1',
+      email: 'parent@example.test',
+      name: 'Старое имя'
+    };
+    setPocketBaseClient(client);
+
+    const profile = await updateCurrentUserProfile({
+      email: 'new-parent@example.test',
+      name: 'Мама'
+    });
+    const passwordProfile = await updateCurrentUserPassword({
+      oldPassword: 'old-secret',
+      password: 'new-secret-123',
+      passwordConfirm: 'new-secret-123'
+    });
+
+    expect(users.update).toHaveBeenNthCalledWith(1, 'user_1', {
+      email: 'new-parent@example.test',
+      name: 'Мама'
+    });
+    expect(users.update).toHaveBeenNthCalledWith(2, 'user_1', {
+      oldPassword: 'old-secret',
+      password: 'new-secret-123',
+      passwordConfirm: 'new-secret-123'
+    });
+    expect(profile).toEqual({
+      id: 'user_1',
+      email: 'new-parent@example.test',
+      name: 'Мама'
+    });
+    expect(passwordProfile).toEqual({
+      id: 'user_1',
+      email: 'new-parent@example.test',
+      name: 'Мама'
+    });
 
     resetPocketBaseClient();
   });
@@ -128,6 +236,60 @@ describe('PocketBase API layer', () => {
       timezone: 'Europe/Amsterdam',
       ownerUser: 'user_1'
     });
+
+    resetPocketBaseClient();
+  });
+
+  it('creates the first family and owner member during onboarding', async () => {
+    const families = {
+      create: vi.fn().mockResolvedValue({
+        id: 'family_1',
+        name: 'Дом',
+        slug: 'dom',
+        timezone: 'Europe/Amsterdam',
+        owner_user: 'user_1'
+      })
+    };
+    const members = {
+      create: vi.fn().mockResolvedValue({
+        id: 'member_owner',
+        family: 'family_1',
+        user: 'user_1',
+        display_name: 'Мама',
+        role: 'owner',
+        color_key: 'peach',
+        managed_by: [],
+        active: true
+      })
+    };
+    const client = createFakeClient({
+      [COLLECTIONS.families]: families,
+      [COLLECTIONS.familyMembers]: members
+    });
+    setPocketBaseClient(client);
+
+    const result = await createFamilyWithOwner({
+      familyName: 'Дом',
+      ownerName: 'Мама',
+      ownerUserId: 'user_1',
+      timezone: 'Europe/Amsterdam'
+    });
+
+    expect(families.create).toHaveBeenCalledWith({
+      name: 'Дом',
+      slug: expect.stringMatching(/^dom/),
+      timezone: 'Europe/Amsterdam',
+      owner_user: 'user_1'
+    });
+    expect(members.create).toHaveBeenCalledWith({
+      family: 'family_1',
+      user: 'user_1',
+      display_name: 'Мама',
+      role: 'owner',
+      color_key: 'peach',
+      active: true
+    });
+    expect(result.member.role).toBe('owner');
 
     resetPocketBaseClient();
   });
@@ -179,6 +341,150 @@ describe('PocketBase API layer', () => {
       { headers: { 'X-Family-Member-Id': 'member_mom' } }
     );
     expect(linked.user).toBe('user_1');
+
+    resetPocketBaseClient();
+  });
+
+  it('creates child profiles with managed parent links', async () => {
+    const members = {
+      create: vi.fn().mockResolvedValue({
+        id: 'member_child',
+        family: 'family_1',
+        display_name: 'Миша',
+        role: 'child',
+        color_key: 'green',
+        managed_by: ['member_parent'],
+        active: true
+      })
+    };
+    const client = createFakeClient({ [COLLECTIONS.familyMembers]: members });
+    setPocketBaseClient(client);
+
+    await createMember(
+      {
+        displayName: 'Миша',
+        role: 'child',
+        colorKey: 'green',
+        managedBy: ['member_parent']
+      },
+      { familyId: 'family_1', memberId: 'member_parent' }
+    );
+
+    expect(members.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'child',
+        managed_by: ['member_parent']
+      }),
+      { headers: { 'X-Family-Member-Id': 'member_parent' } }
+    );
+
+    resetPocketBaseClient();
+  });
+
+  it('creates and accepts adult family invitations by code', async () => {
+    const invitations = {
+      create: vi.fn().mockResolvedValue({
+        id: 'invite_1',
+        family: 'family_1',
+        member: 'member_dad',
+        code: 'ABC123',
+        role: 'parent',
+        email: 'dad@example.test',
+        created_by: 'member_mom',
+        expires_at: '2026-06-22T10:00:00.000Z'
+      }),
+      getFirstListItem: vi.fn().mockResolvedValue({
+        id: 'invite_1',
+        family: 'family_1',
+        member: 'member_dad',
+        code: 'ABC123',
+        role: 'parent',
+        email: 'dad@example.test',
+        created_by: 'member_mom',
+        expires_at: '2026-06-22T10:00:00.000Z'
+      })
+    };
+    const send = vi
+      .fn()
+      .mockResolvedValueOnce({
+        id: 'invite_1',
+        family: 'family_1',
+        member: 'member_dad',
+        code: 'ABC123',
+        role: 'parent',
+        email: 'dad@example.test',
+        created_by: 'member_mom',
+        expires_at: '2026-06-22T10:00:00.000Z'
+      })
+      .mockResolvedValueOnce({
+        family: {
+          id: 'family_1',
+          name: 'Дом',
+          slug: 'dom',
+          timezone: 'Europe/Amsterdam',
+          owner_user: 'user_mom'
+        },
+        member: {
+          id: 'member_dad',
+          family: 'family_1',
+          user: 'user_dad',
+          display_name: 'Папа',
+          role: 'parent',
+          color_key: 'blue',
+          managed_by: [],
+          active: true
+        },
+        invitation: {
+          id: 'invite_1',
+          family: 'family_1',
+          member: 'member_dad',
+          code: 'ABC123',
+          role: 'parent',
+          email: 'dad@example.test',
+          created_by: 'member_mom',
+          expires_at: '2026-06-22T10:00:00.000Z',
+          used_by_user: 'user_dad',
+          used_at: '2026-06-15T10:00:00.000Z'
+        }
+      });
+    const client = createFakeClient({ [COLLECTIONS.invitations]: invitations }, send);
+    setPocketBaseClient(client);
+
+    const invite = await createInvitation(
+      {
+        memberId: 'member_dad',
+        role: 'parent',
+        email: 'dad@example.test'
+      },
+      { familyId: 'family_1', memberId: 'member_mom' }
+    );
+    const preview = await getInvitationPreview('ABC123');
+    const accepted = await acceptInvitation('ABC123');
+
+    expect(invitations.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        family: 'family_1',
+        member: 'member_dad',
+        role: 'parent',
+        email: 'dad@example.test',
+        created_by: 'member_mom'
+      }),
+      { headers: { 'X-Family-Member-Id': 'member_mom' } }
+    );
+    expect(send).toHaveBeenCalledWith('/familytime/invitations/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: { code: 'ABC123' }
+    });
+    expect(send).toHaveBeenCalledWith('/familytime/invitations/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: { code: 'ABC123' }
+    });
+    expect(invite.code).toBe('ABC123');
+    expect(preview.code).toBe('ABC123');
+    expect(accepted.invitation.code).toBe('ABC123');
+    expect(accepted.member.user).toBe('user_dad');
 
     resetPocketBaseClient();
   });
@@ -681,6 +987,86 @@ describe('PocketBase API layer', () => {
     expect(inbox[0].title).toBe('Поручение ждёт проверки');
     expect(unread).toHaveLength(1);
     expect(read.readAt).toBe('2026-06-13T10:05:00.000Z');
+
+    resetPocketBaseClient();
+  });
+
+  it('subscribes realtime feeds with scoped filters and member headers', async () => {
+    const unsubscribeNotifications = vi.fn();
+    const unsubscribeActivity = vi.fn();
+    const unsubscribeOccurrences = vi.fn();
+    const notifications = {
+      subscribe: vi.fn().mockResolvedValue(unsubscribeNotifications)
+    };
+    const activity = {
+      subscribe: vi.fn().mockResolvedValue(unsubscribeActivity)
+    };
+    const occurrences = {
+      subscribe: vi.fn().mockResolvedValue(unsubscribeOccurrences)
+    };
+    const client = createFakeClient({
+      [COLLECTIONS.notifications]: notifications,
+      [COLLECTIONS.itemActivity]: activity,
+      [COLLECTIONS.itemOccurrences]: occurrences
+    });
+    setPocketBaseClient(client);
+
+    const context = { familyId: 'family_1', memberId: 'member_parent' };
+    const onNotificationsChange = vi.fn();
+    const onActivityChange = vi.fn();
+    const onOccurrencesChange = vi.fn();
+
+    const notificationUnsubscribe = await subscribeNotifications(context, onNotificationsChange);
+    const activityUnsubscribe = await subscribeActivity(context, onActivityChange);
+    const occurrenceUnsubscribe = await subscribeOccurrencesInRange(
+      context,
+      {
+        from: '2026-06-15T00:00:00.000Z',
+        to: '2026-06-22T00:00:00.000Z'
+      },
+      onOccurrencesChange
+    );
+
+    notifications.subscribe.mock.calls[0][1]({ action: 'create' });
+    activity.subscribe.mock.calls[0][1]({ action: 'create' });
+    occurrences.subscribe.mock.calls[0][1]({ action: 'update' });
+    notificationUnsubscribe();
+    activityUnsubscribe();
+    occurrenceUnsubscribe();
+
+    expect(notifications.subscribe).toHaveBeenCalledWith(
+      '*',
+      expect.any(Function),
+      expect.objectContaining({
+        filter: 'family = "family_1" && recipient_member = "member_parent"',
+        headers: { 'X-Family-Member-Id': 'member_parent' }
+      })
+    );
+    expect(activity.subscribe).toHaveBeenCalledWith(
+      '*',
+      expect.any(Function),
+      expect.objectContaining({
+        filter: 'family = "family_1"',
+        headers: { 'X-Family-Member-Id': 'member_parent' }
+      })
+    );
+    expect(occurrences.subscribe).toHaveBeenCalledWith(
+      '*',
+      expect.any(Function),
+      expect.objectContaining({
+        headers: { 'X-Family-Member-Id': 'member_parent' }
+      })
+    );
+    expect(occurrences.subscribe.mock.calls[0][2].filter).toContain('family = "family_1"');
+    expect(occurrences.subscribe.mock.calls[0][2].filter).toContain(
+      'start_at < "2026-06-22T00:00:00.000Z"'
+    );
+    expect(onNotificationsChange).toHaveBeenCalledTimes(1);
+    expect(onActivityChange).toHaveBeenCalledTimes(1);
+    expect(onOccurrencesChange).toHaveBeenCalledTimes(1);
+    expect(unsubscribeNotifications).toHaveBeenCalledTimes(1);
+    expect(unsubscribeActivity).toHaveBeenCalledTimes(1);
+    expect(unsubscribeOccurrences).toHaveBeenCalledTimes(1);
 
     resetPocketBaseClient();
   });
