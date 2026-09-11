@@ -35,6 +35,7 @@
   export let annotations: DayAnnotation[] = [];
   export let onnavigate: ((date: Date, view: CalendarView) => void) | undefined = undefined;
   export let contextKey = '';
+  export let mobile = false;
 
   $: selectedView = initialView;
   let filtersOpen = false;
@@ -117,12 +118,12 @@
         aria-pressed={selectedView === 'day'}
         on:click={() => setView('day')}>День</button
       >
-      <button
+      {#if !mobile}<button
         class:today-week-toolbar__active={selectedView === 'week'}
         type="button"
         aria-pressed={selectedView === 'week'}
         on:click={() => setView('week')}>Неделя</button
-      >
+      >{/if}
       <button
         class:today-week-toolbar__active={selectedView === 'month'}
         type="button"
@@ -147,7 +148,9 @@
   {/if}
 
   {#if selectedView === 'month'}
+    {#key `${contextKey}:${monthModel.year}:${monthModel.month}`}
     <TodayMonthGrid model={monthModel} {selectedDateKey} />
+    {/key}
   {:else}
     <div class:week-calendar--day={selectedView === 'day'} class="week-calendar" style={calendarStyle}>
     <div class="week-calendar__header">

@@ -231,6 +231,13 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
 .year-calendar:focus-visible { outline: 2px solid var(--color-green); outline-offset: -2px; }
 
 @media (max-width: 1023px) {
+  .today-mobile-surface .today-week-board { min-height: 0; height: auto; }
+  .today-mobile-surface .today-month-grid { padding: 6px; border-radius: 8px; }
+  .today-mobile-surface .today-month-grid__header, .today-mobile-surface .today-month-grid__week { grid-template-columns: 18px repeat(7, minmax(0, 1fr)); gap: 2px; }
+  .today-mobile-surface .today-month-day { min-height: 54px; padding: 4px 1px; border-radius: 4px; }
+  .today-mobile-surface .today-month-day__annotation { display: none; }
+  .today-mobile-surface .today-week-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+  .today-mobile-surface .today-week-toolbar__range { flex: 1 1 100%; flex-wrap: wrap; }
   .app-screen--calendar { height: 100dvh; min-height: 0; overflow: hidden; }
   .app-screen--calendar .mobile-shell { display: flex; flex-direction: column; height: 100%; min-height: 0; padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
   .app-screen--calendar .mobile-shell > :not(.year-calendar) { flex-shrink: 0; }

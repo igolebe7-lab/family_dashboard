@@ -4,6 +4,7 @@ import type { TodayWeekEvent } from './today-view-model';
 
 export type TodayMonthDay = YearCalendarDay & {
   eventCount: number;
+  events: TodayWeekEvent[];
   primaryAnnotationTitle?: string;
 };
 
@@ -53,6 +54,7 @@ export function createTodayMonthViewModel(input: {
       days: week.days.map((day) => ({
         ...day,
         eventCount: eventCounts.get(day.dateKey) ?? 0,
+        events: (input.events ?? []).filter((event) => event.day === day.dateKey).slice().sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title)),
         primaryAnnotationTitle: day.annotations[0]?.title
       }))
     }))

@@ -33,6 +33,16 @@ const event: TodayWeekEvent = {
 };
 
 describe('createTodayMonthViewModel', () => {
+  it('includes sorted clickable events and boundary days without mutating input', () => {
+    const events = [{ ...event, id: 'late', itemId: 'late', start: '19:00' },
+      { ...event, id: 'early', itemId: 'early', start: '08:00' },
+      { ...event, id: 'boundary', day: '2026-07-01' }];
+    const model = createTodayMonthViewModel({ annotations: [], date: new Date(2026, 5, 18), events });
+    const days = model.weeks.flatMap(week => week.days);
+    expect(days.find(day => day.dateKey === '2026-06-18')?.events.map(event => event.id)).toEqual(['early', 'late']);
+    expect(days.find(day => day.dateKey === '2026-07-01')?.eventCount).toBe(1);
+    expect(events[0].id).toBe('late');
+  });
   it('creates the selected month with week numbers and day metadata', () => {
     const model = createTodayMonthViewModel({
       annotations: [birthday],

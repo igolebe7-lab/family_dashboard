@@ -205,6 +205,17 @@
       <div role="alert"><p>{loadErrors.join(' ')}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>
     {/if}
     <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-mobile" />
+    {#if selectedCalendarView === 'month'}
+      <TodayWeekBoard mobile
+        contextKey={`${currentFamilyState.activeFamily?.id ?? ''}:${currentFamilyState.activeMember?.id ?? ''}`}
+        onnavigate={navigateCalendar} labelledBy="today-month-title-mobile"
+        initialView="month" selectedDate={selectedTodayDate} selectedDateKey={selectedTodayDateKey}
+        weekLabel={today.weekLabel} events={today.weekEvents} annotations={todayAnnotations} />
+    {:else}
+    <div class="today-week-toolbar__view" aria-label="Вид календаря">
+      <button type="button" aria-pressed="true" on:click={() => navigateCalendar(selectedTodayDate, 'day')}>День</button>
+      <button type="button" aria-pressed="false" on:click={() => navigateCalendar(selectedTodayDate, 'month')}>Месяц</button>
+    </div>
     {#key generation}
     <TodayTimeline
       loading={!fixtureMode && $todayState.status === 'loading'}
@@ -218,6 +229,7 @@
       oncompleteAssignment={completeAssignment}
     />
     {/key}
+    {/if}
     {#if actionError}<p class="today-action-message today-action-message--error">{actionError}</p>{/if}
     {#if actionMessage}<p class="today-action-message">{actionMessage}</p>{/if}
     <AttentionPanel
