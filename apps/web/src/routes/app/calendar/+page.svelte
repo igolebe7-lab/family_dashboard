@@ -19,6 +19,7 @@
   } from '$lib/api/day-annotations.api';
   import {
     listOccurrenceMarkersInRange,
+    listOccurrencesInRange,
     type OccurrenceMarker
   } from '$lib/api/occurrences.api';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
@@ -30,6 +31,17 @@
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { createRealtimeStore } from '$lib/stores/realtime.store';
   import type { DayAnnotation } from '$lib/types/domain';
+  import { createTodayViewModelFromOccurrences } from '$lib/today/today-data';
+
+  async function loadDayEvents(dateKey: string) {
+    const context = currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null;
+    if (!context) throw new Error('Family context unavailable');
+    const start = new Date(`${dateKey}T00:00:00`);
+    const end = new Date(`${dateKey}T23:59:59.999`);
+    const result = await listOccurrencesInRange(context, { from: start.toISOString(), to: end.toISOString() });
+    return createTodayViewModelFromOccurrences({ date: start, occurrences: result.items,
+      members: currentFamilyState?.members ?? [], activeMemberId: context.memberId }).weekEvents;
+  }
 
   const activeRoute = '/app/calendar';
   const dayAnnotationsStore = createDayAnnotationsStore();
@@ -345,6 +357,7 @@
   {#if loading}<p role="status">Загружаем календарь…</p>{/if}
   {#if loadError}<div role="alert"><p>{loadError}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>{/if}
   <YearCalendar
+    {loadDayEvents} contextKey={loadedYearKey ?? ''}
     model={yearModel}
     compact
     {selectedDateKey}
@@ -398,6 +411,7 @@
   {#if loading}<p role="status">Загружаем календарь…</p>{/if}
   {#if loadError}<div role="alert"><p>{loadError}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>{/if}
   <YearCalendar
+    {loadDayEvents} contextKey={loadedYearKey ?? ''}
     model={yearModel}
     {selectedDateKey}
     recordMarkers={calendarRecordMarkers}

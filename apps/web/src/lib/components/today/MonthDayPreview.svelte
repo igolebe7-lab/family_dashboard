@@ -10,6 +10,10 @@
   export let anchor: HTMLElement;
   export let touch = false;
   export let focusOnOpen = false;
+  export let loading = false;
+  export let error = '';
+  export let onretry: (() => void) | undefined = undefined;
+  export let onannotations: (() => void) | undefined = undefined;
   export let onclose: () => void;
   export let onenter: () => void;
   export let onleave: () => void;
@@ -25,11 +29,17 @@
     const previous = document.activeElement;
     dialog.show();
     if (!focusOnOpen && previous instanceof HTMLElement) previous.focus({ preventScroll: true });
-    const rect = anchor.getBoundingClientRect();
-    const box = dialog.getBoundingClientRect();
-    dialog.style.left = `${Math.max(12, Math.min(rect.left, innerWidth - box.width - 12))}px`;
-    dialog.style.top = `${Math.max(12, Math.min(rect.bottom + 6, innerHeight - box.height - 12))}px`;
+    function position() {
+      const rect = anchor.getBoundingClientRect();
+      const box = dialog.getBoundingClientRect();
+      dialog.style.left = `${Math.max(12, Math.min(rect.left, innerWidth - box.width - 12))}px`;
+      dialog.style.top = `${Math.max(12, Math.min(rect.bottom + 6, innerHeight - box.height - 12))}px`;
+    }
+    position();
+    const observer = new ResizeObserver(position);
+    observer.observe(dialog);
     return () => {
+      observer.disconnect();
       const restore = dialog.contains(document.activeElement);
       dialog.close();
       if ((focusOnOpen || restore) && anchor.isConnected) anchor.focus({ preventScroll: true });
@@ -41,13 +51,16 @@
 <dialog bind:this={dialog} class:day-preview--touch={touch} class="day-preview" aria-label={`События: ${label}`} on:cancel={dismiss} on:pointerenter={onenter} on:pointerleave={onleave}>
   <header><strong>{label}</strong><button class="icon-button" aria-label="Закрыть сводку дня" on:click={onclose}><X size={20} /></button></header>
   <div class="day-preview__list">
+    {#if loading}<p role="status">Загружаем события…</p>{/if}
+    {#if error}<p role="alert">{error}</p><button class="button" on:click={onretry}>Повторить</button>{/if}
     {#each day.events as event (event.id)}
       <button class="day-preview__event" disabled={!event.itemId} on:click={() => openItem(event.itemId)}>
         <time>{event.start}</time><span><strong>{event.title}</strong><small>{event.memberName}</small></span>
       </button>
-    {:else}<p>Нет событий</p>{/each}
+    {:else}{#if !loading && !error}<p>Нет событий</p>{/if}{/each}
     {#each day.annotations as annotation (annotation.id)}<p class="day-preview__annotation">{annotation.title}</p>{/each}
   </div>
+  {#if onannotations}<button class="button button--ghost" on:click={onannotations}>Особые даты</button>{/if}
   <a class="button button--soft" href={buildTodayCalendarHref({ dateKey: day.dateKey, view: 'day' })} on:click={onclose}>Открыть день<ArrowRight size={18} /></a>
 </dialog>
 <style>

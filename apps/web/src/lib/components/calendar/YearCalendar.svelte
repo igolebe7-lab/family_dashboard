@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
+  import MonthDayPreview from '../today/MonthDayPreview.svelte';
+  import type { TodayWeekEvent } from '$lib/today/today-view-model';
+  import type { TodayMonthDay } from '$lib/today/today-month-calendar';
   import type {
     YearCalendarDay,
     YearCalendarMonth,
@@ -8,6 +11,51 @@
 
   export let model: YearCalendarViewModel;
   export let compact = false;
+  export let loadDayEvents: ((dateKey: string) => Promise<TodayWeekEvent[]>) | undefined = undefined;
+  export let contextKey = '';
+  let preview: TodayMonthDay | null = null;
+  let anchor: HTMLElement;
+  let touch = false;
+  let pinned = false;
+  let previewLoading = false;
+  let previewError = '';
+  let request = 0;
+  let closeTimer: ReturnType<typeof setTimeout>;
+  $: previewScope = `${contextKey}:${model.year}`;
+  $: resetPreview(previewScope);
+  function resetPreview(_key: string) { closePreview(); }
+  function closePreview() { clearTimeout(closeTimer); request++; preview = null; pinned = false; }
+  function keepPreview() { clearTimeout(closeTimer); }
+  function leavePreview() { clearTimeout(closeTimer); if (!pinned) closeTimer = setTimeout(closePreview, 250); }
+  async function loadPreview() {
+    if (!preview || !loadDayEvents) return;
+    const current = ++request;
+    const day = preview;
+    previewLoading = true; previewError = '';
+    try {
+      const events = await loadDayEvents(day.dateKey);
+      if (current === request) preview = { ...day, events, eventCount: events.length };
+    } catch {
+      if (current === request) previewError = 'Не удалось загрузить события дня.';
+    } finally { if (current === request) previewLoading = false; }
+  }
+  function openPreview(day: YearCalendarDay, element: HTMLElement, clicked: boolean) {
+    if (!loadDayEvents) { if (clicked) onselectDay?.(day); return; }
+    keepPreview();
+    if (preview?.dateKey === day.dateKey) {
+      if (clicked) { pinned = true; touch = matchMedia('(hover: none), (max-width: 1023px)').matches; }
+      return;
+    }
+    anchor = element; pinned = clicked;
+    touch = clicked && matchMedia('(hover: none), (max-width: 1023px)').matches;
+    preview = { ...day, eventCount: 0, events: [] };
+    void loadPreview();
+  }
+  function hoverDay(event: PointerEvent, day: YearCalendarDay) {
+    if (event.pointerType === 'mouse' && !pinned && (recordMarkersByDate.has(day.dateKey) || day.annotations.length)) openPreview(day, event.currentTarget as HTMLElement, false);
+  }
+  function openAnnotations() { if (!preview) return; const day = preview; closePreview(); onselectDay?.(day); }
+  onDestroy(closePreview);
   export let selectedDateKey: string | undefined = undefined;
   export let onselectDay: ((day: YearCalendarDay) => void) | undefined = undefined;
   export let monthHref: ((month: YearCalendarMonth) => string) | undefined = undefined;
@@ -65,6 +113,7 @@
   class="year-calendar"
   aria-label={`Календарь на ${model.year} год`}
   tabindex="0"
+  on:scroll={closePreview}
 >
   {#each model.months as month (month.month)}
     <article class="year-month" data-month={month.month} aria-label={`${month.label} ${model.year}`}>
@@ -100,7 +149,11 @@
                 aria-pressed={day.dateKey === selectedDateKey}
                 aria-current={day.inCurrentMonth && day.dateKey === todayKey ? 'date' : undefined}
                 aria-label={`${day.dateKey}, ${day.annotations.length} особых дат`}
-                on:click={() => onselectDay?.(day)}
+                aria-haspopup="dialog"
+                aria-expanded={preview?.dateKey === day.dateKey}
+                on:pointerenter={(event) => hoverDay(event, day)}
+                on:pointerleave={leavePreview}
+                on:click={(event) => openPreview(day, event.currentTarget, true)}
               >
                 <span class="year-day__number">{day.day}</span>
                 {#if day.annotations.length > 0}
@@ -134,3 +187,12 @@
     </article>
   {/each}
 </section>
+
+{#if preview}
+  {#key `${preview.dateKey}:${touch}`}
+    <MonthDayPreview day={preview} {anchor} {touch} focusOnOpen={pinned}
+      loading={previewLoading} error={previewError} onretry={loadPreview}
+      onannotations={preview.annotations.length ? openAnnotations : undefined}
+      onclose={closePreview} onenter={keepPreview} onleave={() => { if (!touch) leavePreview(); }} />
+  {/key}
+{/if}
