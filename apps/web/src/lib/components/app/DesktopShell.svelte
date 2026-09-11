@@ -5,7 +5,7 @@
   export let labelledBy: string;
 </script>
 
-<main class:desktop-shell--wide={!$$slots.aside} class="desktop-shell" aria-labelledby={labelledBy}>
+<main class:desktop-shell--today={activeRoute === '/app/today'} class:desktop-shell--calendar={activeRoute === '/app/calendar'} class:desktop-shell--wide={!$$slots.aside} class="desktop-shell" aria-labelledby={labelledBy}>
   <Sidebar {activeRoute} />
 
   <section class="desktop-main">

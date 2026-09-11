@@ -72,7 +72,7 @@
   <header class="page-heading"><div><p class="section-kicker">Вся семья</p><h1>Поиск</h1></div></header>
   <form class="search-field" role="search" on:submit|preventDefault={() => { clearTimeout(timer); void load(); }}>
     <Search size={22} aria-hidden="true" />
-    <input aria-label="Найти запись" bind:value={query} maxlength="120" type="search" placeholder="Название или описание" />
+    <input aria-label="Найти запись" bind:value={query} maxlength="120" type="search" placeholder="Название, описание или место" />
     <button class="button button--primary" type="submit">Найти</button>
   </form>
   <div class="search-filters" aria-label="Тип записи">

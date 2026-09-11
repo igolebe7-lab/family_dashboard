@@ -110,6 +110,18 @@ try {
   const familyItem = await item();
   const assignment = await item({ kind: 'assignment', owner: '', visibility: 'assignees',
     assignees: [child.member.id], approval_required: true });
+  await test('normalized search covers Russian case, yo, location and remains access scoped', async () => {
+    const record = await item({ title: 'Ёлка В ШКОЛЕ', description: 'Зимний праздник', location_text: 'Большой ЗАЛ', visibility: 'private', search_text: 'forged' });
+    assert.equal(record.search_text, 'елка в школе зимний праздник большой зал');
+    const filter = `id="${record.id}" && search_text ~ "елка" && search_text ~ "зал"`;
+    assert.equal((await list('items', owner.token, filter)).length, 1);
+    assert.equal((await list('items', child.token, filter)).length, 0);
+    assert.equal((await list('items', outsider.token, filter)).length, 0);
+    const updated = await patch('items', record.id, owner.token, { title: 'Поход', search_text: 'forged' });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.data.search_text, 'поход зимний праздник большой зал');
+    assert.equal((await list('items', owner.token, filter)).length, 0);
+  });
   for (const kind of ['task', 'assignment']) {
     await test(`undated ${kind} materializes a backlog occurrence`, async () => {
       const record = await item({ kind, due_at: '', assignees: kind === 'assignment' ? [child.member.id] : [] });

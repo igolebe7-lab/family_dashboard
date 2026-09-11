@@ -17,6 +17,7 @@ onRecordUpdateRequest((event) => {
 }, 'items');
 
 onRecordCreateExecute((event) => {
+  require(`${__hooks}/_shared/search.pb.js`).updateSearchText(event.record);
   const originalApp = event.app;
   try {
     originalApp.runInTransaction((txApp) => {
@@ -30,6 +31,7 @@ onRecordCreateExecute((event) => {
 }, 'items');
 
 onRecordUpdateExecute((event) => {
+  require(`${__hooks}/_shared/search.pb.js`).updateSearchText(event.record);
   const originalApp = event.app;
   const original = event.record.original();
   try {

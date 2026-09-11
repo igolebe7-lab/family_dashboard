@@ -20,6 +20,8 @@
   const weekdayLabels = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
   let calendarElement: HTMLElement;
   let scrolledYear: number | null = null;
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   $: recordMarkersByDate = recordMarkers.reduce((markersByDate, marker) => {
     const existing = markersByDate.get(marker.dateKey) ?? [];
@@ -27,39 +29,42 @@
     return markersByDate;
   }, new Map<string, typeof recordMarkers>());
 
-  $: if (compact && calendarElement && scrolledYear !== model.year) {
+  $: if (calendarElement && scrolledYear !== model.year) {
     void scrollCurrentMonthIntoView();
   }
 
   async function scrollCurrentMonthIntoView(): Promise<void> {
-    scrolledYear = model.year;
     await tick();
-
-    const now = new Date();
-    if (now.getFullYear() !== model.year) return;
+    if (!calendarElement.clientHeight) return;
+    scrolledYear = model.year;
 
     const currentMonth = calendarElement.querySelector<HTMLElement>(
-      `[data-month="${now.getMonth() + 1}"]`
+      `[data-month="${now.getFullYear() === model.year ? now.getMonth() + 1 : 1}"]`
     );
     if (!currentMonth) return;
 
-    const stickyHeaderHeight =
-      document.querySelector<HTMLElement>('.calendar-mobile-sticky')?.getBoundingClientRect().height ?? 0;
-    const top = currentMonth.getBoundingClientRect().top + window.scrollY - stickyHeaderHeight - 12;
-    window.scrollTo({ top: Math.max(0, top) });
+    const top = currentMonth.getBoundingClientRect().top - calendarElement.getBoundingClientRect().top + calendarElement.scrollTop;
+    calendarElement.scrollTo({ top: Math.max(0, top) });
   }
 
   onMount(() => {
-    if (!compact) return;
-    window.setTimeout(() => void scrollCurrentMonthIntoView(), 120);
+    // Hidden mobile/desktop instances must wait until their layout is visible.
+    const observer = new ResizeObserver(() => {
+      if (calendarElement.clientHeight && scrolledYear !== model.year) void scrollCurrentMonthIntoView();
+    });
+    observer.observe(calendarElement);
+    void scrollCurrentMonthIntoView();
+    return () => observer.disconnect();
   });
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users can scroll the named calendar region.) -->
 <section
   bind:this={calendarElement}
   class:year-calendar--compact={compact}
   class="year-calendar"
   aria-label={`Календарь на ${model.year} год`}
+  tabindex="0"
 >
   {#each model.months as month (month.month)}
     <article class="year-month" data-month={month.month} aria-label={`${month.label} ${model.year}`}>
@@ -89,9 +94,11 @@
                 class:year-day--weekend={day.isWeekend}
                 class:year-day--annotated={day.annotations.length > 0}
                 class:year-day--selected={day.dateKey === selectedDateKey}
+                class:year-day--today={day.inCurrentMonth && day.dateKey === todayKey}
                 class="year-day"
                 type="button"
                 aria-pressed={day.dateKey === selectedDateKey}
+                aria-current={day.inCurrentMonth && day.dateKey === todayKey ? 'date' : undefined}
                 aria-label={`${day.dateKey}, ${day.annotations.length} особых дат`}
                 on:click={() => onselectDay?.(day)}
               >

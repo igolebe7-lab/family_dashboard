@@ -2,6 +2,15 @@
 
 Source of truth: `TECHNICAL_SPEC.md`.
 
+## Item Search
+
+`items.search_text` is server-derived from title, description and location_text.
+Unicode lowercasing, Russian ё/е normalization and whitespace folding are applied
+on every create/update; migration backfills existing records without activity events.
+The client normalizes query words and ANDs substring filters, retaining family,
+archive and kind filters and all existing PocketBase visibility rules. Search is
+paginated on the server; it does not download all family items to the browser.
+
 ## Collections
 
 - `users` — PocketBase auth collection with display name, locale, timezone, onboarding flag.

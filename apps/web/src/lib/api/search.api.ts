@@ -13,8 +13,8 @@ export function buildItemSearchFilter(familyId: string, query: string, kind: Sea
     `family = "${escapeFilterValue(familyId)}"`,
     `archived = ${archived}`
   ];
-  const text = query.trim().slice(0, 120);
-  if (text) terms.push(`(title ~ "${escapeFilterValue(text)}" || description ~ "${escapeFilterValue(text)}")`);
+  const words = [...new Set(query.trim().slice(0, 120).toLowerCase().replace(/ё/g, 'е').split(/\s+/).filter(Boolean))];
+  for (const word of words) terms.push(`search_text ~ "${escapeFilterValue(word)}"`);
   if (kind !== 'all') terms.push(`kind = "${escapeFilterValue(kind)}"`);
   return terms.join(' && ');
 }

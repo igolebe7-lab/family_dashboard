@@ -221,6 +221,43 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
   .sidebar { grid-row: 1 / 3; }
 }
 
+.year-day--today {
+  background: var(--color-green);
+  color: var(--color-surface);
+  box-shadow: inset 0 0 0 2px var(--color-green);
+  font-weight: 700;
+}
+.year-day--today.year-day--selected { outline: 2px solid var(--color-text); outline-offset: 2px; }
+.year-calendar:focus-visible { outline: 2px solid var(--color-green); outline-offset: -2px; }
+
+@media (max-width: 1023px) {
+  .app-screen--calendar { height: 100dvh; min-height: 0; overflow: hidden; }
+  .app-screen--calendar .mobile-shell { display: flex; flex-direction: column; height: 100%; min-height: 0; padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+  .app-screen--calendar .mobile-shell > :not(.year-calendar) { flex-shrink: 0; }
+  .app-screen--calendar .year-calendar { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; align-content: start; padding-bottom: 16px; }
+}
+@media (min-width: 1024px) {
+  .desktop-shell--today { height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: minmax(0, 1fr); }
+  .desktop-shell--today .desktop-main { height: 100%; min-height: 0; overflow: hidden; }
+  .desktop-shell--today .desktop-main > :not(.today-week-board) { flex-shrink: 0; }
+  .desktop-shell--today .today-week-board { flex: 1; height: auto; min-height: 0; max-height: none; }
+  .desktop-shell--today .today-month-grid { flex: 1; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+  .desktop-shell--today .today-month-grid__weeks { min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; }
+  .desktop-shell--today .sidebar { grid-row: 1; overflow-y: auto; overscroll-behavior-y: contain; }
+  .desktop-shell--today .desktop-aside { height: calc(100dvh - 64px); max-height: calc(100dvh - 64px); margin-top: 32px; overflow-y: auto; overscroll-behavior-y: contain; }
+  .desktop-shell--calendar { height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: minmax(0, 1fr); }
+  .desktop-shell--calendar .desktop-main { height: 100%; min-height: 0; overflow: hidden; }
+  .desktop-shell--calendar .desktop-main > :not(.year-calendar) { flex-shrink: 0; }
+  .desktop-shell--calendar .desktop-main > .year-calendar { flex: 1; min-height: 0; height: auto; overflow-y: auto; overscroll-behavior-y: contain; align-content: start; }
+  .desktop-shell--calendar .sidebar { grid-row: 1; overflow-y: auto; }
+  .desktop-shell--calendar .desktop-aside { margin-top: 32px; max-height: calc(100dvh - 64px); overflow-y: auto; }
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .desktop-shell--calendar .desktop-aside { display: none; }
+  .desktop-shell--today { grid-template-columns: 184px minmax(0, 1fr) 220px; gap: 16px; padding-right: 16px; }
+  .desktop-shell--today .desktop-aside { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
