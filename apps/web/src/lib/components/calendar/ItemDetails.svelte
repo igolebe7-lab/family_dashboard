@@ -1,4 +1,6 @@
 <script lang="ts">
+  import PriorityPicker from '../composer/PriorityPicker.svelte';
+  import type { ItemPriority } from '$lib/types/domain';
   import { onDestroy } from 'svelte';
   import Pencil from '@lucide/svelte/icons/pencil';
   import CalendarDays from '@lucide/svelte/icons/calendar-days';
@@ -25,6 +27,7 @@
   let title = '';
   let description = '';
   let locationText = '';
+  let priority: ItemPriority = 'normal';
   let version = 0;
   $: context = getActiveFamilyContext($familyStore);
   $: loadItem(itemId, context?.familyId, context?.memberId);
@@ -55,6 +58,7 @@
   function edit() {
     if (!item) return;
     title = item.title; description = item.description ?? ''; locationText = item.locationText ?? '';
+    priority = item.priority;
     editing = true; message = '';
   }
   async function toggleArchive() {
@@ -82,7 +86,7 @@
     const request = version;
     saving = true; error = '';
     try {
-      const updated = await updateItemDetails(item.id, { title, description, locationText }, context);
+      const updated = await updateItemDetails(item.id, { title, description, locationText, priority }, context);
       if (request !== version) return;
       item = updated; editing = false; message = 'Изменения сохранены';
     } catch {
@@ -110,6 +114,7 @@
     </header>
     {#if editing}
       <form class="detail-edit auth-form" on:submit|preventDefault={save}>
+        <PriorityPicker bind:value={priority} />
         <label>Название<input bind:value={title} required maxlength="120" /></label>
         <label>Описание<textarea bind:value={description} maxlength="2000" rows="5"></textarea></label>
         {#if item.kind === 'event'}<label>Место<input bind:value={locationText} maxlength="200" /></label>{/if}
@@ -117,6 +122,7 @@
       </form>
     {:else}
       <dl class="item-details">
+        <div><dt>Приоритет</dt><dd>{{ low: 'Низкий', normal: 'Обычный', high: 'Высокий', urgent: 'Срочно' }[item.priority]}</dd></div>
         <div><dt><CalendarDays size={19} aria-hidden="true" />{item.kind === 'event' ? 'Когда' : 'Срок'}</dt><dd>{formatDate(item.startAt || item.dueAt)}{#if item.endAt}<br />до {formatDate(item.endAt)}{/if}</dd></div>
         <div><dt><Users size={19} aria-hidden="true" />Участники</dt><dd>{people.map((member) => member.displayName).join(', ') || 'Не указаны'}</dd></div>
         <div><dt><ShieldCheck size={19} aria-hidden="true" />Видимость</dt><dd>{visibility[item.visibility]}</dd></div>

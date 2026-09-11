@@ -5,6 +5,14 @@
 
   export let items: TodayAttentionItem[] = [];
   export let labelledBy = 'attention-title';
+  export let title = 'Нужно внимание';
+  export let emptyTitle = 'Ничего срочного';
+  export let emptyBody = 'Когда появятся поручения на проверку или важные записи, они будут здесь.';
+  export let resetKey = '';
+  let expanded = false;
+  $: resetExpansion(resetKey);
+  function resetExpansion(_key: string) { expanded = false; }
+  $: visibleItems = expanded ? items : items.slice(0, 5);
   export let busyItemId: string | null = null;
   export let onapprove: ((item: TodayAttentionItem) => void | Promise<void>) | undefined = undefined;
   export let onreject: ((item: TodayAttentionItem) => void | Promise<void>) | undefined = undefined;
@@ -13,17 +21,17 @@
 
 <section class="today-attention" aria-labelledby={labelledBy}>
   <div class="section-title-row">
-    <h2 id={labelledBy}>Нужно внимание</h2>
+    <h2 id={labelledBy}>{title}</h2>
   </div>
 
   {#if items.length === 0}
     <TodayEmptyState
-      title="Ничего срочного"
-      body="Когда появятся поручения на проверку или напоминания, они будут здесь."
+      title={emptyTitle}
+      body={emptyBody}
     />
   {:else}
     <div class="today-attention__list">
-      {#each items as item (item.id)}
+      {#each visibleItems as item (item.id)}
         <article class={`today-attention-card today-attention-card--${item.color}`}>
           <span class={`today-attention-card__avatar portrait portrait--${item.memberPortrait}`} aria-hidden="true">
             <span class="portrait__face">{item.memberInitial}</span>
@@ -63,6 +71,7 @@
         </article>
       {/each}
     </div>
+    {#if items.length > 5}<button class="button button--ghost" type="button" aria-expanded={expanded} on:click={() => expanded = !expanded}>{expanded ? 'Свернуть' : `Показать все (${items.length})`}</button>{/if}
   {/if}
 </section>
 

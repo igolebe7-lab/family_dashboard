@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PriorityPicker from './PriorityPicker.svelte';
   import { CATEGORY_META, ITEM_CATEGORIES } from '$lib/constants/categories';
   import { FAMILY_TARGET, type ComposerFormValues } from '$lib/composer/composer-form';
   import type { FamilyMember } from '$lib/types/domain';
@@ -68,6 +69,7 @@
   </label>
 
   <ReminderPicker bind:value={values.reminder} />
+  <PriorityPicker bind:value={values.priority} />
   <RepeatRuleEditor bind:value={values.repeat} bind:interval={values.repeatInterval} bind:days={values.repeatDays} bind:until={values.repeatUntil} date={values.date} />
 
   <fieldset class="composer-fieldset composer-field--wide">

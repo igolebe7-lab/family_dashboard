@@ -141,7 +141,7 @@ export function mapItemRecord(value: unknown): Item {
 
 export async function updateItemDetails(
   id: string,
-  input: { title: string; description: string; locationText: string },
+  input: { title: string; description: string; locationText: string; priority?: ItemPriority },
   context: ActiveFamilyContext
 ): Promise<Item> {
   const active = requireActiveContext(context);
@@ -149,6 +149,7 @@ export async function updateItemDetails(
   if (!title || title.length > 120) throw new Error('Название: от 1 до 120 символов');
   const update = requireCollectionMethod(getPocketBaseClient().collection(COLLECTIONS.items), 'update');
   return mapItemRecord(await update(id, {
-    title, description: input.description.trim(), location_text: input.locationText.trim()
+    title, description: input.description.trim(), location_text: input.locationText.trim(),
+    ...(input.priority ? { priority: input.priority } : {})
   }, memberRequestOptions(active)));
 }

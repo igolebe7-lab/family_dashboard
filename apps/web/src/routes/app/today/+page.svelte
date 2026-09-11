@@ -26,6 +26,8 @@
   import { createRealtimeStore } from '$lib/stores/realtime.store';
   import { sessionStore } from '$lib/stores/session.store';
   import { itemDetailsStore } from '$lib/stores/item-details.store';
+  import { loadAttentionOccurrences } from '$lib/api/attention.api';
+  import { buildAttentionSummary, nextAttentionDayBoundary, type AttentionSummary } from '$lib/today/attention-summary';
   import { createTodayAllDayInfoViewModel } from '$lib/today/today-all-day';
   import { getTodayOccurrenceRange } from '$lib/today/today-data';
   import { createTodayState } from '$lib/today/today-state';
@@ -48,6 +50,36 @@
   let busyOccurrenceId: string | null = null;
   let actionMessage: string | null = null;
   let actionError: string | null = null;
+  let summary: AttentionSummary = { attention: [], tomorrow: [] };
+  let summaryError = '';
+  let summaryLoading = false;
+  let summaryRequest = 0;
+  let summaryTimer: ReturnType<typeof setTimeout>;
+  $: summaryContextKey = JSON.stringify([currentFamilyState.activeFamily?.id, currentFamilyState.activeFamily?.timezone, currentFamilyState.activeMember?.id, currentFamilyState.members]);
+  $: if (mounted) changeSummaryContext(summaryContextKey);
+  function changeSummaryContext(_key: string) {
+    summaryRequest++; summary = { attention: [], tomorrow: [] }; summaryError = '';
+    void refreshSummary();
+  }
+  async function refreshSummary() {
+    const request = ++summaryRequest;
+    clearTimeout(summaryTimer);
+    const state = currentFamilyState;
+    const context = getActiveFamilyContext(state);
+    if (!context || fixtureMode) { summaryLoading = false; return; }
+    summaryLoading = true; summaryError = '';
+    const now = new Date();
+    try {
+      const rows = await loadAttentionOccurrences(context, now);
+      if (request !== summaryRequest) return;
+      summary = buildAttentionSummary(rows, state.members, context.memberId, now, state.activeFamily?.timezone || 'UTC');
+      // Refresh at the next included deadline or date boundary, not on a polling interval.
+      const midnight = nextAttentionDayBoundary(now, state.activeFamily?.timezone || 'UTC');
+      const next = Math.min(midnight, ...rows.map(row => Date.parse(row.dueAt || row.startAt || '') + 1000).filter(time => time > now.getTime()));
+      summaryTimer = setTimeout(() => void refreshSummary(), Math.max(1000, next - Date.now()));
+    } catch { if (request === summaryRequest) summaryError = 'Не удалось загрузить важное и записи на завтра.'; }
+    finally { if (request === summaryRequest) summaryLoading = false; }
+  }
 
   $: fixtureMode = dev && $page.url.searchParams.get('fixture') === 'desktop-reference';
   $: navigationState = parseTodayCalendarSearch($page.url.searchParams);
@@ -106,7 +138,7 @@
     const guarded = (refresh: () => Promise<unknown>) => () => { if (epoch === generation) void refresh(); };
     await Promise.all([
       realtime.syncNotifications(context, guarded(todayState.refreshNotifications)),
-      realtime.syncActivity(context, guarded(todayState.refreshActivity)),
+      realtime.syncActivity(context, guarded(async () => { await Promise.all([todayState.refreshActivity(), refreshSummary()]); })),
       realtime.syncOccurrences(context, getTodayOccurrenceRange(date, view), guarded(todayState.refreshOccurrences))
     ].map(async (subscription) => {
       try { await subscription; }
@@ -130,7 +162,7 @@
     return Boolean(userId && members.length > 1 && members.some((member) =>
       member.user === userId && ['owner', 'parent', 'adult'].includes(member.role)));
   }
-  async function refreshTodayAfterCreate(): Promise<void> { await todayState.refresh(); }
+  async function refreshTodayAfterCreate(): Promise<void> { await Promise.all([todayState.refresh(), refreshSummary()]); }
 
   async function runOccurrenceAction(
     occurrenceId: string | undefined,
@@ -178,6 +210,7 @@
 
   onMount(() => { mounted = browser; });
   onDestroy(() => {
+    summaryRequest++; clearTimeout(summaryTimer);
     mounted = false;
     generation++;
     todayState.reset();
@@ -185,6 +218,8 @@
     routeRealtimeStore.stopAll();
   });
 </script>
+
+<svelte:window on:focus={() => { if (mounted) void refreshSummary(); }} />
 
 <MobileShell {activeRoute} labelledBy="today-title-mobile">
   <TodayHeader
@@ -235,13 +270,16 @@
     {#if actionError}<p class="today-action-message today-action-message--error">{actionError}</p>{/if}
     {#if actionMessage}<p class="today-action-message">{actionMessage}</p>{/if}
     <AttentionPanel
-      items={today.attentionItems}
+      items={fixtureMode ? today.attentionItems : summary.attention} resetKey={summaryContextKey}
       labelledBy="attention-title-mobile"
       busyItemId={busyOccurrenceId ? `attention-approval-${busyOccurrenceId}` : null}
       onapprove={approveAssignment}
       onreject={rejectAssignment}
       onopen={openAttention}
     />
+    {#if summaryLoading}<p role="status">Обновляем важное…</p>{/if}
+    {#if summaryError}<p role="alert">{summaryError}</p><button class="button" on:click={refreshSummary}>Повторить</button>{/if}
+    <AttentionPanel title="Завтра" items={summary.tomorrow} resetKey={summaryContextKey} labelledBy="tomorrow-mobile" emptyTitle="Завтра свободно" emptyBody="Обычные события и дела на завтра появятся здесь." onopen={openAttention} />
     <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-mobile" onselect={openComposer} />
   </section>
 
@@ -280,13 +318,16 @@
     {#if actionError}<p class="today-action-message today-action-message--error">{actionError}</p>{/if}
     {#if actionMessage}<p class="today-action-message">{actionMessage}</p>{/if}
     <AttentionPanel
-      items={today.attentionItems}
+      items={fixtureMode ? today.attentionItems : summary.attention} resetKey={summaryContextKey}
       labelledBy="attention-title-desktop"
       busyItemId={busyOccurrenceId ? `attention-approval-${busyOccurrenceId}` : null}
       onapprove={approveAssignment}
       onreject={rejectAssignment}
       onopen={openAttention}
     />
+    {#if summaryLoading}<p role="status">Обновляем важное…</p>{/if}
+    {#if summaryError}<p role="alert">{summaryError}</p><button class="button" on:click={refreshSummary}>Повторить</button>{/if}
+    <AttentionPanel title="Завтра" items={summary.tomorrow} resetKey={summaryContextKey} labelledBy="tomorrow-desktop" emptyTitle="Завтра свободно" emptyBody="Обычные события и дела на завтра появятся здесь." onopen={openAttention} />
     <QuickActions actions={today.quickActions} labelledBy="quick-actions-title-desktop" onselect={openComposer} />
 
     <section class="today-feed" aria-labelledby="today-feed-title">

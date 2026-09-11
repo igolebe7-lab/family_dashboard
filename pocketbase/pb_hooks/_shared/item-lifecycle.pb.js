@@ -211,7 +211,7 @@ function afterUpdate(app, item, original) {
     if (records.length < 200) break;
     offset += records.length;
   }
-  const fields = ['title', 'description', 'location_text'].filter((field) =>
+  const fields = ['title', 'description', 'location_text', 'priority'].filter((field) =>
     item.getString(field) !== original.getString(field)
   );
   if (!fields.length) return;
