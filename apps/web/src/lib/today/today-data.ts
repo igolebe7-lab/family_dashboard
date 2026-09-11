@@ -165,6 +165,7 @@ function mapWaitingApprovalAttention(
 
   return {
     id: `attention-approval-${occurrence.id}`,
+    itemId: occurrence.item,
     occurrenceId: occurrence.id,
     body: `${member.name} отметил «${occurrence.titleSnapshot}» как готово`,
     ...memberToAttentionMember(member),
@@ -182,6 +183,7 @@ function mapOverdueAttention(
 
   return {
     id: `attention-overdue-${occurrence.id}`,
+    itemId: occurrence.item,
     body: `Просрочено: ${member.name} — «${occurrence.titleSnapshot}»`,
     ...memberToAttentionMember(member),
     actionKind: 'open',
@@ -197,10 +199,11 @@ function mapPrepReminderAttention(
 
   return {
     id: `attention-prep-${occurrence.id}`,
+    itemId: occurrence.item,
     body: `Завтра: «${occurrence.titleSnapshot}» — ${member.name}`,
     ...memberToAttentionMember(member),
-    actionKind: 'add_task',
-    actionLabel: 'Добавить дело'
+    actionKind: 'open',
+    actionLabel: 'Открыть событие'
   };
 }
 

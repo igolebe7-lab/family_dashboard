@@ -25,6 +25,7 @@
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { createRealtimeStore } from '$lib/stores/realtime.store';
   import { sessionStore } from '$lib/stores/session.store';
+  import { itemDetailsStore } from '$lib/stores/item-details.store';
   import { createTodayAllDayInfoViewModel } from '$lib/today/today-all-day';
   import { getTodayOccurrenceRange } from '$lib/today/today-data';
   import { createTodayState } from '$lib/today/today-state';
@@ -155,7 +156,8 @@
   function approveAssignment(item: TodayAttentionItem) { return runOccurrenceAction(item.occurrenceId, approveOccurrence, 'Поручение подтверждено.'); }
   function rejectAssignment(item: TodayAttentionItem) { return runOccurrenceAction(item.occurrenceId, rejectOccurrence, 'Поручение возвращено на доработку.'); }
   function openAttention(item: TodayAttentionItem) {
-    if (item.actionKind === 'add_task') openComposer('task');
+    if (item.itemId) itemDetailsStore.set(item.itemId);
+    else if (item.actionKind === 'add_task') openComposer('task');
     else void goto('/app/assignments');
   }
 

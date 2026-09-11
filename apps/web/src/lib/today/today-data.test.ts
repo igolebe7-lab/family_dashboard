@@ -198,7 +198,7 @@ describe('today data adapter', () => {
         body: 'Завтра: «Тренировка» — Миша',
         memberName: 'Миша',
         color: 'green',
-        actionLabel: 'Добавить дело'
+        actionLabel: 'Открыть событие'
       })
     ]);
     expect(model.attentionCount).toBe(3);

@@ -29,7 +29,7 @@
             <span class="portrait__face">{item.memberInitial}</span>
           </span>
           <div class="today-attention-card__copy">
-            <p>{item.body}</p>
+            {#if item.itemId}<button class="attention-open" type="button" on:click={() => onopen?.(item)}>{item.body}</button>{:else}<p>{item.body}</p>{/if}
           </div>
           {#if item.actionKind === 'approve_assignment'}
             <div class="today-attention-card__actions">
@@ -65,3 +65,11 @@
     </div>
   {/if}
 </section>
+
+<style>
+  .today-attention-card { position: relative; }
+  .attention-open { border: 0; background: transparent; color: inherit; text-align: left; font: inherit; font-weight: 600; padding: 0; cursor: pointer; }
+  .attention-open::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .attention-open:focus-visible::after { outline: 2px solid var(--color-green); outline-offset: 2px; }
+  .today-attention-card__actions, .today-attention-card__icon-button { position: relative; z-index: 1; }
+</style>

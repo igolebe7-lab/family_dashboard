@@ -42,6 +42,7 @@ export type TodayAllDayItem = Omit<TodayTimelineItem, 'time'> & {
 
 export type TodayAttentionItem = {
   id: string;
+  itemId?: string;
   occurrenceId?: string;
   body: string;
   memberInitial: string;
