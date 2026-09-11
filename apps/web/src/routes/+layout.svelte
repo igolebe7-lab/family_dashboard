@@ -8,6 +8,7 @@
   import { bootstrapClientApp, clearDevelopmentShell, isProtectedAppRoute, resolveAppRouteRedirect, watchClientSession } from '$lib/stores/app.bootstrap';
   import { familyStore, getActiveFamilyContext } from '$lib/stores/family.store';
   import { sessionStore } from '$lib/stores/session.store';
+  import { itemDetailsStore } from '$lib/stores/item-details.store';
   import '../app.css';
   import '$lib/design/workspace.css';
 
@@ -17,8 +18,23 @@
   let guardVersion = 0;
   let checked = false;
   let bootstrapError = '';
+  $: detailContextKey = `${$familyStore.activeFamily?.id ?? ''}:${$familyStore.activeMember?.id ?? ''}`;
+  $: closeDetailsForContext(detailContextKey);
+  function closeDetailsForContext(_key: string) { itemDetailsStore.set(null); }
+  function openItemDetails(event: MouseEvent) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
+    if (!link || link.target || link.hasAttribute('download')) return;
+    const url = new URL(link.href);
+    const match = url.origin === window.location.origin && url.pathname.match(/^\/app\/items\/([a-zA-Z0-9]+)\/?$/);
+    if (!match || !canRender || !getActiveFamilyContext(get(familyStore))) return;
+    event.preventDefault();
+    event.stopPropagation();
+    itemDetailsStore.set(match[1]);
+  }
 
   beforeNavigate(() => {
+    itemDetailsStore.set(null);
     guardVersion += 1;
   });
   afterNavigate(() => {
@@ -123,9 +139,15 @@
 </svelte:head>
 
 <ConnectionStatus />
+<svelte:window on:click|capture={openItemDetails} />
 
 {#if canRender}
   <slot />
+  {#if $itemDetailsStore}
+    {#await import('$lib/components/calendar/ItemDetailsDialog.svelte') then module}
+      <svelte:component this={module.default} itemId={$itemDetailsStore} onclose={() => itemDetailsStore.set(null)} />
+    {/await}
+  {/if}
 {:else}
   <main class="auth-bootstrap" aria-busy={!bootstrapError}>
     {#if bootstrapError}
