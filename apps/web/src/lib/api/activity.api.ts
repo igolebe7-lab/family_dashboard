@@ -14,15 +14,17 @@ import {
 
 export async function listActivity(
   context: Partial<ActiveFamilyContext>,
-  limit = 30
+  limit = 30,
+  page = 1
 ): Promise<ActivityRecord[]> {
   const activeContext = requireActiveContext(context);
   const activity = getPocketBaseClient().collection(COLLECTIONS.itemActivity);
   const getList = requireCollectionMethod(activity, 'getList');
   const result = asRecord(
-    await getList(1, limit, {
-      filter: `family = "${activeContext.familyId}"`,
+    await getList(Math.max(1, Math.trunc(page) || 1), Math.min(100, Math.max(1, Math.trunc(limit) || 30)), {
+      filter: `family = "${escapeFilterValue(activeContext.familyId)}"`,
       sort: '-created',
+      requestKey: null,
       ...memberRequestOptions(activeContext)
     })
   );

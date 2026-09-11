@@ -10,10 +10,10 @@
   export let selected = false;
 </script>
 
-<button
+<a
   class:member-avatar-card--selected={selected}
   class={`member-avatar-card member-avatar-card--${color}`}
-  type="button"
+  href="/app/family"
   aria-label={`${name}${roleLabel ? `, ${roleLabel}` : ''}${todayCount ? `, дел сегодня: ${todayCount}` : ''}`}
 >
   <span class={`member-avatar-card__halo portrait portrait--${portrait}`} aria-hidden="true">
@@ -23,4 +23,4 @@
     <span class="member-avatar-card__dot" aria-hidden="true"></span>
     <span class="member-avatar-card__name">{name}</span>
   </span>
-</button>
+</a>

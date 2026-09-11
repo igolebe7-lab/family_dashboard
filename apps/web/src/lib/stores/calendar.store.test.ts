@@ -39,6 +39,50 @@ const trainingOccurrence: ItemOccurrence = {
 };
 
 describe('createCalendarStore', () => {
+  it('does not resurrect a request after navigating away and back to the same range', async () => {
+    const store = createCalendarStore();
+    let resolve!: (value: { items: ItemOccurrence[]; totalItems: number }) => void;
+    const pending = store.loadVisibleOccurrences(context, {
+      listOccurrencesInRange: () => new Promise((done) => { resolve = done; })
+    });
+    store.goNext();
+    store.goPrevious();
+    resolve({ items: [schoolOccurrence], totalItems: 1 });
+    await pending;
+    expect(get(store).occurrences).toEqual([]);
+  });
+  it('ignores an older request after a range change and newer successful load', async () => {
+    const store = createCalendarStore();
+    let resolve!: (value: { items: ItemOccurrence[]; totalItems: number }) => void;
+    const pending = store.loadVisibleOccurrences(context, {
+      listOccurrencesInRange: () => new Promise((done) => { resolve = done; })
+    });
+    store.goNext();
+    await store.loadVisibleOccurrences(context, {
+      listOccurrencesInRange: vi.fn().mockResolvedValue({ items: [], totalItems: 0 })
+    });
+    resolve({ items: [schoolOccurrence], totalItems: 1 });
+    await pending;
+    expect(get(store).occurrences).toEqual([]);
+  });
+
+  it('clears the previous context immediately and invalidates pending loads on reset', async () => {
+    const store = createCalendarStore();
+    await store.loadVisibleOccurrences(context, {
+      listOccurrencesInRange: vi.fn().mockResolvedValue({ items: [schoolOccurrence], totalItems: 1 })
+    });
+    let resolve!: (value: { items: ItemOccurrence[]; totalItems: number }) => void;
+    const pending = store.loadVisibleOccurrences({ ...context, memberId: 'another' }, {
+      listOccurrencesInRange: () => new Promise((done) => { resolve = done; })
+    });
+    expect(get(store).occurrences).toEqual([]);
+    store.reset();
+    resolve({ items: [schoolOccurrence], totalItems: 1 });
+    await pending;
+    expect(get(store).status).toBe('idle');
+    expect(get(store).occurrences).toEqual([]);
+  });
+
   it('calculates API visible ranges for day, week, month and agenda views', () => {
     const store = createCalendarStore({
       selectedDate: new Date('2026-06-10T12:00:00.000+02:00')
@@ -58,7 +102,7 @@ describe('createCalendarStore', () => {
     store.setView('month');
     expect(get(store).visibleRange).toEqual({
       from: '2026-06-01T00:00:00+02:00',
-      to: '2026-06-30T23:59:59+02:00'
+      to: '2026-07-05T23:59:59+02:00'
     });
 
     store.setView('agenda');

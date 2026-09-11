@@ -76,7 +76,7 @@ describe('createDayAnnotationsStore', () => {
     });
   });
 
-  it('reprojects yearly annotations when selected year changes', async () => {
+  it('clears annotations until the newly selected year is loaded', async () => {
     const store = createDayAnnotationsStore({ selectedYear: 2026 });
 
     await store.loadYear(context, {
@@ -88,7 +88,22 @@ describe('createDayAnnotationsStore', () => {
 
     store.setYear(2027);
 
-    expect(get(store).projectedAnnotations).toEqual([birthday]);
+    expect(get(store).projectedAnnotations).toEqual([]);
+    expect(get(store).status).toBe('idle');
+  });
+
+  it('ignores a delayed response after a context change', async () => {
+    const store = createDayAnnotationsStore();
+    let resolve!: (value: { items: DayAnnotation[]; totalItems: number }) => void;
+    const pending = store.loadYear(context, {
+      listDayAnnotationsForYear: () => new Promise((done) => { resolve = done; })
+    });
+    await store.loadYear({ ...context, memberId: 'child' }, {
+      listDayAnnotationsForYear: vi.fn().mockResolvedValue({ items: [], totalItems: 0 })
+    });
+    resolve({ items: [birthday], totalItems: 1 });
+    await pending;
+    expect(get(store).annotations).toEqual([]);
   });
 
   it('stores a user-facing error when loading fails', async () => {

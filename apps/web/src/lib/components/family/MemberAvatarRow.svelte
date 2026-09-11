@@ -6,7 +6,7 @@
 </script>
 
 <section class="member-avatar-row" aria-label="Члены семьи">
-  {#each members as member, index (member.id)}
+  {#each members as member (member.id)}
     <MemberAvatar
       name={member.name}
       initial={member.initial}
@@ -14,7 +14,6 @@
       portrait={member.portrait}
       roleLabel={member.roleLabel}
       todayCount={member.todayCount}
-      selected={index === 0}
     />
   {/each}
 </section>

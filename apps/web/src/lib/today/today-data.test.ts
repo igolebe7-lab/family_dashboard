@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
-import type { FamilyMember, ItemOccurrence } from '$lib/types/domain';
+import type { FamilyMember, Item, ItemOccurrence } from '$lib/types/domain';
 import { createTodayViewModelFromOccurrences, loadTodayViewModelFromOccurrences } from './today-data';
 
 const context: ActiveFamilyContext = {
@@ -16,7 +16,7 @@ const members: FamilyMember[] = [
     displayName: 'Миша',
     role: 'child',
     colorKey: 'green',
-    managedBy: [],
+    managedBy: ['member_mom'],
     active: true
   },
   {
@@ -86,7 +86,55 @@ const tomorrowTrainingOccurrence: ItemOccurrence = {
   status: 'todo'
 };
 
+function itemFor(occurrence: ItemOccurrence): Item {
+  return {
+    id: occurrence.item, family: occurrence.family, kind: occurrence.kind, title: occurrence.titleSnapshot,
+    createdBy: 'member_mom', participants: occurrence.kind === 'event' ? ['member_misha'] : [],
+    assignees: occurrence.kind === 'assignment' ? ['member_misha'] : [], visibleTo: members.map(member => member.id),
+    category: occurrence.categorySnapshot, priority: 'normal', visibility: 'family',
+    allDay: false, timezone: 'Europe/Amsterdam', approvalRequired: true, archived: false
+  };
+}
+for (const occurrence of [schoolOccurrence, doneAssignmentOccurrence, overdueAssignmentOccurrence, tomorrowTrainingOccurrence]) {
+  occurrence.itemRecord = itemFor(occurrence);
+}
+
 describe('today data adapter', () => {
+  it('attributes completion to the actual actor rather than the assignee or readers', () => {
+    const model = createTodayViewModelFromOccurrences({
+      date: new Date(2026, 5, 10), members, activeMemberId: 'member_mom',
+      occurrences: [{ ...doneAssignmentOccurrence, completedBy: 'member_mom' }]
+    });
+    expect(model.attentionItems[0].memberName).toBe('Мама');
+    expect(model.attentionItems[0].body).toContain('Мама отметил');
+  });
+  it('uses actual participants rather than readers and never requests approval without metadata', () => {
+    const model = createTodayViewModelFromOccurrences({
+      date: new Date(2026, 5, 10), members, activeMemberId: 'member_mom',
+      occurrences: [{ ...tomorrowTrainingOccurrence, visibleTo: members.map(member => member.id),
+        itemRecord: { ...itemFor(tomorrowTrainingOccurrence), approvalRequired: false } },
+        { ...doneAssignmentOccurrence, itemRecord: undefined }]
+    });
+    expect(model.weekEvents[1]?.memberName ?? model.weekEvents[0]?.memberName).toBe('Миша');
+    expect(model.attentionItems.some(item => item.actionKind === 'approve_assignment')).toBe(false);
+    expect(model.attentionItems.some(item => item.body.includes('Вся семьи'))).toBe(false);
+  });
+  it('keeps the entire displayed month including adjacent grid days', async () => {
+    const listOccurrencesInRange = vi.fn().mockResolvedValue({
+      items: [{ ...schoolOccurrence, startAt: '2026-06-29T08:00:00+02:00' }], totalItems: 1
+    });
+    const model = await loadTodayViewModelFromOccurrences(context, {
+      date: new Date(2026, 5, 10), view: 'month', listOccurrencesInRange
+    });
+    expect(listOccurrencesInRange).toHaveBeenCalledWith(context, {
+      from: '2026-06-01T00:00:00+02:00', to: '2026-07-05T23:59:59+02:00'
+    });
+    expect(model.weekEvents).toHaveLength(1);
+    expect(model.timelineItems).toEqual([]);
+    expect(model.feedItems).toEqual([]);
+    expect(model.familyMembers).toEqual([]);
+  });
+
   it('builds Today view model sections from occurrence records', () => {
     const model = createTodayViewModelFromOccurrences({
       date: new Date('2026-06-10T12:00:00.000Z'),
@@ -123,6 +171,7 @@ describe('today data adapter', () => {
     const model = createTodayViewModelFromOccurrences({
       date: new Date('2026-06-10T12:00:00.000+02:00'),
       occurrences: [doneAssignmentOccurrence, overdueAssignmentOccurrence, tomorrowTrainingOccurrence],
+      activeMemberId: 'member_mom',
       members
     });
 
@@ -146,7 +195,7 @@ describe('today data adapter', () => {
       }),
       expect.objectContaining({
         id: 'attention-prep-occ_training',
-        body: 'Завтра у Миши «Тренировка» — подготовиться',
+        body: 'Завтра: «Тренировка» — Миша',
         memberName: 'Миша',
         color: 'green',
         actionLabel: 'Добавить дело'
@@ -159,6 +208,7 @@ describe('today data adapter', () => {
     const model = createTodayViewModelFromOccurrences({
       date: new Date('2026-06-10T12:00:00.000+02:00'),
       occurrences: [overdueAssignmentOccurrence],
+      activeMemberId: 'member_misha',
       members
     });
 
@@ -189,6 +239,17 @@ describe('today data adapter', () => {
       to: '2026-06-14T23:59:59+02:00'
     });
     expect(model.weekEvents.map((event) => event.id)).toEqual(['occ_school', 'occ_trash']);
-    expect(model.attentionItems).toHaveLength(1);
+    expect(model.attentionItems).toHaveLength(0);
+  });
+
+  it('allows a managing parent to complete but never lets a child approve or a reader complete', () => {
+    const model = (memberId: string, occurrences = [overdueAssignmentOccurrence, doneAssignmentOccurrence]) => createTodayViewModelFromOccurrences({
+      date: new Date(2026, 5, 10), occurrences, members, activeMemberId: memberId
+    });
+    expect(model('member_mom').timelineItems.find(item => item.id === 'occ_room')?.actionKind).toBe('mark_assignment_done');
+    expect(model('member_misha').attentionItems.some(item => item.actionKind === 'approve_assignment')).toBe(false);
+    expect(model('unknown').timelineItems.every(item => !item.actionKind)).toBe(true);
+    const noApproval = { ...doneAssignmentOccurrence, itemRecord: { ...itemFor(doneAssignmentOccurrence), approvalRequired: false } };
+    expect(model('member_mom', [noApproval]).attentionItems).toEqual([]);
   });
 });

@@ -52,9 +52,6 @@ function validateAssignment(record) {
     throw newApiError(400, 'Для задачи себе используйте тип «Дело»', { field: 'assignees' });
   }
 
-  if (!getRecordValue(record, 'due_at')) {
-    throw newApiError(400, 'Для поручения нужен срок выполнения', { field: 'due_at' });
-  }
 }
 
 module.exports = {

@@ -21,30 +21,32 @@ export async function bootstrapFamilyContext(
   const loadFamilies = dependencies.listFamilies ?? listFamilies;
   const loadMembers = dependencies.listMembersForFamily ?? listMembersForFamily;
 
+  const preferredFamilyId = get(store).activeFamily?.id;
   store.setLoading();
+  const revision = store.getRevision();
+  const isCurrent = () => store.getRevision() === revision;
 
   try {
     const families = await loadFamilies();
-    store.setFamilies(families);
+    if (!isCurrent()) return null;
 
-    const activeFamily = get(store).activeFamily;
+    const activeFamily = families.find((family) => family.id === preferredFamilyId) ?? families[0] ?? null;
     if (!activeFamily) {
-      store.setMembers([]);
+      store.setContext(families, null, [], null);
       return null;
     }
 
     const members = await loadMembers(activeFamily.id);
-    store.setMembers(members);
+    if (!isCurrent()) return null;
+    const available = members.filter((member) => member.active && member.family === activeFamily.id);
     const preferredMember = dependencies.preferredUserId
-      ? members.find((member) => member.user === dependencies.preferredUserId)
-      : undefined;
-
-    if (preferredMember) {
-      store.setActiveMember(preferredMember);
-    }
+      ? available.find((member) => member.user === dependencies.preferredUserId)
+      : available[0];
+    store.setContext(families, activeFamily, available, preferredMember ?? null);
 
     return getActiveFamilyContext(get(store));
   } catch (error) {
+    if (!isCurrent()) return null;
     store.setError('Не удалось загрузить семейные данные');
     throw error;
   }

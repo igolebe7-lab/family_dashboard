@@ -12,6 +12,9 @@ import {
   login,
   logout,
   registerAdult,
+  requestPasswordReset,
+  confirmPasswordReset,
+  getAuthErrorMessage,
   updateCurrentUserPassword,
   updateCurrentUserProfile
 } from './auth.api';
@@ -48,6 +51,8 @@ import {
 
 type FakeCollectionService = {
   authWithPassword?: ReturnType<typeof vi.fn>;
+  requestPasswordReset?: ReturnType<typeof vi.fn>;
+  confirmPasswordReset?: ReturnType<typeof vi.fn>;
   create?: ReturnType<typeof vi.fn>;
   update?: ReturnType<typeof vi.fn>;
   getFirstListItem?: ReturnType<typeof vi.fn>;
@@ -68,7 +73,7 @@ type FakeClient = {
 
 function createFakeClient(
   services: Record<string, FakeCollectionService>,
-  send: ReturnType<typeof vi.fn> = vi.fn()
+  send: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(undefined)
 ): FakeClient {
   return {
     authStore: {
@@ -87,7 +92,7 @@ describe('PocketBase API layer', () => {
     expect(resolvePocketBaseUrl('https://family.example.com/pb/')).toBe(
       'https://family.example.com/pb'
     );
-    expect(resolvePocketBaseUrl('')).toBe('http://127.0.0.1:8090');
+    expect(resolvePocketBaseUrl('')).toBe('/');
   });
 
   it('authenticates and clears auth state through the users collection', async () => {
@@ -201,6 +206,43 @@ describe('PocketBase API layer', () => {
       email: 'new-parent@example.test',
       name: 'Мама'
     });
+
+    resetPocketBaseClient();
+  });
+
+  it('requests and confirms password resets through auth collection helpers', async () => {
+    const users = {
+      requestPasswordReset: vi.fn().mockResolvedValue(undefined),
+      confirmPasswordReset: vi.fn().mockResolvedValue(undefined)
+    };
+    const client = createFakeClient({ [COLLECTIONS.users]: users });
+    setPocketBaseClient(client);
+
+    await requestPasswordReset(' parent@example.test ');
+    await confirmPasswordReset({
+      token: 'reset_token',
+      password: 'new-secret-123',
+      passwordConfirm: 'new-secret-123'
+    });
+
+    expect(users.requestPasswordReset).toHaveBeenCalledWith('parent@example.test');
+    expect(users.confirmPasswordReset).toHaveBeenCalledWith(
+      'reset_token',
+      'new-secret-123',
+      'new-secret-123'
+    );
+    expect(
+      getAuthErrorMessage(
+        {
+          data: {
+            data: {
+              password: { message: 'Password is too short.' }
+            }
+          }
+        },
+        'Не удалось обновить пароль.'
+      )
+    ).toBe('Password is too short.');
 
     resetPocketBaseClient();
   });
@@ -581,7 +623,7 @@ describe('PocketBase API layer', () => {
       200,
       expect.objectContaining({
         filter: expect.stringContaining('family = "family_1"'),
-        sort: 'start_at,due_at'
+        sort: 'start_at,due_at,id'
       })
     );
     expect(occurrences.getList.mock.calls[0][2].filter).toContain(
@@ -972,7 +1014,7 @@ describe('PocketBase API layer', () => {
       1,
       50,
       expect.objectContaining({
-        filter: 'family = "family_1"',
+        filter: 'family = "family_1" && recipient_member = "member_parent"',
         sort: '-created',
         headers: { 'X-Family-Member-Id': 'member_parent' }
       })

@@ -25,32 +25,40 @@ export type DayAnnotationsLoadDependencies = {
 };
 
 export function createDayAnnotationsStore(options: DayAnnotationsStoreOptions = {}) {
+  let requestVersion = 0;
   const store = writable<DayAnnotationsState>(
     createDayAnnotationsState(options.selectedYear ?? new Date().getFullYear())
   );
 
   return {
     subscribe: store.subscribe,
-    setYear: (year: number) => store.update((state) => createDayAnnotationsState(year, state)),
+    reset: () => { requestVersion++; store.update((state) => createDayAnnotationsState(state.selectedYear)); },
+    setYear: (year: number) => {
+      if (get(store).selectedYear === year) return;
+      requestVersion++;
+      store.set(createDayAnnotationsState(year));
+    },
     goPreviousYear: () =>
-      store.update((state) => createDayAnnotationsState(state.selectedYear - 1, state)),
+      { requestVersion++; store.update((state) => createDayAnnotationsState(state.selectedYear - 1)); },
     goNextYear: () =>
-      store.update((state) => createDayAnnotationsState(state.selectedYear + 1, state)),
+      { requestVersion++; store.update((state) => createDayAnnotationsState(state.selectedYear + 1)); },
     loadYear: async (
       context: ActiveFamilyContext,
       dependencies: DayAnnotationsLoadDependencies = {}
     ): Promise<DayAnnotation[]> => {
       const loader = dependencies.listDayAnnotationsForYear ?? listDayAnnotationsForYear;
       const year = get(store).selectedYear;
+      const version = ++requestVersion;
 
       store.update((state) => ({
-        ...state,
+        ...createDayAnnotationsState(state.selectedYear),
         status: 'loading',
         error: null
       }));
 
       try {
         const result = await loader(context, year);
+        if (version !== requestVersion) return [];
 
         store.update((state) => ({
           ...state,
@@ -63,6 +71,7 @@ export function createDayAnnotationsStore(options: DayAnnotationsStoreOptions = 
 
         return result.items;
       } catch (error) {
+        if (version !== requestVersion) return [];
         store.update((state) => ({
           ...state,
           status: 'error',

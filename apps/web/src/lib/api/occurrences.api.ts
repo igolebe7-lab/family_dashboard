@@ -1,5 +1,7 @@
 import { COLLECTIONS } from '$lib/constants/collections';
 import type { ItemKind, ItemOccurrence } from '$lib/types/domain';
+import { mapItemRecord } from './items.api';
+import { ensureOccurrenceRange } from './recurrence.api';
 
 import {
   type ActiveFamilyContext,
@@ -45,20 +47,31 @@ export async function listOccurrencesInRange(
   range: OccurrenceRange
 ): Promise<OccurrenceListResult> {
   const activeContext = requireActiveContext(context);
+  await ensureOccurrenceRange(activeContext, range);
   const occurrences = getPocketBaseClient().collection(COLLECTIONS.itemOccurrences);
   const getList = requireCollectionMethod(occurrences, 'getList');
-  const result = asRecord(
-    await getList(1, 200, {
+  const items: ItemOccurrence[] = [];
+  let totalItems = 0;
+  let totalPages = 1;
+  for (let page = 1; page <= totalPages; page++) {
+    const result = asRecord(await getList(page, 200, {
       filter: buildOccurrenceRangeFilter(activeContext.familyId, range),
-      sort: 'start_at,due_at',
+      sort: 'start_at,due_at,id',
+      expand: 'item',
       requestKey: null,
       ...memberRequestOptions(activeContext)
-    })
-  );
+    }));
+    if (page === 1) {
+      totalItems = typeof result.totalItems === 'number' ? result.totalItems : 0;
+      totalPages = typeof result.totalPages === 'number' && Number.isFinite(result.totalPages)
+        ? Math.max(1, result.totalPages) : 1;
+    }
+    if (Array.isArray(result.items)) items.push(...result.items.map(mapOccurrenceRecord));
+  }
 
   return {
-    items: Array.isArray(result.items) ? result.items.map(mapOccurrenceRecord) : [],
-    totalItems: typeof result.totalItems === 'number' ? result.totalItems : 0
+    items: [...new Map(items.map((item) => [item.id, item])).values()],
+    totalItems
   };
 }
 
@@ -68,6 +81,7 @@ export async function listOccurrenceMarkersInRange(
   options: OccurrenceMarkerListOptions = {}
 ): Promise<OccurrenceMarkerListResult> {
   const activeContext = requireActiveContext(context);
+  await ensureOccurrenceRange(activeContext, range);
   const occurrences = getPocketBaseClient().collection(COLLECTIONS.itemOccurrences);
   const getList = requireCollectionMethod(occurrences, 'getList');
   const perPage = options.perPage ?? 200;
@@ -182,6 +196,7 @@ export function buildOccurrenceRangeFilter(
   const to = escapeFilterValue(range.to);
   const conditions = [
     `family = "${family}"`,
+    'item.archived = false',
     [
       '(',
       '(',
@@ -206,11 +221,14 @@ export function buildOccurrenceRangeFilter(
 
 export function mapOccurrenceRecord(value: unknown): ItemOccurrence {
   const record = asRecord(value);
+  const expandedItem = asRecord(asRecord(record.expand).item);
 
   return {
     id: asString(record.id),
     family: asString(record.family),
     item: asString(record.item),
+    itemRecord: expandedItem.id === record.item && expandedItem.family === record.family
+      ? mapItemRecord(expandedItem) : undefined,
     visibleTo: asStringArray(record.visible_to),
     kind: asString(record.kind) as ItemOccurrence['kind'],
     titleSnapshot: asString(record.title_snapshot),

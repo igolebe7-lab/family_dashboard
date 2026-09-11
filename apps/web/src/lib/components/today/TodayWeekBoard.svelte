@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { tick } from 'svelte';
+  import { addDays, addMonths } from 'date-fns';
+  import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
+  import { ITEM_CATEGORIES, getCategoryMeta, type ItemCategory } from '$lib/constants/categories';
+  import { formatDateKey } from '$lib/today/today-view-model';
   import ChevronLeft from '@lucide/svelte/icons/chevron-left';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
@@ -29,54 +33,81 @@
   export let times: string[] = [];
   export let events: TodayWeekEvent[] = [];
   export let annotations: DayAnnotation[] = [];
+  export let onnavigate: ((date: Date, view: CalendarView) => void) | undefined = undefined;
+  export let contextKey = '';
 
-  let selectedView: CalendarView = initialView;
+  $: selectedView = initialView;
+  let filtersOpen = false;
+  let selectedCategories: ItemCategory[] = [];
+  $: if (contextKey) selectedCategories = [];
+  $: filteredEvents = events.filter((event) => selectedCategories.length === 0 || (event.category && selectedCategories.includes(event.category)));
   let calendarScrollElement: HTMLDivElement | undefined;
+  let focusedRange: string | null = null;
 
   $: calendarBodyHeight = getCalendarBodyHeight();
   $: calendarStyle = `--calendar-start-hour:${CALENDAR_START_HOUR}; --calendar-end-hour:${CALENDAR_END_HOUR}; --hour-height:${HOUR_HEIGHT}px;`;
   $: selectedDay = days.find((day) => day.dateKey === selectedDateKey) ?? days.find((day) => day.isToday);
   $: visibleDays = selectedView === 'day' ? (selectedDay ? [selectedDay] : days.slice(0, 1)) : days;
-  $: visibleEvents = events.filter((event) => visibleDays.some((day) => day.dateKey === event.day));
+  $: visibleEvents = filteredEvents.filter((event) => visibleDays.some((day) => day.dateKey === event.day));
+  $: scrollRangeKey = `${contextKey}:${selectedDateKey}:${selectedView}:${selectedCategories.join(',')}`;
+  $: if (calendarScrollElement) void scrollToFirstEvent(visibleEvents, scrollRangeKey);
   $: monthModel = createTodayMonthViewModel({
     annotations,
     date: selectedDate,
-    events
+    events: filteredEvents
   });
+  $: rangeLabel = selectedView === 'month' ? monthModel.label : selectedView === 'day'
+    ? new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate) : weekLabel;
+  $: previousLabel = selectedView === 'month' ? 'Предыдущий месяц' : selectedView === 'day' ? 'Предыдущий день' : 'Предыдущая неделя';
+  $: nextLabel = selectedView === 'month' ? 'Следующий месяц' : selectedView === 'day' ? 'Следующий день' : 'Следующая неделя';
+  $: previousDate = selectedView === 'month' ? addMonths(selectedDate, -1) : addDays(selectedDate, selectedView === 'week' ? -7 : -1);
+  $: nextDate = selectedView === 'month' ? addMonths(selectedDate, 1) : addDays(selectedDate, selectedView === 'week' ? 7 : 1);
 
   function eventsForDay(day: TodayWeekDay): TodayWeekEvent[] {
-    return events.filter((event) => event.day === day.dateKey);
+    return filteredEvents.filter((event) => event.day === day.dateKey);
   }
 
-  async function scrollToFirstEvent(): Promise<void> {
+  async function scrollToFirstEvent(currentEvents: TodayWeekEvent[], rangeKey: string): Promise<void> {
     await tick();
-    if (!calendarScrollElement) return;
-    calendarScrollElement.scrollTop = getCalendarInitialScrollTop(visibleEvents);
+    if (rangeKey !== scrollRangeKey || currentEvents !== visibleEvents) return;
+    if (!calendarScrollElement?.clientHeight || !currentEvents.length || focusedRange === rangeKey) return;
+    calendarScrollElement.scrollTop = getCalendarInitialScrollTop(currentEvents);
+    focusedRange = rangeKey;
+  }
+
+  function observeCalendarSize(element: HTMLDivElement) {
+    let wasVisible = false;
+    const observer = new ResizeObserver(() => {
+      const visible = element.clientHeight > 0 && element.clientWidth > 0;
+      if (visible && !wasVisible) {
+        focusedRange = null;
+        void scrollToFirstEvent(visibleEvents, scrollRangeKey);
+      }
+      wasVisible = visible;
+    });
+    observer.observe(element);
+    return { destroy() { observer.disconnect(); } };
   }
 
   function setView(view: CalendarView): void {
-    selectedView = view;
-    if (view !== 'month') void scrollToFirstEvent();
+    if (onnavigate) onnavigate(selectedDate, view);
+    else initialView = view;
   }
-
-  onMount(() => {
-    void scrollToFirstEvent();
-  });
 </script>
 
 <section class="today-week-board" aria-labelledby={labelledBy}>
   <div class="today-week-toolbar">
     <div class="today-week-toolbar__range">
-      <button type="button">Сегодня</button>
-      <div class="today-week-toolbar__arrows" aria-label="Переключить неделю">
-        <button type="button" aria-label="Предыдущая неделя">
+      <a class="button" href={buildTodayCalendarHref({ dateKey: formatDateKey(new Date()), view: selectedView })} data-sveltekit-noscroll>Сегодня</a>
+      <div class="today-week-toolbar__arrows" aria-label="Переключить период">
+        <a class="icon-button" href={buildTodayCalendarHref({ dateKey: formatDateKey(previousDate), view: selectedView })} aria-label={previousLabel} data-sveltekit-noscroll>
           <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />
-        </button>
-        <button type="button" aria-label="Следующая неделя">
+        </a>
+        <a class="icon-button" href={buildTodayCalendarHref({ dateKey: formatDateKey(nextDate), view: selectedView })} aria-label={nextLabel} data-sveltekit-noscroll>
           <ChevronRight size={18} strokeWidth={2.2} aria-hidden="true" />
-        </button>
+        </a>
       </div>
-      <h2 id={labelledBy}>{weekLabel}</h2>
+      <h2 id={labelledBy}>{rangeLabel}</h2>
     </div>
 
     <div class="today-week-toolbar__view" aria-label="Вид календаря">
@@ -100,10 +131,20 @@
       >
     </div>
 
-    <button class="today-week-toolbar__filter" type="button" aria-label="Фильтры календаря">
+    <button class="today-week-toolbar__filter" type="button" aria-label="Фильтры календаря" aria-expanded={filtersOpen} aria-controls={`${labelledBy}-filters`} on:click={() => (filtersOpen = !filtersOpen)}>
       <SlidersHorizontal size={18} strokeWidth={2.2} aria-hidden="true" />
     </button>
   </div>
+
+  {#if filtersOpen}
+    <fieldset id={`${labelledBy}-filters`} class="calendar-category-filters">
+      <legend>Категории</legend>
+      {#each ITEM_CATEGORIES as category}
+        <label><input type="checkbox" value={category} bind:group={selectedCategories} /> {getCategoryMeta(category).label}</label>
+      {/each}
+      <button class="button" type="button" on:click={() => (selectedCategories = [])}>Сбросить</button>
+    </fieldset>
+  {/if}
 
   {#if selectedView === 'month'}
     <TodayMonthGrid model={monthModel} {selectedDateKey} />
@@ -119,7 +160,7 @@
       {/each}
     </div>
 
-    <div bind:this={calendarScrollElement} class="week-calendar__body-scroll" aria-label="Сетка времени недели">
+    <div bind:this={calendarScrollElement} use:observeCalendarSize class="week-calendar__body-scroll" aria-label="Сетка времени недели">
       <div class="week-calendar__body" style={`height:${calendarBodyHeight}px;`}>
         <div class="week-calendar__time-scale">
           {#each times as time (`time-${time}`)}

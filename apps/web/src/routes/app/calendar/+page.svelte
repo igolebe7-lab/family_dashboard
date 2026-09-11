@@ -21,19 +21,22 @@
     listOccurrenceMarkersInRange,
     type OccurrenceMarker
   } from '$lib/api/occurrences.api';
-  import { DEMO_DAY_ANNOTATIONS } from '$lib/calendar/demo-day-annotations';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
   import type { ComposerKind } from '$lib/composer/composer-form';
   import { createYearCalendarViewModel } from '$lib/calendar/year-calendar';
   import type { YearCalendarDay, YearCalendarMonth } from '$lib/calendar/year-calendar';
-  import { dayAnnotationsStore } from '$lib/stores/day-annotations.store';
+  import { createDayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { createRealtimeStore } from '$lib/stores/realtime.store';
   import type { DayAnnotation } from '$lib/types/domain';
 
   const activeRoute = '/app/calendar';
-  const routeRealtimeStore = createRealtimeStore();
+  const dayAnnotationsStore = createDayAnnotationsStore();
+  let routeRealtimeStore = createRealtimeStore();
+  let generation = 0;
+  let loading = false;
+  let loadError: string | null = null;
   type SpecialDateFormMode = 'closed' | 'create' | 'edit';
   let familyUnsubscribe: Unsubscriber | undefined;
   let currentFamilyState: FamilyState | undefined;
@@ -53,8 +56,7 @@
     $dayAnnotationsStore.projectedAnnotations,
     publicHolidayAnnotations
   );
-  $: calendarAnnotations =
-    loadedCalendarAnnotations.length > 0 ? loadedCalendarAnnotations : DEMO_DAY_ANNOTATIONS;
+  $: calendarAnnotations = loadedCalendarAnnotations;
   $: yearModel = createYearCalendarViewModel(selectedYear, calendarAnnotations);
   $: selectedDay = selectedDateKey ? yearModel.daysByDate.get(selectedDateKey) : undefined;
   $: selectedTodayHref = selectedDay
@@ -66,47 +68,56 @@
   $: isFormOpen = formMode !== 'closed';
 
   async function loadAnnotationsFromFamilyState(familyState: FamilyState | undefined) {
-    if (!familyState || familyState.status !== 'ready') return;
-
-    const context = getActiveFamilyContext(familyState);
-    if (!context) return;
-
-    const selectedYear = get(dayAnnotationsStore).selectedYear;
-    const yearKey = `${context.familyId}:${context.memberId}:${selectedYear}`;
-    if (loadedYearKey === yearKey) return;
+    const context = familyState?.status === 'ready' ? getActiveFamilyContext(familyState) : null;
+    const year = get(dayAnnotationsStore).selectedYear;
+    const yearKey = context ? `${context.familyId}:${context.memberId}:${year}` : null;
+    if (yearKey && loadedYearKey === yearKey) return;
     loadedYearKey = yearKey;
+    const epoch = ++generation;
+    routeRealtimeStore.stopAll();
+    routeRealtimeStore = createRealtimeStore();
+    publicHolidayAnnotations = [];
+    calendarRecordMarkers = [];
+    loadError = null;
+    loading = Boolean(context);
+    dayAnnotationsStore.reset();
+    if (!context) return;
+    const realtime = routeRealtimeStore;
+    const yearRange = createYearOccurrenceRange(year);
+    const errors: string[] = [];
+    await Promise.all([
+      dayAnnotationsStore.loadYear(context).catch(() => { errors.push('Не удалось загрузить особые даты.'); }),
+      (async () => {
+        try {
+          const holidays = await loadPublicHolidaysForYears({
+            countryCode: 'RU', familyId: context.familyId, storage: localStorage, years: [year]
+          });
+          if (epoch === generation) publicHolidayAnnotations = holidays;
+        } catch { errors.push('Не удалось загрузить государственные праздники.'); }
+      })(),
+      (async () => {
+        try {
+          const result = await listOccurrenceMarkersInRange(context, yearRange);
+          if (epoch === generation) calendarRecordMarkers = createCalendarRecordMarkers(result.items);
+        } catch { errors.push('Не удалось загрузить отметки событий.'); }
+      })(),
+      (async () => {
+        try {
+          await realtime.syncOccurrences(context, yearRange, () => {
+            if (epoch === generation) retryLoading();
+          });
+        } catch { errors.push('Обновления в реальном времени недоступны.'); }
+        finally { if (epoch !== generation) realtime.stopAll(); }
+      })()
+    ]);
+    if (epoch !== generation) return;
+    loading = false;
+    loadError = errors.length ? errors.join(' ') : null;
+  }
 
-    try {
-      await dayAnnotationsStore.loadYear(context);
-    } catch (error) {
-      console.warn('Failed to load Calendar day annotations from PocketBase, keeping cached holiday layer.', error);
-    }
-
-    try {
-      publicHolidayAnnotations = await loadPublicHolidaysForYears({
-        countryCode: 'RU',
-        familyId: context.familyId,
-        storage: localStorage,
-        years: [selectedYear, selectedYear + 1]
-      });
-    } catch (error) {
-      console.warn('Failed to load Calendar public holidays, keeping local family annotations.', error);
-    }
-
-    const yearRange = createYearOccurrenceRange(selectedYear);
-
-    try {
-      const result = await listOccurrenceMarkersInRange(context, yearRange);
-      calendarRecordMarkers = createCalendarRecordMarkers(result.items);
-    } catch (error) {
-      console.warn('Failed to load Calendar record markers.', error);
-      calendarRecordMarkers = [];
-    }
-
-    await routeRealtimeStore.syncOccurrences(context, yearRange, () => {
-      loadedYearKey = null;
-      void loadAnnotationsFromFamilyState(currentFamilyState);
-    });
+  function retryLoading(): void {
+    loadedYearKey = null;
+    void loadAnnotationsFromFamilyState(currentFamilyState);
   }
 
   function goPreviousYear(): void {
@@ -169,6 +180,7 @@
 
     formSaving = true;
     formError = null;
+    const epoch = generation;
 
     try {
       if (editingAnnotation) {
@@ -176,12 +188,14 @@
       } else {
         await createDayAnnotation(input, context);
       }
+      if (epoch !== generation) return;
 
       if (input.year) dayAnnotationsStore.setYear(input.year);
       loadedYearKey = null;
       await loadAnnotationsFromFamilyState(currentFamilyState);
       closeSpecialDateForm();
     } catch (error) {
+      if (epoch !== generation) return;
       formError = 'Не удалось сохранить дату. Проверьте поля или подключение к серверу.';
       console.warn('Failed to save special date.', error);
     } finally {
@@ -198,13 +212,16 @@
 
     formSaving = true;
     formError = null;
+    const epoch = generation;
 
     try {
       await deleteDayAnnotation(editingAnnotation.id, context);
+      if (epoch !== generation) return;
       loadedYearKey = null;
       await loadAnnotationsFromFamilyState(currentFamilyState);
       closeSpecialDateForm();
     } catch (error) {
+      if (epoch !== generation) return;
       formError = 'Не удалось удалить дату. Попробуйте ещё раз.';
       console.warn('Failed to delete special date.', error);
     } finally {
@@ -277,12 +294,22 @@
 
   onMount(() => {
     familyUnsubscribe = familyStore.subscribe((familyState) => {
+      const previous = currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null;
+      const next = familyState.status === 'ready' ? getActiveFamilyContext(familyState) : null;
+      if (JSON.stringify(previous) !== JSON.stringify(next)) {
+        selectedDateKey = undefined;
+        closeSpecialDateForm();
+        composerOpen = false;
+        formSaving = false;
+      }
       currentFamilyState = familyState;
       void loadAnnotationsFromFamilyState(familyState);
     });
   });
 
   onDestroy(() => {
+    generation++;
+    dayAnnotationsStore.reset();
     familyUnsubscribe?.();
     routeRealtimeStore.stopAll();
   });
@@ -292,10 +319,9 @@
   <div class="calendar-mobile-sticky">
     <header class="top-row">
       <h1 id="calendar-title-mobile">Календарь</h1>
-      <button class="icon-button" type="button" aria-label="Открыть уведомления">
+      <a class="icon-button" href="/app/notifications" aria-label="Открыть уведомления">
         <Bell size={23} strokeWidth={2.2} aria-hidden="true" />
-        <span class="notification-dot" aria-hidden="true"></span>
-      </button>
+      </a>
     </header>
 
     <section class="calendar-year-toolbar" aria-label="Навигация по году">
@@ -316,6 +342,8 @@
     </button>
   </div>
 
+  {#if loading}<p role="status">Загружаем календарь…</p>{/if}
+  {#if loadError}<div role="alert"><p>{loadError}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>{/if}
   <YearCalendar
     model={yearModel}
     compact
@@ -343,17 +371,6 @@
       onsave={saveSpecialDate}
     />
   {/if}
-  {#if composerOpen}
-    <ComposerSheet
-      activeKind={composerKind}
-      context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
-      members={currentFamilyState?.members ?? []}
-      selectedDate={selectedDateForForm}
-      timezone={currentFamilyState?.activeFamily?.timezone}
-      titleId="calendar-composer-title-mobile"
-      onclose={() => (composerOpen = false)}
-    />
-  {/if}
 </MobileShell>
 
 <FloatingCreateButton onclick={() => openComposer('event')} />
@@ -378,6 +395,8 @@
     </button>
   </div>
 
+  {#if loading}<p role="status">Загружаем календарь…</p>{/if}
+  {#if loadError}<div role="alert"><p>{loadError}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>{/if}
   <YearCalendar
     model={yearModel}
     {selectedDateKey}
@@ -407,17 +426,6 @@
         onsave={saveSpecialDate}
       />
     {/if}
-    {#if composerOpen}
-      <ComposerSheet
-        activeKind={composerKind}
-        context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
-        members={currentFamilyState?.members ?? []}
-        selectedDate={selectedDateForForm}
-        timezone={currentFamilyState?.activeFamily?.timezone}
-        titleId="calendar-composer-title-desktop"
-        onclose={() => (composerOpen = false)}
-      />
-    {/if}
 
     <section class="calendar-legend" aria-labelledby="calendar-legend-title">
       <h2 id="calendar-legend-title">Слой дат</h2>
@@ -431,3 +439,16 @@
     </section>
   </svelte:fragment>
 </DesktopShell>
+
+{#if composerOpen}
+  <ComposerSheet
+    activeKind={composerKind}
+    context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
+    members={currentFamilyState?.members ?? []}
+    selectedDate={selectedDateForForm}
+    timezone={currentFamilyState?.activeFamily?.timezone}
+    titleId="calendar-composer-title"
+    onclose={() => (composerOpen = false)}
+    oncreated={retryLoading}
+  />
+{/if}

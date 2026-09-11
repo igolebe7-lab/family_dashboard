@@ -22,16 +22,22 @@ const initialSessionState: SessionState = {
 
 export function createSessionStore() {
   const store = writable<SessionState>(initialSessionState);
+  let revision = 0;
+  function set(state: SessionState): void {
+    revision += 1;
+    store.set(state);
+  }
 
   return {
     subscribe: store.subscribe,
+    getRevision: () => revision,
     setLoading: () =>
-      store.set({
+      set({
         ...initialSessionState,
         status: 'loading'
       }),
     setSession: (session: AuthSession) =>
-      store.set({
+      set({
         status: 'ready',
         token: session.token,
         user: session.user,
@@ -39,12 +45,12 @@ export function createSessionStore() {
         isAuthenticated: true
       }),
     setError: (error: string) =>
-      store.set({
+      set({
         ...initialSessionState,
         status: 'error',
         error
       }),
-    clear: () => store.set(initialSessionState)
+    clear: () => set(initialSessionState)
   };
 }
 

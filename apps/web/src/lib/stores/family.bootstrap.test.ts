@@ -24,6 +24,43 @@ const member: FamilyMember = {
 };
 
 describe('bootstrapFamilyContext', () => {
+  it('does not publish partial readiness while members are loading', async () => {
+    const store = createFamilyStore();
+    let resolveMembers!: (members: FamilyMember[]) => void;
+    const pending = bootstrapFamilyContext(store, {
+      listFamilies: async () => [family],
+      listMembersForFamily: () => new Promise((resolve) => { resolveMembers = resolve; })
+    });
+    await Promise.resolve();
+    expect(get(store).status).toBe('loading');
+    resolveMembers([member]);
+    await pending;
+  });
+
+  it('does not restore family data after stores are cleared during loading', async () => {
+    const store = createFamilyStore();
+    let resolveMembers!: (members: FamilyMember[]) => void;
+    const pending = bootstrapFamilyContext(store, {
+      listFamilies: async () => [family],
+      listMembersForFamily: () => new Promise((resolve) => { resolveMembers = resolve; })
+    });
+    await Promise.resolve();
+    store.clear();
+    resolveMembers([member]);
+    expect(await pending).toBeNull();
+    expect(get(store).members).toEqual([]);
+  });
+
+  it('never impersonates the first member when the authenticated user is absent', async () => {
+    const store = createFamilyStore();
+    const context = await bootstrapFamilyContext(store, {
+      listFamilies: async () => [family],
+      listMembersForFamily: async () => [member],
+      preferredUserId: 'another_user'
+    });
+    expect(context).toBeNull();
+    expect(get(store).activeMember).toBeNull();
+  });
   it('loads families and members, then exposes active family context', async () => {
     const store = createFamilyStore();
     const listFamilies = vi.fn().mockResolvedValue([family]);

@@ -29,22 +29,37 @@ creating a duplicate member.
 `family_members`. Hooks derive it from item visibility:
 
 - `family` — every active family member;
-- `adults` — active `owner`, `parent`, `adult` members plus explicitly involved members;
-- `assignees` — creator, owner, assignees and participants;
+- `adults` — active `owner`, `parent`, `adult` members only, never explicitly added children;
+- `assignees` — creator, owner, assignees, participants and authorized managing parents;
 - `private` — creator and owner only.
 
-API rules for item reads use `visible_to.user ?= @request.auth.id`, so child accounts do not
-receive adult/private records through client-side filters.
+API rules evaluate current active membership, source item visibility and relations.
+`visible_to` is a snapshot, not the security authority. Membership, role or manager
+changes revoke access immediately, including occurrences, activity, comments and
+previous notifications. A member header cannot impersonate another adult account.
 
 `items.reminder_offset_minutes` stores the selected reminder offset relative to `start_at` or
-`due_at`. Stage 8 persists the value from the composer; notification delivery rules consume it in
-later realtime/notification stages.
+`due_at`. `reminder_enabled` distinguishes none from zero. A bounded minute cron
+creates `item.reminder` inbox records with database uniqueness per occurrence and
+recipient. See `reminders.md` for catch-up and migration semantics.
 
 ## Calendar invariant
 
-Every dated `items` record creates at least one `item_occurrences` record. Calendar and Today query occurrences by visible date range instead of loading all items.
+Non-recurring dated items create one occurrence. Undated tasks and assignments also
+create an occurrence for their backlog. Repeating items are materialized into a
+60-day rolling horizon and on authorized range requests (maximum 370 days).
+Calendar and Today query occurrences by visible date range, excluding archived items.
 
-Occurrences copy `visible_to` from their source item so calendar queries can enforce the same visibility rule without loading all logical items.
+Occurrences copy display/visibility snapshots; access rules still inspect the source item.
+`recurrence_key` identifies the original UTC occurrence instant. A partial unique
+index on `(item, recurrence_key)` prevents duplicates and keeps a moved occurrence
+from being regenerated at its original date. Independent statuses belong to each occurrence.
+
+RRULE uses vendored RRule 2.8.1 with DAILY/WEEKLY/MONTHLY, INTERVAL, BYDAY and
+optional COUNT. Composer supports an inclusive last date via `recurrence_until`.
+Go timezone conversion preserves local wall-clock time across DST. Dates absent
+from a month and nonexistent spring-forward local times are skipped. Exdates can
+be stored as local YYYY-MM-DD or UTC instants; there is no exdate editor yet.
 
 `day_annotations` are not `items` and do not create `item_occurrences`. They are rendered as an all-day informational layer. Yearly annotations are stored once with `month` and `day` and projected into the visible year at query/render time.
 
@@ -57,3 +72,9 @@ Assignment must have at least one assignee. For a single assignee equal to creat
 ## Event invariant
 
 Events require valid date order: `end_at >= start_at`.
+
+Work/club schedules are informational events, not tasks. They cannot be marked
+done or approved. The authenticated schedule endpoint can move one occurrence
+without modifying the series; it writes activity and notifies eligible participants.
+Changing the base recurrence via a generic item PATCH is rejected: archive the
+old series and create a replacement. Archive is reversible and does not erase history.

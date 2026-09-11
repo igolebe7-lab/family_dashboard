@@ -68,7 +68,7 @@
   </label>
 
   <ReminderPicker bind:value={values.reminder} />
-  <RepeatRuleEditor bind:value={values.repeat} />
+  <RepeatRuleEditor bind:value={values.repeat} bind:interval={values.repeatInterval} bind:days={values.repeatDays} bind:until={values.repeatUntil} date={values.date} />
 
   <fieldset class="composer-fieldset composer-field--wide">
     <legend>Участники</legend>

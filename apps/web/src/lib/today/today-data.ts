@@ -3,8 +3,10 @@ import type { AccentColor } from '$lib/constants/colors';
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 import { listOccurrencesInRange } from '$lib/api/occurrences.api';
 import type { FamilyMember, ItemOccurrence } from '$lib/types/domain';
-import { getWeekRange, toIsoRange } from '$lib/utils/date';
+import { getWeekRange, getMonthRange, toIsoRange } from '$lib/utils/date';
+import type { TodayNavigationView } from '$lib/calendar/today-navigation';
 import type { IconName } from '$lib/design/icon-registry';
+import { createAssignmentViewModels, type AssignmentCardModel } from '$lib/assignments/assignments-view';
 import {
   createTodayViewModel,
   formatDateKey,
@@ -20,12 +22,15 @@ type ListOccurrencesInRange = typeof listOccurrencesInRange;
 
 export type TodayOccurrenceDataInput = {
   date?: Date;
+  view?: TodayNavigationView;
+  activeMemberId?: string;
   occurrences: ItemOccurrence[];
   members?: FamilyMember[];
 };
 
 export type LoadTodayViewModelOptions = {
   date?: Date;
+  view?: TodayNavigationView;
   members?: FamilyMember[];
   listOccurrencesInRange?: ListOccurrencesInRange;
 };
@@ -56,11 +61,17 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
   const date = input.date ?? new Date();
   const base = createTodayViewModel(date);
   const memberById = new Map((input.members ?? []).map((member) => [member.id, member]));
-  const weekDayKeys = new Set(base.weekDays.map((day) => day.dateKey));
+  const assignmentActions = new Map(createAssignmentViewModels({
+    occurrences: input.occurrences,
+    items: input.occurrences.flatMap((occurrence) => occurrence.itemRecord ? [occurrence.itemRecord] : []),
+    members: input.members ?? [], activeMemberId: input.activeMemberId
+  }).map((card) => [card.id, card]));
+  const range = getTodayOccurrenceRange(date, input.view);
   const todayKey = formatDateKey(date);
   const weekOccurrences = input.occurrences.filter((occurrence) => {
-    const dateKey = getOccurrenceDateKey(occurrence);
-    return dateKey ? weekDayKeys.has(dateKey) : false;
+    const value = occurrence.startAt ?? occurrence.dueAt;
+    const time = value ? new Date(value).getTime() : NaN;
+    return time >= new Date(range.from).getTime() && time <= new Date(range.to).getTime();
   });
 
   const weekEvents = weekOccurrences
@@ -73,9 +84,10 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
     .sort((left, right) => left.title.localeCompare(right.title));
   const timelineItems = todayOccurrences
     .filter((occurrence) => !occurrence.allDay)
-    .map((occurrence) => mapOccurrenceToTimelineItem(occurrence, memberById, input.members?.length ?? 0))
+    .map((occurrence) => ({ ...mapOccurrenceToTimelineItem(occurrence, memberById, input.members?.length ?? 0),
+      ...getTimelineAction(assignmentActions.get(occurrence.id)) }))
     .sort((left, right) => left.time.localeCompare(right.time));
-  const attentionItems = createAttentionItems(weekOccurrences, memberById, date);
+  const attentionItems = createAttentionItems(weekOccurrences, memberById, date, assignmentActions);
   const familyMembers =
     input.members && input.members.length > 0 ? input.members.map(mapFamilyMemberToTodayMember) : base.familyMembers;
 
@@ -89,7 +101,7 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
     attentionCount: attentionItems.length,
     emptyState: {
       ...base.emptyState,
-      isEmpty: timelineItems.length === 0
+      isEmpty: timelineItems.length === 0 && allDayItems.length === 0
     }
   };
 }
@@ -97,7 +109,8 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
 function createAttentionItems(
   occurrences: ItemOccurrence[],
   memberById: Map<string, FamilyMember>,
-  date: Date
+  date: Date,
+  assignmentActions: Map<string, AssignmentCardModel>
 ): TodayAttentionItem[] {
   const tomorrow = new Date(date);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -105,7 +118,7 @@ function createAttentionItems(
 
   return occurrences
     .flatMap((occurrence) => {
-      if (isAssignmentWaitingApproval(occurrence)) {
+      if (assignmentActions.get(occurrence.id)?.primaryAction === 'approve_assignment') {
         return [mapWaitingApprovalAttention(occurrence, memberById)];
       }
 
@@ -120,10 +133,6 @@ function createAttentionItems(
       return [];
     })
     .sort(compareAttentionItems);
-}
-
-function isAssignmentWaitingApproval(occurrence: ItemOccurrence): boolean {
-  return occurrence.kind === 'assignment' && occurrence.status === 'done' && !occurrence.approvedAt;
 }
 
 function isOverdueAssignment(occurrence: ItemOccurrence, date: Date): boolean {
@@ -147,7 +156,9 @@ function mapWaitingApprovalAttention(
   const member = getOccurrenceMember(
     {
       ...occurrence,
-      visibleTo: occurrence.completedBy ? [occurrence.completedBy] : occurrence.visibleTo
+      itemRecord: occurrence.completedBy && occurrence.itemRecord && memberById.get(occurrence.completedBy)?.family === occurrence.family
+        ? { ...occurrence.itemRecord, assignees: [occurrence.completedBy] }
+        : occurrence.itemRecord
     },
     memberById
   );
@@ -186,7 +197,7 @@ function mapPrepReminderAttention(
 
   return {
     id: `attention-prep-${occurrence.id}`,
-    body: `Завтра у ${toGenitiveName(member.name)} «${occurrence.titleSnapshot}» — подготовиться`,
+    body: `Завтра: «${occurrence.titleSnapshot}» — ${member.name}`,
     ...memberToAttentionMember(member),
     actionKind: 'add_task',
     actionLabel: 'Добавить дело'
@@ -219,18 +230,26 @@ export async function loadTodayViewModelFromOccurrences(
   options: LoadTodayViewModelOptions = {}
 ): Promise<TodayViewModel> {
   const date = options.date ?? new Date();
-  const range = toIsoRange(getWeekRange(date));
+  const range = getTodayOccurrenceRange(date, options.view);
   const loader = options.listOccurrencesInRange ?? listOccurrencesInRange;
-  const result = await loader(context, {
-    from: range.start,
-    to: range.end
-  });
+  const result = await loader(context, range);
 
   return createTodayViewModelFromOccurrences({
     date,
+    view: options.view,
+    activeMemberId: context.memberId,
     occurrences: result.items,
     members: options.members
   });
+}
+
+export function getTodayOccurrenceRange(date: Date, view: TodayNavigationView = 'week') {
+  // The month grid includes the leading/trailing days of its boundary weeks.
+  const month = getMonthRange(date);
+  const range = toIsoRange(view === 'month'
+    ? { start: getWeekRange(month.start).start, end: getWeekRange(month.end).end }
+    : getWeekRange(date));
+  return { from: range.start, to: range.end };
 }
 
 function mapOccurrenceToWeekEvent(
@@ -242,6 +261,8 @@ function mapOccurrenceToWeekEvent(
 
   return {
     id: occurrence.id,
+    itemId: occurrence.item,
+    category: occurrence.categorySnapshot,
     day: getOccurrenceDateKey(occurrence) ?? '',
     start: getOccurrenceTime(occurrence),
     durationMinutes: getOccurrenceDurationMinutes(occurrence),
@@ -276,8 +297,7 @@ function mapOccurrenceToTimelineItem(
     color: category.color,
     category: occurrence.categorySnapshot,
     categoryLabel: category.label,
-    icon: category.icon as IconName,
-    ...getTimelineAction(occurrence)
+    icon: category.icon as IconName
   };
 }
 
@@ -308,11 +328,10 @@ function mapOccurrenceToAllDayItem(
 }
 
 function getTimelineAction(
-  occurrence: ItemOccurrence
+  card: AssignmentCardModel | undefined
 ): Pick<TodayTimelineItem, 'actionKind' | 'actionLabel'> {
   if (
-    occurrence.kind === 'assignment' &&
-    ['assigned', 'accepted', 'in_progress', 'rejected', 'overdue'].includes(occurrence.status)
+    card?.primaryAction === 'mark_assignment_done'
   ) {
     return {
       actionKind: 'mark_assignment_done',
@@ -342,34 +361,32 @@ function getOccurrenceMember(
   memberById: Map<string, FamilyMember>,
   familyMemberCount = memberById.size
 ): MemberDisplay {
-  if (isFamilyWideOccurrence(occurrence, familyMemberCount)) {
+  const memberIds = getPreferredOccurrenceMemberIds(occurrence);
+  if (occurrence.kind === 'event' && familyMemberCount > 0 && memberById.size > 0 && [...memberById.keys()].every((id) => memberIds.includes(id))) {
     return DEFAULT_MEMBER;
   }
 
-  const memberIds = getPreferredOccurrenceMemberIds(occurrence);
-  const member = memberIds.map((memberId) => memberById.get(memberId)).find(Boolean);
+  const members = memberIds.map((id) => memberById.get(id)).filter((member): member is FamilyMember => Boolean(member));
+  const member = members[0];
 
-  if (!member) return DEFAULT_MEMBER;
+  if (!member) return { ...DEFAULT_MEMBER, name: 'Участник не указан', initial: '?' };
 
   const color = getMemberColor(member, 0);
 
   return {
     color,
     initial: getInitial(member.displayName),
-    name: member.displayName,
+    name: members.map((member) => member.displayName).join(', '),
     portrait: PORTRAITS_BY_COLOR[color] ?? DEFAULT_MEMBER.portrait
   };
 }
 
-function isFamilyWideOccurrence(occurrence: ItemOccurrence, familyMemberCount: number): boolean {
-  if (familyMemberCount <= 0) return false;
-  const uniqueVisible = new Set(occurrence.visibleTo.filter(Boolean));
-  return occurrence.kind === 'event' && uniqueVisible.size >= familyMemberCount;
-}
-
 function getPreferredOccurrenceMemberIds(occurrence: ItemOccurrence): string[] {
-  if (occurrence.completedBy) return [occurrence.completedBy];
-  return occurrence.visibleTo;
+  const item = occurrence.itemRecord;
+  if (!item || item.id !== occurrence.item || item.family !== occurrence.family) return [];
+  if (item.kind === 'event') return item.participants;
+  if (item.kind === 'assignment') return item.assignees;
+  return item.owner ? [item.owner] : [item.createdBy];
 }
 
 function getMemberColor(member: FamilyMember, index: number): AccentColor {

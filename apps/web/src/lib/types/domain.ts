@@ -41,6 +41,7 @@ export type ActivityAction =
   | 'member.updated';
 
 export type NotificationType =
+  | 'item.reminder'
   | 'assignment.created'
   | 'assignment.due_soon'
   | 'assignment.done_waiting_approval'
@@ -95,6 +96,7 @@ export type Item = {
   recurrenceRule?: string;
   recurrenceUntil?: string;
   reminderOffsetMinutes?: number;
+  reminderEnabled?: boolean;
   approvalRequired: boolean;
   checklist?: ChecklistItem[];
   points?: number;
@@ -113,6 +115,7 @@ export type ItemOccurrence = {
   id: string;
   family: string;
   item: string;
+  itemRecord?: Item;
   visibleTo: string[];
   kind: ItemKind;
   titleSnapshot: string;

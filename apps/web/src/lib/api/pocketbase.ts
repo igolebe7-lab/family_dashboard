@@ -1,6 +1,6 @@
-import PocketBase from 'pocketbase';
+import PocketBase, { BaseAuthStore } from 'pocketbase';
 
-export const DEFAULT_POCKETBASE_URL = 'http://127.0.0.1:8090';
+export const DEFAULT_POCKETBASE_URL = '/';
 
 export type ActiveFamilyContext = {
   familyId: string;
@@ -10,6 +10,7 @@ export type ActiveFamilyContext = {
 export type PocketBaseAuthStoreLike = {
   clear: () => void;
   save?: (token: string, record: unknown) => void;
+  onChange?: (callback: (token: string, record: unknown) => void, fireImmediately?: boolean) => () => void;
   isValid: boolean;
   token: string;
   record: unknown;
@@ -18,6 +19,13 @@ export type PocketBaseAuthStoreLike = {
 export type PocketBaseCollectionLike = {
   authWithPassword?: (email: string, password: string) => Promise<unknown>;
   authRefresh?: () => Promise<unknown>;
+  requestPasswordReset?: (email: string, options?: Record<string, unknown>) => Promise<unknown>;
+  confirmPasswordReset?: (
+    token: string,
+    password: string,
+    passwordConfirm: string,
+    options?: Record<string, unknown>
+  ) => Promise<unknown>;
   create?: (body: Record<string, unknown>, options?: Record<string, unknown>) => Promise<unknown>;
   update?: (
     id: string,
@@ -40,6 +48,7 @@ export type PocketBaseCollectionLike = {
 };
 
 export type PocketBaseClientLike = {
+  baseURL?: string;
   authStore: PocketBaseAuthStoreLike;
   collection: (name: string) => PocketBaseCollectionLike;
   send?: (path: string, options?: Record<string, unknown>) => Promise<unknown>;
@@ -47,9 +56,21 @@ export type PocketBaseClientLike = {
 
 let pocketBaseClient: PocketBaseClientLike | undefined;
 
-export function resolvePocketBaseUrl(value = import.meta.env.PUBLIC_POCKETBASE_URL): string {
+export function resolvePocketBaseUrl(
+  value = import.meta.env.PUBLIC_POCKETBASE_URL,
+  origin = typeof location === 'undefined' ? '' : location.origin
+): string {
   const normalized = String(value || '').trim().replace(/\/+$/, '');
-  return normalized || DEFAULT_POCKETBASE_URL;
+  return normalized || origin || DEFAULT_POCKETBASE_URL;
+}
+
+export function createAuthRequestClient(client: PocketBaseClientLike): PocketBaseClientLike {
+  // SDK auth methods save responses automatically. Stage them in memory so a late
+  // response cannot overwrite logout or an account change in the shared auth store.
+  if (!client.baseURL) return client;
+  const requestClient = new PocketBase(client.baseURL, new BaseAuthStore()) as PocketBaseClientLike;
+  requestClient.authStore.save?.(client.authStore.token, client.authStore.record);
+  return requestClient;
 }
 
 export function createPocketBaseClient(baseUrl = resolvePocketBaseUrl()): PocketBaseClientLike {

@@ -5,6 +5,7 @@ import { listOccurrencesInRange } from '$lib/api/occurrences.api';
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 import type { ItemCategory } from '$lib/constants/categories';
 import type { ItemOccurrence } from '$lib/types/domain';
+import { getTodayOccurrenceRange } from '$lib/today/today-data';
 import {
   getVisibleRange,
   toIsoRange,
@@ -56,24 +57,37 @@ const initialFilters: CalendarFilters = {
 };
 
 export function createCalendarStore(options: CalendarStoreOptions = {}) {
+  let requestVersion = 0;
   const store = writable<CalendarState>(
     createCalendarState(options.selectedDate ?? new Date(), options.view ?? 'week')
   );
 
+  function updateSelection(select: (state: CalendarState) => CalendarState) {
+    store.update((state) => {
+      const next = select(state);
+      if (next.visibleRange.from !== state.visibleRange.from || next.visibleRange.to !== state.visibleRange.to) requestVersion++;
+      return next;
+    });
+  }
+
   return {
     subscribe: store.subscribe,
+    reset: () => {
+      requestVersion++;
+      store.update((state) => createCalendarState(state.selectedDate, state.view));
+    },
     setView: (view: DateCalendarView) => {
       assertMvpView(view);
-      store.update((state) => createCalendarState(state.selectedDate, view, state.filters, state));
+      updateSelection((state) => createCalendarState(state.selectedDate, view, state.filters, state));
     },
     setSelectedDate: (date: Date) =>
-      store.update((state) => createCalendarState(date, state.view, state.filters, state)),
+      updateSelection((state) => createCalendarState(date, state.view, state.filters, state)),
     goPrevious: () =>
-      store.update((state) =>
+      updateSelection((state) =>
         createCalendarState(shiftDate(state.selectedDate, state.view, -1), state.view, state.filters, state)
       ),
     goNext: () =>
-      store.update((state) =>
+      updateSelection((state) =>
         createCalendarState(shiftDate(state.selectedDate, state.view, 1), state.view, state.filters, state)
       ),
     toggleCategory: (category: ItemCategory) =>
@@ -112,15 +126,22 @@ export function createCalendarStore(options: CalendarStoreOptions = {}) {
     ): Promise<ItemOccurrence[]> => {
       const loader = dependencies.listOccurrencesInRange ?? listOccurrencesInRange;
       const range = get(store).visibleRange;
+      const version = ++requestVersion;
+      const isCurrent = () => version === requestVersion &&
+        get(store).visibleRange.from === range.from && get(store).visibleRange.to === range.to;
 
       store.update((state) => ({
         ...state,
         status: 'loading',
+        occurrences: [],
+        filteredOccurrences: [],
+        totalItems: 0,
         error: null
       }));
 
       try {
         const result = await loader(context, range);
+        if (!isCurrent()) return [];
 
         store.update((state) => ({
           ...state,
@@ -133,6 +154,7 @@ export function createCalendarStore(options: CalendarStoreOptions = {}) {
 
         return result.items;
       } catch (error) {
+        if (!isCurrent()) return [];
         store.update((state) => ({
           ...state,
           status: 'error',
@@ -151,9 +173,14 @@ function createCalendarState(
   selectedDate: Date,
   view: CalendarView,
   filters: CalendarFilters = initialFilters,
-  existingState?: Pick<CalendarState, 'status' | 'occurrences' | 'totalItems' | 'error'>
+  existingState?: CalendarState
 ): CalendarState {
-  const range = toIsoRange(getVisibleRange(view, selectedDate));
+  const range = view === 'month'
+    ? (() => { const range = getTodayOccurrenceRange(selectedDate, 'month'); return { start: range.from, end: range.to }; })()
+    : toIsoRange(getVisibleRange(view, selectedDate));
+  if (existingState?.visibleRange.from !== range.start || existingState?.visibleRange.to !== range.end) {
+    existingState = undefined;
+  }
   const occurrences = existingState?.occurrences ?? [];
 
   return {

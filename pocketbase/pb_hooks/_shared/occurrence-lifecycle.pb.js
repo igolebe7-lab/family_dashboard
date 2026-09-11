@@ -1,5 +1,19 @@
 function validateBeforeUpdate(app, event, auth, isSuperuser) {
   const existing = event.record.original();
+  if (!isSuperuser) {
+    const body = require(`${__hooks}/_shared/auth.pb.js`).getRequestInfo(event).body || {};
+    for (const field of Object.keys(body)) {
+      if (!['status', 'rejection_reason', 'skipped_reason'].includes(field)) {
+        throw newApiError(400, 'Это поле экземпляра изменяет только сервер', { field });
+      }
+    }
+    for (const [field, status] of [['rejection_reason', 'rejected'], ['skipped_reason', 'skipped']]) {
+      if (Object.prototype.hasOwnProperty.call(body, field) &&
+          (event.record.get('status') !== status || existing.get('status') === status)) {
+        throw newApiError(400, 'Причина задаётся только при переходе статуса', { field });
+      }
+    }
+  }
   const previousStatus = existing.get('status');
   const nextStatus = event.record.get('status');
 
@@ -46,11 +60,34 @@ function validateTransition(previousStatus, nextStatus) {
 
 function applyTransition(app, event, auth, isSuperuser, previousStatus, nextStatus) {
   const occurrence = event.record;
-  if (occurrence.get('kind') !== 'assignment') return;
-
   const item = findItem(app, occurrence.get('item'));
   const actor = findRequestActor(app, event, auth, occurrence.get('family'), isSuperuser);
   ensureActorMatchesAuth(app, auth, actor, occurrence.get('family'), isSuperuser);
+  const permissions = require(`${__hooks}/_shared/permissions.pb.js`);
+  if (!permissions.canViewItem(app, actor, item)) {
+    throw newApiError(403, 'Нет доступа к записи', {});
+  }
+  if (occurrence.get('kind') !== 'assignment') {
+    const allowedStatuses = occurrence.get('kind') === 'event'
+      ? ['cancelled']
+      : ['todo', 'in_progress', 'done', 'cancelled'];
+    if (!allowedStatuses.includes(nextStatus)) {
+      throw newApiError(400, 'Статус не подходит для этого типа записи', {});
+    }
+    if (![item.get('created_by'), item.get('owner')].includes(actor.id)) {
+      throw newApiError(403, 'Нельзя менять статус чужого дела', {});
+    }
+    if (nextStatus === 'done') {
+      occurrence.set('completed_by', actor.id);
+      occurrence.set('completed_at', nowIso());
+    }
+    return;
+  }
+  if (!['approved', 'rejected'].includes(nextStatus)) {
+    if (nextStatus === 'cancelled') ensureCanReview(app, actor, item);
+    else ensureCanMarkDone(app, actor, item);
+  }
+  if (nextStatus === 'skipped') occurrence.set('skipped_by', actor.id);
 
   if (nextStatus === 'done') {
     ensureCanMarkDone(app, actor, item);
@@ -151,7 +188,7 @@ function findRequestActor(app, event, auth, familyId, isSuperuser) {
 
   const authMembers = app.findRecordsByFilter(
     'family_members',
-    `family = "${escapeFilterValue(familyId)}" && user = "${escapeFilterValue(auth.id)}"`,
+    `family = "${escapeFilterValue(familyId)}" && user = "${escapeFilterValue(auth.id)}" && active = true`,
     '',
     1,
     0
@@ -163,11 +200,12 @@ function findRequestActor(app, event, auth, familyId, isSuperuser) {
 }
 
 function ensureActorMatchesAuth(app, auth, actor, familyId, isSuperuser) {
+  if (!actor.get('active')) throw newApiError(403, 'Член семьи неактивен', {});
   if (isSuperuser || actor.get('user') === auth.id) return;
 
   const authMembers = app.findRecordsByFilter(
     'family_members',
-    `family = "${escapeFilterValue(familyId)}" && user = "${escapeFilterValue(auth.id)}"`,
+    `family = "${escapeFilterValue(familyId)}" && user = "${escapeFilterValue(auth.id)}" && active = true`,
     '',
     20,
     0
@@ -272,7 +310,9 @@ function notifyMembers(app, occurrence, item, memberIds, payload) {
 function getTransitionActor(occurrence, status) {
   if (status === 'approved') return occurrence.get('approved_by');
   if (status === 'rejected') return occurrence.get('rejected_by');
-  return occurrence.get('completed_by');
+  if (status === 'skipped') return occurrence.get('skipped_by');
+  if (status === 'done') return occurrence.get('completed_by');
+  return '';
 }
 
 function getActivityAction(status) {
@@ -327,7 +367,7 @@ function getHeader(event, name) {
     return headers.get(name) || headers.get(lowerName) || '';
   }
 
-  return headers[name] || headers[lowerName] || headers['X-Family-Member-Id'] || '';
+  return headers[name] || headers[lowerName] || headers[lowerName.replace(/-/g, '_')] || headers['X-Family-Member-Id'] || '';
 }
 
 function escapeFilterValue(value) {

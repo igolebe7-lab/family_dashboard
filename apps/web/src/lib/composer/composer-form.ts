@@ -4,7 +4,9 @@ import type { ItemKind, ItemPriority, ItemVisibility } from '$lib/types/domain';
 
 export type ComposerKind = Extract<ItemKind, 'event' | 'task'>;
 export type ComposerReminder = 'none' | 'at_time' | 'before_15' | 'before_60' | 'before_day';
-export type ComposerRepeat = 'none' | 'daily' | 'weekly' | 'monthly';
+export type ComposerRepeat = 'none' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+export const COMPOSER_WEEKDAYS = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const;
+export type ComposerWeekday = typeof COMPOSER_WEEKDAYS[number];
 export const FAMILY_TARGET = '__family__';
 
 export type ComposerFormValues = {
@@ -28,6 +30,10 @@ export type ComposerFormValues = {
   locationText: string;
   reminder: ComposerReminder;
   repeat: ComposerRepeat;
+  repeatInterval: number;
+  // Undefined follows the selected date; an empty array is an invalid explicit selection.
+  repeatDays: ComposerWeekday[] | undefined;
+  repeatUntil: string;
   approvalRequired: boolean;
   points: string;
 };
@@ -64,6 +70,9 @@ export function createComposerFormValues(input: {
     locationText: '',
     reminder: 'none',
     repeat: 'none',
+    repeatInterval: 1,
+    repeatDays: undefined,
+    repeatUntil: '',
     approvalRequired: false,
     points: ''
   };
@@ -73,6 +82,24 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
   const errors = validateComposerForm(values);
   if (errors.length > 0) return { ok: false, errors };
   const familyMemberIds = getFamilyMemberIds(values);
+  let startAt: string | undefined;
+  let endAt: string | undefined;
+  let dueAt: string | undefined;
+  let recurrenceUntil: string | undefined;
+  try {
+    if (values.kind === 'event') {
+      startAt = createDateTimeIso(values.date, values.allDay ? '00:00' : values.startTime, timezone);
+      endAt = createDateTimeIso(values.date, values.allDay ? '23:59' : values.endTime, timezone);
+    } else {
+      dueAt = createDateTimeIso(values.date, values.dueTime, timezone);
+    }
+    if (values.repeat !== 'none' && values.repeatUntil) {
+      // Include the whole final local date, not midnight at its beginning.
+      recurrenceUntil = new Date(Date.parse(createDateTimeIso(values.repeatUntil, '23:59', timezone)) + 59_999).toISOString();
+    }
+  } catch (error) {
+    return { ok: false, errors: [error instanceof Error ? error.message : 'Проверьте дату и часовой пояс семьи'] };
+  }
 
   const base = {
     kind: values.kind,
@@ -82,16 +109,12 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
     priority: values.priority,
     visibility: values.visibility,
     timezone,
-    recurrenceRule: createRecurrenceRule(values.repeat),
+    recurrenceRule: createRecurrenceRule(values),
+    recurrenceUntil,
     reminderOffsetMinutes: createReminderOffsetMinutes(values.reminder)
   } satisfies Partial<CreateItemInput>;
 
   if (values.kind === 'event') {
-    const startAt = createDateTimeIso(values.date, values.startTime);
-    const endAt = values.allDay
-      ? createDateTimeIso(values.date, '23:59')
-      : createDateTimeIso(values.date, values.endTime);
-
     return {
       ok: true,
       input: {
@@ -114,7 +137,7 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
         kind: 'assignment',
         visibility: 'family',
         assignees: familyMemberIds,
-        dueAt: createDateTimeIso(values.date, values.dueTime),
+        dueAt,
         approvalRequired: values.approvalRequired,
         points: values.points ? Number(values.points) : undefined
       } as CreateItemInput
@@ -128,7 +151,7 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
         ...base,
         kind: 'task',
         owner: values.owner,
-        dueAt: createDateTimeIso(values.date, values.dueTime),
+        dueAt,
         checklist: createChecklist(values.checklistText)
       } as CreateItemInput
     };
@@ -141,7 +164,7 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
       kind: 'assignment',
       visibility: 'assignees',
       assignees: [values.owner],
-      dueAt: createDateTimeIso(values.date, values.dueTime),
+      dueAt,
       approvalRequired: values.approvalRequired,
       points: values.points ? Number(values.points) : undefined
     } as CreateItemInput
@@ -155,6 +178,16 @@ export function validateComposerForm(values: ComposerFormValues): string[] {
   if (!title) errors.push('Название обязательно');
   if (title.length > 120) errors.push('Название слишком длинное');
   if (!isValidDateInput(values.date)) errors.push('Проверьте дату');
+  if (values.repeat !== 'none') {
+    if (!Number.isInteger(values.repeatInterval) || values.repeatInterval < 1 || values.repeatInterval > 52) {
+      errors.push('Интервал повтора должен быть целым числом от 1 до 52');
+    }
+    if (values.repeat === 'weekly' && getComposerRepeatDays(values.date, values.repeatDays).length === 0) {
+      errors.push('Выберите хотя бы один день недели');
+    }
+    if (values.repeatUntil && !isValidDateInput(values.repeatUntil)) errors.push('Проверьте дату окончания повтора');
+    else if (values.repeatUntil && values.repeatUntil < values.date) errors.push('Окончание повтора не может быть раньше начала');
+  }
 
   if (values.kind === 'event') {
     if (!values.allDay && !isValidTimeInput(values.startTime)) errors.push('Проверьте время начала');
@@ -162,9 +195,7 @@ export function validateComposerForm(values: ComposerFormValues): string[] {
     if (getEventParticipants(values, getFamilyMemberIds(values)).length === 0) errors.push('Выберите участников события');
 
     if (!values.allDay && isValidDateInput(values.date) && isValidTimeInput(values.startTime) && isValidTimeInput(values.endTime)) {
-      const startAt = createDateTimeIso(values.date, values.startTime);
-      const endAt = createDateTimeIso(values.date, values.endTime);
-      if (new Date(endAt).getTime() < new Date(startAt).getTime()) {
+      if (values.endTime < values.startTime) {
         errors.push('Окончание не может быть раньше начала');
       }
     }
@@ -206,8 +237,33 @@ export function setComposerKind(values: ComposerFormValues, kind: ComposerKind):
   };
 }
 
-function createDateTimeIso(date: string, time: string): string {
-  return new Date(`${date}T${time}:00`).toISOString();
+export function createDateTimeIso(date: string, time: string, timezone: string): string {
+  if (!isValidDateInput(date) || !isValidTimeInput(time)) throw new Error('Проверьте дату и время');
+  let formatter: Intl.DateTimeFormat;
+  try {
+    if (!timezone) throw new Error();
+    formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: timezone, calendar: 'gregory', numberingSystem: 'latn', hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  } catch {
+    throw new Error('Проверьте часовой пояс семьи');
+  }
+  const wallTime = Date.parse(`${date}T${time}:00Z`);
+  const localTimestamp = (instant: number) => {
+    const parts = Object.fromEntries(formatter.formatToParts(instant).map(({ type, value }) => [type, value]));
+    return Date.parse(`${parts.year.padStart(4, '0')}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}Z`);
+  };
+  // Probe both sides of nearby transitions, then round-trip each candidate.
+  // Gaps have no candidate; folds deliberately choose the earlier instant.
+  const offsets = new Set([-36, -12, 0, 12, 36].map((hours) => {
+    const probe = wallTime + hours * 3_600_000;
+    return localTimestamp(probe) - probe;
+  }));
+  const candidates = [...offsets].map((offset) => wallTime - offset)
+    .filter((instant) => localTimestamp(instant) === wallTime);
+  if (!candidates.length) throw new Error(`Время ${time} ${date} не существует в часовом поясе семьи. Выберите другое время`);
+  return new Date(Math.min(...candidates)).toISOString();
 }
 
 function createChecklist(value: string): { id: string; title: string; done: boolean }[] | undefined {
@@ -224,11 +280,19 @@ function createChecklist(value: string): { id: string; title: string; done: bool
   return items.length > 0 ? items : undefined;
 }
 
-function createRecurrenceRule(repeat: ComposerRepeat): string | undefined {
-  if (repeat === 'daily') return 'FREQ=DAILY';
-  if (repeat === 'weekly') return 'FREQ=WEEKLY';
-  if (repeat === 'monthly') return 'FREQ=MONTHLY';
-  return undefined;
+export function getComposerRepeatDays(date: string, days?: ComposerWeekday[]): ComposerWeekday[] {
+  if (days !== undefined) return COMPOSER_WEEKDAYS.filter((day) => days.includes(day));
+  if (!isValidDateInput(date)) return [];
+  return [COMPOSER_WEEKDAYS[(new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7]];
+}
+
+function createRecurrenceRule(values: ComposerFormValues): string | undefined {
+  if (values.repeat === 'none') return undefined;
+  const freq = values.repeat === 'daily' ? 'DAILY' : values.repeat === 'monthly' ? 'MONTHLY' : 'WEEKLY';
+  const rule = `FREQ=${freq};INTERVAL=${values.repeatInterval}`;
+  if (values.repeat === 'weekdays') return `${rule};BYDAY=MO,TU,WE,TH,FR`;
+  if (values.repeat === 'weekly') return `${rule};BYDAY=${getComposerRepeatDays(values.date, values.repeatDays).join(',')}`;
+  return rule;
 }
 
 function createReminderOffsetMinutes(reminder: ComposerReminder): number | undefined {
@@ -249,8 +313,8 @@ function formatDateInputValue(date: Date): string {
 function isValidDateInput(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  const date = new Date(`${value}T12:00:00Z`);
+  return year >= 1 && date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 
 function isValidTimeInput(value: string): boolean {

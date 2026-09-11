@@ -1,5 +1,6 @@
 import { COLLECTIONS } from '$lib/constants/collections';
 import type { NotificationRecord } from '$lib/types/domain';
+import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
 
 import {
   type ActiveFamilyContext,
@@ -12,6 +13,10 @@ import {
   requireCollectionMethod
 } from './pocketbase';
 
+export type InboxNotification = NotificationRecord & {
+  destination: { href: string; label: string } | null;
+};
+
 export async function listUnreadNotifications(
   context: Partial<ActiveFamilyContext>
 ): Promise<NotificationRecord[]> {
@@ -20,36 +25,80 @@ export async function listUnreadNotifications(
 
 export async function listNotifications(
   context: Partial<ActiveFamilyContext>,
-  options: { unreadOnly?: boolean; limit?: number } = {}
-): Promise<NotificationRecord[]> {
+  options: { unreadOnly?: boolean; limit?: number; page?: number; createdBefore?: string } = {}
+): Promise<InboxNotification[]> {
   const activeContext = requireActiveContext(context);
   const notifications = getPocketBaseClient().collection(COLLECTIONS.notifications);
   const getList = requireCollectionMethod(notifications, 'getList');
   const filter = [
     `family = "${escapeFilterValue(activeContext.familyId)}"`,
-    options.unreadOnly ? 'read_at = ""' : ''
+    `recipient_member = "${escapeFilterValue(activeContext.memberId)}"`,
+    options.unreadOnly ? 'read_at = ""' : '',
+    options.createdBefore ? `created <= "${escapeFilterValue(options.createdBefore)}"` : ''
   ]
     .filter(Boolean)
     .join(' && ');
   const result = asRecord(
-    await getList(1, options.limit ?? 50, {
+    await getList(Math.max(1, Math.trunc(options.page ?? 1) || 1), Math.min(100, Math.max(1, Math.trunc(options.limit ?? 50) || 50)), {
       filter,
       sort: '-created',
+      expand: 'item,occurrence',
       requestKey: null,
       ...memberRequestOptions(activeContext)
     })
   );
 
-  return Array.isArray(result.items) ? result.items.map(mapNotificationRecord) : [];
+  return Array.isArray(result.items) ? result.items.map((record) => ({
+    ...mapNotificationRecord(record),
+    destination: notificationDestination(record)
+  })) : [];
 }
 
 export async function markAllNotificationsRead(
   context: Partial<ActiveFamilyContext>,
-  readAt = new Date().toISOString()
+  readAt = new Date().toISOString(),
+  signal?: AbortSignal
 ): Promise<NotificationRecord[]> {
-  const unread = await listUnreadNotifications(context);
+  const activeContext = requireActiveContext(context);
+  const updated: NotificationRecord[] = [];
+  const seen = new Set<string>();
+  // Always drain page one: successful updates remove rows from the unread result.
+  for (;;) {
+    signal?.throwIfAborted();
+    const unread = await listNotifications(activeContext, { unreadOnly: true, limit: 50, createdBefore: readAt });
+    for (const record of unread) {
+      signal?.throwIfAborted();
+      if (seen.has(record.id)) throw new Error('Unread notification did not advance');
+      seen.add(record.id);
+      updated.push(await markNotificationRead(record.id, activeContext, readAt));
+    }
+    if (unread.length < 50) return updated;
+  }
+}
 
-  return Promise.all(unread.map((record) => markNotificationRead(record.id, context, readAt)));
+export function notificationDestination(value: unknown): InboxNotification['destination'] {
+  const record = asRecord(value);
+  const expanded = asRecord(record.expand);
+  const occurrence = asRecord(expanded.occurrence);
+  const item = asRecord(expanded.item);
+  const related = occurrence.kind ? occurrence : item;
+  if (related.family && related.family !== record.family) return null;
+  const itemId = asString(record.item) || asString(occurrence.item) || asString(item.id);
+  if (itemId) return { href: `/app/items/${encodeURIComponent(itemId)}`, label: 'Открыть запись' };
+  const type = asString(record.type);
+  const kind = asString(related.kind);
+  if (kind === 'assignment' || type.startsWith('assignment.')) {
+    return { href: '/app/assignments', label: 'Открыть поручения' };
+  }
+  if (kind === 'task') return { href: '/app/tasks', label: 'Открыть дела' };
+  if (kind === 'event' || type.startsWith('event.')) {
+    const date = new Date(asString(related.start_at));
+    const dateKey = Number.isNaN(date.getTime()) ? null :
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return { href: dateKey ? buildTodayCalendarHref({ dateKey }) : '/app/today', label: dateKey ? 'Открыть день события' : 'Открыть расписание' };
+  }
+  if (type.startsWith('digest.')) return { href: '/app/today', label: 'Открыть сегодня' };
+  return null;
 }
 
 export async function markNotificationRead(

@@ -11,7 +11,7 @@
     <slot />
   </a>
 {:else}
-  <button class={`button button--${variant} ${className}`} {type} aria-label={ariaLabel}>
+  <button class={`button button--${variant} ${className}`} {type} aria-label={ariaLabel} on:click>
     <slot />
   </button>
 {/if}

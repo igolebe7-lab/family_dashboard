@@ -9,6 +9,9 @@
   export let items: TodayTimelineItem[] = [];
   export let allDayItems: TodayAllDayItem[] = [];
   export let labelledBy = 'today-timeline-title';
+  export let title = 'Сегодня';
+  export let loading = false;
+  export let error: string | null = null;
   export let loadDetails:
     | ((item: TodayTimelineItem | TodayAllDayItem) => Promise<Partial<TodayTimelineItem | TodayAllDayItem>>)
     | undefined = undefined;
@@ -27,6 +30,7 @@
     selectedLoading = true;
     try {
       const details = await loadDetails(item);
+      if (selectedItem?.id !== item.id) return;
       selectedItem = { ...item, ...details };
     } catch (error) {
       console.warn('Failed to load item details.', error);
@@ -39,11 +43,11 @@
 <Card labelledBy={labelledBy} className="today-timeline-card">
   <div class="section-title-row">
     <div>
-      <h2 id={labelledBy}>Сегодня</h2>
+      <h2 id={labelledBy}>{title}</h2>
     </div>
-    <button class="today-section-icon-button" type="button" aria-label="Открыть календарь">
+    <a class="today-section-icon-button" href="/app/calendar" aria-label="Открыть календарь">
       <CalendarDays size={22} strokeWidth={2.1} aria-hidden="true" />
-    </button>
+    </a>
   </div>
 
   {#if allDayItems.length > 0}
@@ -67,7 +71,11 @@
     </div>
   {/if}
 
-  {#if items.length === 0 && allDayItems.length === 0}
+  {#if loading && items.length === 0 && allDayItems.length === 0}
+    <p role="status">Загружаем расписание…</p>
+  {:else if error && items.length === 0 && allDayItems.length === 0}
+    <p>Расписание пока недоступно.</p>
+  {:else if items.length === 0 && allDayItems.length === 0}
     <TodayEmptyState title="Сегодня спокойно" body="Когда появятся события или дела, они будут здесь." />
   {:else}
     <div class="today-timeline-list">

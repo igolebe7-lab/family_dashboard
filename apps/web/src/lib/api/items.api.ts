@@ -72,6 +72,7 @@ export async function createItem(
       recurrence_rule: input.recurrenceRule,
       recurrence_until: input.recurrenceUntil,
       reminder_offset_minutes: input.reminderOffsetMinutes,
+      reminder_enabled: input.reminderOffsetMinutes !== undefined,
       approval_required: input.approvalRequired || false,
       checklist_json: input.checklist,
       points: input.points,
@@ -122,11 +123,32 @@ export function mapItemRecord(value: unknown): Item {
     recurrenceRule: asString(record.recurrence_rule) || undefined,
     recurrenceUntil: asString(record.recurrence_until) || undefined,
     reminderOffsetMinutes:
-      typeof record.reminder_offset_minutes === 'number' ? record.reminder_offset_minutes : undefined,
+      asBoolean(record.reminder_enabled) && typeof record.reminder_offset_minutes === 'number' ? record.reminder_offset_minutes : undefined,
+    reminderEnabled: asBoolean(record.reminder_enabled),
     approvalRequired: asBoolean(record.approval_required),
+    checklist: Array.isArray(record.checklist_json)
+      ? record.checklist_json.map((entry) => {
+          const step = asRecord(entry);
+          return { id: asString(step.id), title: asString(step.title), done: asBoolean(step.done) };
+        }).filter((step) => step.id && step.title)
+      : [],
     points: typeof record.points === 'number' ? record.points : undefined,
     locationText: asString(record.location_text) || undefined,
     colorOverride: asString(record.color_override) || undefined,
     archived: asBoolean(record.archived)
   };
+}
+
+export async function updateItemDetails(
+  id: string,
+  input: { title: string; description: string; locationText: string },
+  context: ActiveFamilyContext
+): Promise<Item> {
+  const active = requireActiveContext(context);
+  const title = input.title.trim();
+  if (!title || title.length > 120) throw new Error('Название: от 1 до 120 символов');
+  const update = requireCollectionMethod(getPocketBaseClient().collection(COLLECTIONS.items), 'update');
+  return mapItemRecord(await update(id, {
+    title, description: input.description.trim(), location_text: input.locationText.trim()
+  }, memberRequestOptions(active)));
 }

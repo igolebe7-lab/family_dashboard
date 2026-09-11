@@ -2,26 +2,8 @@ const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090';
 const SUPERUSER_EMAIL = process.env.PB_SUPERUSER_EMAIL || 'admin@familytime.local';
 const SUPERUSER_PASSWORD = process.env.PB_SUPERUSER_PASSWORD || 'ChangeMe123456!';
 const KEEP_SMOKE_DATA = process.env.SMOKE_KEEP_DATA === '1';
-const CLEANUP_BEFORE = process.env.SMOKE_CLEANUP_BEFORE !== '0';
 const CLEANUP_AFTER = process.env.SMOKE_CLEANUP_AFTER !== '0' && !KEEP_SMOKE_DATA;
-
-const FAMILY_SCOPED_COLLECTIONS = [
-  'notifications',
-  'item_activity',
-  'item_comments',
-  'item_occurrences',
-  'items',
-  'day_annotations',
-  'invitations',
-  'family_members'
-];
-const ITEM_SCOPED_COLLECTIONS = [
-  'notifications',
-  'item_activity',
-  'item_comments',
-  'item_occurrences'
-];
-const UI_SMOKE_TITLE_PATTERNS = [/^UI smoke /, /^Login smoke /, /^direct api /, /^Draft QA /];
+const owned = [];
 
 const suffix = `${Date.now()}`;
 const parentPassword = 'ParentPass12345!';
@@ -62,6 +44,7 @@ async function auth(collection, identity, password) {
 
 async function createRecord(collection, token, body) {
   const { data } = await request(`/api/collections/${collection}/records`, { token, body });
+  owned.push({ collection, id: data.id });
   return data;
 }
 
@@ -71,14 +54,15 @@ async function listRecords(collection, token, filter) {
   return data;
 }
 
-async function listAllRecords(collection, token) {
+async function listAllRecords(collection, token, familyId) {
   const items = [];
   let page = 1;
 
   while (true) {
     const query = new URLSearchParams({
       page: `${page}`,
-      perPage: '200'
+      perPage: '200',
+      filter: `family="${familyId}"`
     });
     const { data } = await request(`/api/collections/${collection}/records?${query}`, { token });
     items.push(...data.items);
@@ -97,73 +81,12 @@ async function deleteRecord(collection, token, id) {
   });
 }
 
-function relationIds(value) {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string' && value) return [value];
-  return [];
-}
-
-function isSmokeUser(user) {
-  return /^(parent|parent\.helper|child|invited|debug|ui\.owner|ui\.invited|stage8)\.\d+@familytime\.local$/.test(
-    user.email ?? ''
-  );
-}
-
-function isSmokeFamily(family) {
-  return (
-    typeof family.slug === 'string' &&
-    (family.slug.startsWith('smoke-family-') ||
-      family.slug.startsWith('ui-family-') ||
-      family.slug.startsWith('stage8-family-'))
-  );
-}
-
-function isUiSmokeItem(item) {
-  return UI_SMOKE_TITLE_PATTERNS.some((pattern) => pattern.test(item.title ?? ''));
-}
-
-async function deleteCollectionRecords(collection, token, records, deleted) {
-  for (const record of records) {
-    await deleteRecord(collection, token, record.id);
-    deleted[collection] = (deleted[collection] ?? 0) + 1;
-  }
-}
-
 async function cleanupSmokeData(token) {
-  const deleted = {};
-  const families = await listAllRecords('families', token);
-  const smokeFamilies = families.filter(isSmokeFamily);
-  const smokeFamilyIds = new Set(smokeFamilies.map((family) => family.id));
-
-  for (const collection of FAMILY_SCOPED_COLLECTIONS) {
-    const records = await listAllRecords(collection, token);
-    const recordsToDelete = records.filter((record) =>
-      relationIds(record.family).some((familyId) => smokeFamilyIds.has(familyId))
-    );
-    await deleteCollectionRecords(collection, token, recordsToDelete, deleted);
-  }
-
-  await deleteCollectionRecords('families', token, smokeFamilies, deleted);
-
-  const items = await listAllRecords('items', token);
-  const uiSmokeItems = items.filter(isUiSmokeItem);
-  const uiSmokeItemIds = new Set(uiSmokeItems.map((item) => item.id));
-
-  for (const collection of ITEM_SCOPED_COLLECTIONS) {
-    const records = await listAllRecords(collection, token);
-    const recordsToDelete = records.filter((record) =>
-      relationIds(record.item).some((itemId) => uiSmokeItemIds.has(itemId))
-    );
-    await deleteCollectionRecords(collection, token, recordsToDelete, deleted);
-  }
-
-  await deleteCollectionRecords('items', token, uiSmokeItems, deleted);
-
-  const users = await listAllRecords('users', token);
-  const smokeUsers = users.filter(isSmokeUser);
-  await deleteCollectionRecords('users', token, smokeUsers, deleted);
-
-  return deleted;
+  return cleanupSmokeRun({
+    owned,
+    list: (collection, familyId) => listAllRecords(collection, token, familyId),
+    remove: (collection, id) => deleteRecord(collection, token, id)
+  });
 }
 
 async function expectRejected(label, callback, expectedStatus = 400) {
@@ -176,7 +99,9 @@ async function expectRejected(label, callback, expectedStatus = 400) {
 
 const superuserAuth = await auth('_superusers', SUPERUSER_EMAIL, SUPERUSER_PASSWORD);
 const superToken = superuserAuth.token;
-const cleanupBefore = CLEANUP_BEFORE ? await cleanupSmokeData(superToken) : null;
+let cleanupCompleted = false;
+
+try {
 
 const parentEmail = `parent.${suffix}@familytime.local`;
 const childEmail = `child.${suffix}@familytime.local`;
@@ -272,7 +197,7 @@ const invitation = await createRecord('invitations', parentAuth.token, {
   code: invitationCode,
   role: 'adult',
   created_by: parentMember.id,
-  expires_at: '2026-06-30T10:00:00.000Z'
+  expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 });
 const invitationPreview = await request('/familytime/invitations/preview', {
   token: invitedAuth.token,
@@ -583,6 +508,7 @@ await expectRejected(
 );
 
 const cleanupAfter = CLEANUP_AFTER ? await cleanupSmokeData(superToken) : null;
+cleanupCompleted = true;
 
 console.log(
   JSON.stringify(
@@ -608,7 +534,7 @@ console.log(
         'child cannot list adults/private items'
       ],
       cleanup: {
-        before: cleanupBefore,
+        scope: 'current-run-only',
         after: cleanupAfter,
         retained: KEEP_SMOKE_DATA
       }
@@ -617,3 +543,7 @@ console.log(
     2
   )
 );
+} finally {
+  if (CLEANUP_AFTER && !cleanupCompleted) await cleanupSmokeData(superToken);
+}
+import { cleanupSmokeRun } from './smoke-cleanup.mjs';

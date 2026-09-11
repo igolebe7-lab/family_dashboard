@@ -50,7 +50,7 @@
   </label>
 
   <ReminderPicker bind:value={values.reminder} />
-  <RepeatRuleEditor bind:value={values.repeat} />
+  <RepeatRuleEditor bind:value={values.repeat} bind:interval={values.repeatInterval} bind:days={values.repeatDays} bind:until={values.repeatUntil} date={values.date} />
 
   <label class="composer-checkbox">
     <input bind:checked={values.approvalRequired} type="checkbox" />

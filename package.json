@@ -10,7 +10,8 @@
     "lint": "pnpm --filter @familytime/web lint",
     "test": "pnpm --filter @familytime/web test",
     "build": "pnpm --filter @familytime/web build",
-    "preview": "pnpm --filter @familytime/web preview"
+    "preview": "node scripts/preview-static.mjs",
+    "smoke:auth": "node scripts/smoke-auth-profile-flow.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

@@ -80,6 +80,8 @@ export type TodayWeekDay = {
 
 export type TodayWeekEvent = {
   id: string;
+  itemId?: string;
+  category?: ItemCategory;
   day: string;
   start: string;
   durationMinutes: number;
@@ -472,8 +474,7 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
       : options.date;
   const weekDays = createWeekDays(date);
   const weekTimes = createCalendarTimeLabels();
-  const weekEvents =
-    options.fixture === 'desktop-reference' ? createReferenceWeekEvents() : createDemoWeekEvents(weekDays);
+  const weekEvents = isReferenceFixture ? createReferenceWeekEvents() : [];
   const timelineItems: TodayTimelineItem[] = [
     {
       id: 'school',
@@ -600,18 +601,18 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
     weekDays,
     weekTimes,
     weekEvents,
-    familyMembers: FAMILY_MEMBERS,
+    familyMembers: isReferenceFixture ? FAMILY_MEMBERS : [],
     allDayItems: [],
-    timelineItems,
-    attentionItems,
-    attentionCount: attentionItems.length,
+    timelineItems: isReferenceFixture ? timelineItems : [],
+    attentionItems: isReferenceFixture ? attentionItems : [],
+    attentionCount: isReferenceFixture ? attentionItems.length : 0,
     quickActions: [
       { id: 'task', label: '+ Задача', icon: 'square-check-big', color: 'green' },
       { id: 'event', label: '+ Событие', icon: 'calendar-days', color: 'peach' }
     ],
-    feedItems,
+    feedItems: isReferenceFixture ? feedItems : [],
     emptyState: {
-      isEmpty: timelineItems.length === 0,
+      isEmpty: !isReferenceFixture,
       title: 'Сегодня спокойно',
       body: 'Когда появятся события или дела, они будут здесь.'
     }

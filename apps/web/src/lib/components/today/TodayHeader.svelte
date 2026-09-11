@@ -14,7 +14,7 @@
       {greeting}
       <Sun size={27} strokeWidth={2.3} aria-hidden="true" />
     </h1>
-    <p>{dateLabel}</p>
+    <p class="today-header__date">{dateLabel}</p>
   </div>
 
   <a class="icon-button" href="/app/notifications" aria-label="Открыть уведомления">
@@ -25,3 +25,7 @@
     {/if}
   </a>
 </header>
+
+<style>
+  .today-header__date { display: block; }
+</style>

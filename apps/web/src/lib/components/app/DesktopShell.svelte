@@ -5,14 +5,14 @@
   export let labelledBy: string;
 </script>
 
-<main class="desktop-shell" aria-labelledby={labelledBy}>
+<main class:desktop-shell--wide={!$$slots.aside} class="desktop-shell" aria-labelledby={labelledBy}>
   <Sidebar {activeRoute} />
 
   <section class="desktop-main">
     <slot />
   </section>
 
-  <aside class="desktop-aside" aria-label="Сводка справа">
+  {#if $$slots.aside}<aside class="desktop-aside" aria-label="Сводка справа">
     <slot name="aside" />
-  </aside>
+  </aside>{/if}
 </main>

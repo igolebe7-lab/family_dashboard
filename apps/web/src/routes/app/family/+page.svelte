@@ -1,13 +1,18 @@
 <script lang="ts">
   import Plus from '@lucide/svelte/icons/plus';
+  import Pencil from '@lucide/svelte/icons/pencil';
+  import Smile from '@lucide/svelte/icons/smile';
+  import Copy from '@lucide/svelte/icons/copy';
+  import { goto } from '$app/navigation';
+  import ColorPicker from '$lib/components/family/ColorPicker.svelte';
   import { onDestroy, onMount } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import ActiveProfileSwitcher from '$lib/components/family/ActiveProfileSwitcher.svelte';
   import { createInvitation } from '$lib/api/invitations.api';
-  import { createMember, listMembers } from '$lib/api/members.api';
-  import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
+  import { createMember, updateMember, listMembers } from '$lib/api/members.api';
+  import { familyStore, type FamilyState } from '$lib/stores/family.store';
   import { sessionStore, type SessionState } from '$lib/stores/session.store';
   import type { FamilyMember } from '$lib/types/domain';
   import type { MemberRole } from '$lib/constants/roles';
@@ -20,20 +25,15 @@
     { value: 'child', label: 'Ребёнок' },
     { value: 'guest', label: 'Гость' }
   ];
-  const colorOptions = [
-    { value: 'blue', label: 'Синий' },
-    { value: 'green', label: 'Зелёный' },
-    { value: 'peach', label: 'Персиковый' },
-    { value: 'lavender', label: 'Лавандовый' },
-    { value: 'yellow', label: 'Жёлтый' }
-  ];
   const roleLabelByValue = new Map(roleOptions.map((option) => [option.value, option.label]));
 
   let familyUnsubscribe: Unsubscriber | undefined;
   let sessionUnsubscribe: Unsubscriber | undefined;
   let familyState: FamilyState | undefined;
   let sessionState: SessionState | undefined;
-  let displayName = 'Папа';
+  let displayName = '';
+  let editingId: string | null = null;
+  let birthday = '';
   let role: MemberRole = 'parent';
   let colorKey = 'blue';
   let managedBy = '';
@@ -42,8 +42,11 @@
   let success: string | null = null;
   let inviteLinks: Record<string, string> = {};
 
-  $: context = familyState ? getActiveFamilyContext(familyState) : null;
+  $: context = accountMember && familyState?.activeFamily
+    ? { familyId: familyState.activeFamily.id, memberId: accountMember.id } : null;
   $: currentUserId = sessionState?.user?.id;
+  $: accountMember = familyState?.members.find((member) => member.user === currentUserId);
+  $: canManage = Boolean(accountMember && ['owner', 'parent'].includes(accountMember.role));
   $: adultMembers = (familyState?.members ?? []).filter((member) =>
     ['owner', 'parent', 'adult'].includes(member.role)
   );
@@ -60,6 +63,7 @@
   }
 
   function getRoleLabel(memberRole: MemberRole | string): string {
+    if (memberRole === 'owner') return 'Владелец семьи';
     return roleLabelByValue.get(memberRole as MemberRole) ?? memberRole;
   }
 
@@ -88,6 +92,7 @@
       return;
     }
 
+    if (!canManage || saving) return;
     const name = displayName.trim();
     if (!name) {
       error = 'Введите имя профиля.';
@@ -99,19 +104,26 @@
     success = null;
 
     try {
-      const member = await createMember(
+      const input = {
+        displayName: name, colorKey, birthday,
+        managedBy: role === 'child' && managedBy ? [managedBy] : []
+      };
+      if (editingId) await updateMember(editingId, input, context);
+      else await createMember(
         {
           displayName: name,
           role,
           colorKey,
+          birthday,
           managedBy: role === 'child' && managedBy ? [managedBy] : []
         },
         context
       );
       await reloadMembers();
-      familyStore.setActiveMember(member);
-      success = `${name} добавлен в семью.`;
+      success = editingId ? 'Профиль обновлён.' : `${name} добавлен в семью.`;
+      editingId = null;
       displayName = '';
+      birthday = '';
       if (role === 'child') managedBy = familyState?.activeMember?.id ?? adultMembers[0]?.id ?? '';
     } catch (submitError) {
       error = 'Не удалось добавить профиль. Проверьте подключение к серверу.';
@@ -155,7 +167,30 @@
   }
 
   function canInviteMember(member: FamilyMember): boolean {
-    return !member.user && ['parent', 'adult', 'teen', 'guest'].includes(member.role);
+    return canManage && !member.user && ['parent', 'adult', 'teen', 'guest'].includes(member.role);
+  }
+
+  function editMember(member: FamilyMember): void {
+    editingId = member.id;
+    displayName = member.displayName;
+    role = member.role;
+    colorKey = member.colorKey ?? 'green';
+    birthday = member.birthday?.slice(0, 10) ?? '';
+    managedBy = member.managedBy[0] ?? accountMember?.id ?? '';
+    const input = Array.from(document.querySelectorAll<HTMLInputElement>('.family-form input'))
+      .find((element) => element.getClientRects().length > 0);
+    input?.scrollIntoView({ block: 'center' });
+    input?.focus();
+  }
+
+  async function openChild(member: FamilyMember): Promise<void> {
+    familyStore.setActiveMember(member);
+    await goto('/child');
+  }
+
+  async function copyInvite(member: FamilyMember): Promise<void> {
+    try { await navigator.clipboard.writeText(inviteLinks[member.id]); success = 'Ссылка скопирована.'; }
+    catch { error = 'Выделите и скопируйте ссылку вручную.'; }
   }
 
   onMount(() => {
@@ -207,8 +242,15 @@
                 Пригласить
               </button>
             {/if}
+            {#if canManage}
+              <button type="button" title="Изменить профиль" aria-label={`Изменить профиль ${member.displayName}`} on:click={() => editMember(member)}><Pencil size={17} aria-hidden="true" /></button>
+            {/if}
+            {#if canSwitchActiveProfile && ['child', 'teen'].includes(member.role)}
+              <button type="button" on:click={() => openChild(member)}><Smile size={17} aria-hidden="true" />Детский режим</button>
+            {/if}
             {#if inviteLinks[member.id]}
               <p class="family-member-card__invite">{inviteLinks[member.id]}</p>
+              <button type="button" title="Скопировать ссылку" aria-label="Скопировать ссылку" on:click={() => copyInvite(member)}><Copy size={17} aria-hidden="true" /></button>
             {/if}
           </article>
         {/each}
@@ -216,7 +258,7 @@
     </section>
 
     <form class="family-panel family-form" aria-labelledby="family-create-title-mobile" on:submit|preventDefault={submitMember}>
-      <h2 id="family-create-title-mobile">Добавить профиль</h2>
+      <h2 id="family-create-title-mobile">{editingId ? 'Изменить профиль' : 'Добавить в семью'}</h2>
       {#if error}<p class="family-message family-message--error">{error}</p>{/if}
       {#if success}<p class="family-message family-message--success">{success}</p>{/if}
       <label>
@@ -225,20 +267,15 @@
       </label>
       <label>
         <span>Роль</span>
-        <select bind:value={role}>
+        <select bind:value={role} disabled={Boolean(editingId)}>
+          {#if role === 'owner'}<option value="owner">Владелец семьи</option>{/if}
           {#each roleOptions as option}
             <option value={option.value}>{option.label}</option>
           {/each}
         </select>
       </label>
-      <label>
-        <span>Цвет</span>
-        <select bind:value={colorKey}>
-          {#each colorOptions as option}
-            <option value={option.value}>{option.label}</option>
-          {/each}
-        </select>
-      </label>
+      <ColorPicker bind:value={colorKey} />
+      <label><span>День рождения</span><input type="date" bind:value={birthday} /></label>
       {#if role === 'child'}
         <label>
           <span>Кто управляет профилем</span>
@@ -249,10 +286,11 @@
           </select>
         </label>
       {/if}
-      <button class="button button--primary" disabled={saving} type="submit">
+      <button class="button button--primary" disabled={saving || !canManage} type="submit">
         <Plus size={18} strokeWidth={2.3} aria-hidden="true" />
-        {saving ? 'Сохраняем' : 'Добавить'}
+        {saving ? 'Сохраняем' : editingId ? 'Сохранить' : 'Добавить'}
       </button>
+      {#if editingId}<button class="button button--ghost" type="button" on:click={() => { editingId = null; displayName = ''; role = 'parent'; birthday = ''; }}>Отмена</button>{/if}
     </form>
   </section>
 </MobileShell>
@@ -262,7 +300,7 @@
     <header class="desktop-header">
       <div>
         <h1 id="family-title-desktop">Семья</h1>
-        <p class="offline-note">Профили, активный семейный контекст и связь с аккаунтом.</p>
+        <p class="offline-note">{familyState?.activeFamily?.name}</p>
       </div>
     </header>
     <ActiveProfileSwitcher
@@ -289,8 +327,15 @@
                 Пригласить
               </button>
             {/if}
+            {#if canManage}
+              <button type="button" title="Изменить профиль" aria-label={`Изменить профиль ${member.displayName}`} on:click={() => editMember(member)}><Pencil size={17} aria-hidden="true" /></button>
+            {/if}
+            {#if canSwitchActiveProfile && ['child', 'teen'].includes(member.role)}
+              <button type="button" on:click={() => openChild(member)}><Smile size={17} aria-hidden="true" />Детский режим</button>
+            {/if}
             {#if inviteLinks[member.id]}
               <p class="family-member-card__invite">{inviteLinks[member.id]}</p>
+              <button type="button" title="Скопировать ссылку" aria-label="Скопировать ссылку" on:click={() => copyInvite(member)}><Copy size={17} aria-hidden="true" /></button>
             {/if}
           </article>
         {/each}
@@ -299,7 +344,7 @@
   </section>
   <svelte:fragment slot="aside">
     <form class="family-panel family-form" on:submit|preventDefault={submitMember}>
-      <h2>Добавить профиль</h2>
+      <h2>{editingId ? 'Изменить профиль' : 'Добавить в семью'}</h2>
       {#if error}<p class="family-message family-message--error">{error}</p>{/if}
       {#if success}<p class="family-message family-message--success">{success}</p>{/if}
       <label>
@@ -308,20 +353,15 @@
       </label>
       <label>
         <span>Роль</span>
-        <select bind:value={role}>
+        <select bind:value={role} disabled={Boolean(editingId)}>
+          {#if role === 'owner'}<option value="owner">Владелец семьи</option>{/if}
           {#each roleOptions as option}
             <option value={option.value}>{option.label}</option>
           {/each}
         </select>
       </label>
-      <label>
-        <span>Цвет</span>
-        <select bind:value={colorKey}>
-          {#each colorOptions as option}
-            <option value={option.value}>{option.label}</option>
-          {/each}
-        </select>
-      </label>
+      <ColorPicker bind:value={colorKey} />
+      <label><span>День рождения</span><input type="date" bind:value={birthday} /></label>
       {#if role === 'child'}
         <label>
           <span>Кто управляет профилем</span>
@@ -332,10 +372,11 @@
           </select>
         </label>
       {/if}
-      <button class="button button--primary" disabled={saving} type="submit">
+      <button class="button button--primary" disabled={saving || !canManage} type="submit">
         <Plus size={18} strokeWidth={2.3} aria-hidden="true" />
-        {saving ? 'Сохраняем' : 'Добавить'}
+        {saving ? 'Сохраняем' : editingId ? 'Сохранить' : 'Добавить'}
       </button>
+      {#if editingId}<button class="button button--ghost" type="button" disabled={saving} on:click={() => { editingId = null; displayName = ''; role = 'parent'; birthday = ''; }}>Отмена</button>{/if}
     </form>
   </svelte:fragment>
 </DesktopShell>

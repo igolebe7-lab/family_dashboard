@@ -1,5 +1,4 @@
 <script lang="ts">
-  import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import CircleUserRound from '@lucide/svelte/icons/circle-user-round';
   import LogOut from '@lucide/svelte/icons/log-out';
   import { goto } from '$app/navigation';
@@ -8,17 +7,21 @@
   import { getIcon, type IconName } from '$lib/design/icon-registry';
   import { APP_ROUTE_DEFINITIONS, desktopNavigation } from '$lib/constants/routes';
   import { logout } from '$lib/api/auth.api';
-  import { familyStore } from '$lib/stores/family.store';
+  import { familyStore, type FamilyState } from '$lib/stores/family.store';
   import { sessionStore, type SessionState } from '$lib/stores/session.store';
 
   export let activeRoute: string;
 
   let sessionState: SessionState | undefined;
+  let familyState: FamilyState | undefined;
   let sessionUnsubscribe: Unsubscriber | undefined;
+  let familyUnsubscribe: Unsubscriber | undefined;
 
   $: accountLabel =
     sessionState?.user?.name || sessionState?.user?.email?.split('@')[0] || 'Аккаунт';
   $: accountEmail = sessionState?.user?.email ?? '';
+  $: familyMembers = (familyState?.members ?? []).filter((member) => member.active).slice(0, 5);
+  $: familyName = familyState?.activeFamily?.name ?? 'Семья';
 
   async function handleLogout(): Promise<void> {
     logout();
@@ -31,10 +34,14 @@
     sessionUnsubscribe = sessionStore.subscribe((state) => {
       sessionState = state;
     });
+    familyUnsubscribe = familyStore.subscribe((state) => {
+      familyState = state;
+    });
   });
 
   onDestroy(() => {
     sessionUnsubscribe?.();
+    familyUnsubscribe?.();
   });
 </script>
 
@@ -59,51 +66,22 @@
     {/each}
   </nav>
 
-  <section class="sidebar-family" aria-label="Семья">
-    <p>Семья</p>
-    <div class="sidebar-family__list">
-      <span class="sidebar-family__member sidebar-family__member--lavender">
-        <span class="sidebar-family__avatar portrait portrait--mom" aria-hidden="true">
-          <span class="portrait__face">М</span>
-        </span>
-        <span class="sidebar-family__name">Мама</span>
-        <span class="sidebar-family__dot" aria-hidden="true"></span>
-      </span>
-      <span class="sidebar-family__member sidebar-family__member--blue">
-        <span class="sidebar-family__avatar portrait portrait--dad" aria-hidden="true">
-          <span class="portrait__face">П</span>
-        </span>
-        <span class="sidebar-family__name">Папа</span>
-        <span class="sidebar-family__dot" aria-hidden="true"></span>
-      </span>
-      <span class="sidebar-family__member sidebar-family__member--green">
-        <span class="sidebar-family__avatar portrait portrait--misha" aria-hidden="true">
-          <span class="portrait__face">М</span>
-        </span>
-        <span class="sidebar-family__name">Миша</span>
-        <span class="sidebar-family__dot" aria-hidden="true"></span>
-      </span>
-      <span class="sidebar-family__member sidebar-family__member--peach">
-        <span class="sidebar-family__avatar portrait portrait--anya" aria-hidden="true">
-          <span class="portrait__face">А</span>
-        </span>
-        <span class="sidebar-family__name">Аня</span>
-        <span class="sidebar-family__dot" aria-hidden="true"></span>
-      </span>
-    </div>
-  </section>
-
-  <section class="family-progress" aria-label="Семейный прогресс">
-    <div class="family-progress__title">
-      <p>Семейный прогресс</p>
-      <ChevronRight size={17} strokeWidth={2.35} aria-hidden="true" />
-    </div>
-    <strong>Отличная работа! 🎉</strong>
-    <div class="family-progress__bar">
-      <span class="progress-line" aria-hidden="true"><span></span></span>
-      <span>78%</span>
-    </div>
-  </section>
+  {#if familyMembers.length > 0}
+    <section class="sidebar-family" aria-label="Семья">
+      <p>{familyName}</p>
+      <div class="sidebar-family__list">
+        {#each familyMembers as member (member.id)}
+          <span class={`sidebar-family__member sidebar-family__member--${member.colorKey ?? 'green'}`}>
+            <span class="sidebar-family__avatar" aria-hidden="true">
+              {member.displayName.charAt(0).toUpperCase()}
+            </span>
+            <span class="sidebar-family__name">{member.displayName}</span>
+            <span class="sidebar-family__dot" aria-hidden="true"></span>
+          </span>
+        {/each}
+      </div>
+    </section>
+  {/if}
 
   <section class="sidebar-account" aria-label="Аккаунт">
     <a

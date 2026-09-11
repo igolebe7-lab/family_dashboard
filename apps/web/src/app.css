@@ -2866,6 +2866,16 @@ h3 {
   gap: 1.25rem;
 }
 
+.tasks-page {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.tasks-page--desktop {
+  gap: 1.25rem;
+}
+
 .assignments-list,
 .inbox-list,
 .feed-page-list {
@@ -2878,6 +2888,66 @@ h3 {
 .feed-page-list--desktop {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
+}
+
+.tasks-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.tasks-list--desktop {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.task-card {
+  display: grid;
+  grid-template-columns: 2.7rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.76rem;
+  border: 1px solid rgb(238 231 220 / 0.78);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.88);
+  box-shadow: var(--shadow-soft);
+  padding: 0.82rem;
+}
+
+.task-card--done {
+  opacity: 0.64;
+}
+
+.task-card--done strong {
+  text-decoration: line-through;
+}
+
+.task-card__toggle {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border: 1px solid rgb(238 231 220 / 0.88);
+  border-radius: 999px;
+  background: var(--color-green-soft);
+  color: var(--color-green);
+}
+
+.task-card__toggle:disabled {
+  cursor: default;
+}
+
+.task-card strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 0.96rem;
+  font-weight: 590;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-card p {
+  margin-top: 0.18rem;
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
 }
 
 .assignment-card {
@@ -3983,6 +4053,10 @@ h3 {
     color: var(--color-peach);
   }
 
+  .sidebar-family__member--yellow {
+    color: var(--color-yellow);
+  }
+
   .sidebar-family__name {
     color: var(--color-text);
   }
@@ -4055,6 +4129,7 @@ h3 {
   .sidebar-account {
     display: grid;
     gap: 0.48rem;
+    margin-top: auto;
     border-top: 1px solid rgb(238 231 220 / 0.72);
     padding-top: 0.7rem;
   }

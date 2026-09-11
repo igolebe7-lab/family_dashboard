@@ -8,7 +8,9 @@
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import {
+    getAuthErrorMessage,
     logout,
+    requestPasswordReset,
     updateCurrentUserPassword,
     updateCurrentUserProfile
   } from '$lib/api/auth.api';
@@ -26,6 +28,7 @@
   let passwordConfirm = '';
   let profileSaving = false;
   let passwordSaving = false;
+  let resetRequestSaving = false;
   let profileMessage: string | null = null;
   let passwordMessage: string | null = null;
   let profileError: string | null = null;
@@ -52,17 +55,16 @@
     profileMessage = null;
 
     try {
-      const user = await updateCurrentUserProfile({
+      await updateCurrentUserProfile({
         name: nextName,
         email: nextEmail
       });
-      sessionStore.setSession({
-        token: sessionState.token,
-        user
-      });
       profileMessage = 'Данные профиля сохранены.';
     } catch (error) {
-      profileError = 'Не удалось сохранить профиль. Проверьте email и подключение.';
+      profileError = getAuthErrorMessage(
+        error,
+        'Не удалось сохранить профиль. Проверьте email и подключение.'
+      );
       console.warn('Failed to update profile.', error);
     } finally {
       profileSaving = false;
@@ -90,24 +92,44 @@
     passwordMessage = null;
 
     try {
-      const user = await updateCurrentUserPassword({
+      await updateCurrentUserPassword({
         oldPassword,
         password,
         passwordConfirm
       });
-      sessionStore.setSession({
-        token: sessionState.token,
-        user
-      });
       oldPassword = '';
       password = '';
       passwordConfirm = '';
-      passwordMessage = 'Пароль обновлён.';
+      // The root session guard owns navigation after credential invalidation.
     } catch (error) {
-      passwordError = 'Не удалось обновить пароль. Проверьте старый пароль.';
+      passwordError = getAuthErrorMessage(
+        error,
+        'Не удалось обновить пароль. Проверьте старый пароль.'
+      );
       console.warn('Failed to update password.', error);
     } finally {
       passwordSaving = false;
+    }
+  }
+
+  async function requestResetEmail(): Promise<void> {
+    if (!currentUser?.email) {
+      passwordError = 'Email аккаунта не загружен.';
+      return;
+    }
+
+    resetRequestSaving = true;
+    passwordError = null;
+    passwordMessage = null;
+
+    try {
+      await requestPasswordReset(currentUser.email);
+      passwordMessage = 'Если аккаунт найден, ссылка для сброса пароля отправлена на email.';
+    } catch (error) {
+      passwordError = getAuthErrorMessage(error, 'Не удалось отправить письмо для сброса пароля.');
+      console.warn('Failed to request password reset.', error);
+    } finally {
+      resetRequestSaving = false;
     }
   }
 
@@ -192,6 +214,9 @@
         <ShieldCheck size={18} strokeWidth={2.35} aria-hidden="true" />
         {passwordSaving ? 'Обновляем' : 'Обновить пароль'}
       </button>
+      <button class="button button--ghost" disabled={resetRequestSaving} type="button" on:click={requestResetEmail}>
+        {resetRequestSaving ? 'Отправляем' : 'Отправить ссылку сброса'}
+      </button>
     </form>
 
     <button class="profile-logout" type="button" on:click={handleLogout}>
@@ -259,6 +284,9 @@
       <button class="button button--ghost" disabled={passwordSaving} type="submit">
         <ShieldCheck size={18} strokeWidth={2.35} aria-hidden="true" />
         {passwordSaving ? 'Обновляем' : 'Обновить пароль'}
+      </button>
+      <button class="button button--ghost" disabled={resetRequestSaving} type="button" on:click={requestResetEmail}>
+        {resetRequestSaving ? 'Отправляем' : 'Отправить ссылку сброса'}
       </button>
     </form>
 

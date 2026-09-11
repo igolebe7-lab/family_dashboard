@@ -3,10 +3,19 @@ onRecordUpdateRequest((event) => {
   const lifecycle = require(`${__hooks}/_shared/occurrence-lifecycle.pb.js`);
   const auth = authHelpers.requireAuth(event);
 
-  lifecycle.validateBeforeUpdate($app, event, auth, authHelpers.hasSuperuserAuth(event));
+  lifecycle.validateBeforeUpdate(event.app, event, auth, event.hasSuperuserAuth());
   event.next();
 }, 'item_occurrences');
 
-onRecordAfterUpdateSuccess((event) => {
-  require(`${__hooks}/_shared/occurrence-lifecycle.pb.js`).afterUpdate($app, event.record);
+onRecordUpdateExecute((event) => {
+  const originalApp = event.app;
+  try {
+    originalApp.runInTransaction((txApp) => {
+      event.app = txApp;
+      require(`${__hooks}/_shared/occurrence-lifecycle.pb.js`).afterUpdate(txApp, event.record);
+      event.next();
+    });
+  } finally {
+    event.app = originalApp;
+  }
 }, 'item_occurrences');

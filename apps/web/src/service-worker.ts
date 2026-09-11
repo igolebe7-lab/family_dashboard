@@ -8,11 +8,12 @@ import { build, files, version } from '$service-worker';
 const worker = self as unknown as ServiceWorkerGlobalScope;
 const CACHE = `familytime-shell-${version}`;
 const ASSETS = [...build, ...files];
+const SHELL = '/200.html';
 
 worker.addEventListener('install', (event) => {
   async function addFilesToCache() {
     const cache = await caches.open(CACHE);
-    await cache.addAll(ASSETS);
+    await cache.addAll([...ASSETS, SHELL]);
   }
 
   event.waitUntil(addFilesToCache());
@@ -21,16 +22,23 @@ worker.addEventListener('install', (event) => {
 worker.addEventListener('activate', (event) => {
   async function deleteOldCaches() {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith('familytime-shell-') && key !== CACHE).map((key) => caches.delete(key)));
+    await worker.clients.claim();
   }
 
   event.waitUntil(deleteOldCaches());
+});
+
+worker.addEventListener('message', (event) => {
+  if (event.data?.type === 'ACTIVATE_UPDATE') void worker.skipWaiting();
 });
 
 worker.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+  if (url.origin !== worker.location.origin) return;
+  if (!ASSETS.includes(url.pathname) && event.request.mode !== 'navigate') return;
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_/')) return;
 
   async function respond() {
@@ -48,13 +56,9 @@ worker.addEventListener('fetch', (event) => {
         throw new Error('Invalid response from fetch');
       }
 
-      if (response.status === 200 && !response.headers.get('cache-control')?.includes('no-store')) {
-        cache.put(event.request, response.clone());
-      }
-
       return response;
     } catch (error) {
-      const response = await cache.match(event.request);
+      const response = await cache.match(event.request.mode === 'navigate' ? SHELL : url.pathname);
       if (response) return response;
       throw error;
     }

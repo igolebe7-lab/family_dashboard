@@ -1,5 +1,6 @@
 <script lang="ts">
   import BottomNav from './BottomNav.svelte';
+  import MobileTools from './MobileTools.svelte';
 
   export let activeRoute: string;
   export let labelledBy: string;
@@ -8,6 +9,7 @@
 
 <main class:app-screen--calendar={calendar} class="app-screen app-screen--mobile" aria-labelledby={labelledBy}>
   <section class="mobile-shell">
+    <MobileTools />
     <slot />
   </section>
 

@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { createTodayViewModel } from './today-view-model';
 
 describe('createTodayViewModel', () => {
-  it('provides demo-ready Today sections with Russian quick actions and attention count', () => {
-    const model = createTodayViewModel();
+  it('provides demo-ready Today sections only for an explicit fixture', () => {
+    const model = createTodayViewModel({ fixture: 'desktop-reference' });
 
     expect(model.familyMembers).toHaveLength(4);
     expect(model.weekDays).toHaveLength(7);
@@ -33,6 +33,17 @@ describe('createTodayViewModel', () => {
       '+ Событие'
     ]);
     expect(model.emptyState.isEmpty).toBe(false);
+  });
+
+  it('starts production with empty data, never demo family or feed', () => {
+    const model = createTodayViewModel();
+    expect(model.familyMembers).toEqual([]);
+    expect(model.timelineItems).toEqual([]);
+    expect(model.weekEvents).toEqual([]);
+    expect(model.attentionItems).toEqual([]);
+    expect(model.feedItems).toEqual([]);
+    expect(model.attentionCount).toBe(0);
+    expect(model.emptyState.isEmpty).toBe(true);
   });
 
   it('provides the desktop reference fixture for visual QA', () => {

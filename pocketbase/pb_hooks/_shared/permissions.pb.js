@@ -20,6 +20,8 @@ function canCreateAssignmentFor(actorMember, assigneeMember) {
 function canManageMember(actorMember, targetMember) {
   if (!actorMember || !targetMember) return false;
   if (actorMember.get('family') !== targetMember.get('family')) return false;
+  if (!actorMember.get('active') || !targetMember.get('active')) return false;
+  if (!['child', 'teen'].includes(targetMember.get('role'))) return false;
   if (actorMember.get('role') === 'owner') return true;
   if (actorMember.get('role') !== 'parent') return false;
   return require(`${__hooks}/_shared/auth.pb.js`)
@@ -27,7 +29,27 @@ function canManageMember(actorMember, targetMember) {
     .includes(actorMember.id);
 }
 
+function canViewItem(app, member, item) {
+  if (!member || !member.get('active') || member.get('family') !== item.get('family')) return false;
+  const { getRecordArray } = require(`${__hooks}/_shared/auth.pb.js`);
+  const visibility = item.get('visibility');
+  if (visibility === 'family') return true;
+  if (visibility === 'adults') return isAdultRole(member.get('role'));
+  if ([item.get('created_by'), item.get('owner')].includes(member.id)) return true;
+  if (visibility !== 'assignees') return false;
+  const explicit = [...getRecordArray(item, 'assignees'), ...getRecordArray(item, 'participants')];
+  if (explicit.includes(member.id)) return true;
+  return explicit.some((id) => {
+    const target = app.findRecordById('family_members', id);
+    return target.get('active') && target.get('family') === item.get('family') &&
+      ['child', 'teen'].includes(target.get('role')) &&
+      ['owner', 'parent'].includes(member.get('role')) &&
+      getRecordArray(target, 'managed_by').includes(member.id);
+  });
+}
+
 module.exports = {
+  canViewItem,
   canManageMember,
   canCreateAssignmentFor,
   isAdultRole,

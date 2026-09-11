@@ -456,6 +456,10 @@
 - [x] Stage 10.4: Subscribe to notifications for current recipient member.
 - [x] Stage 10.5: Subscribe to `item_activity` for active family.
 - [x] Stage 10.6: Subscribe to `item_occurrences` only for Today/Calendar visible range.
+- [x] Stage 10.8: Replace fake desktop sidebar family/progress with real `family_members` data or hide it.
+- [x] Stage 10.9: Guard `/app/*` routes: unauthenticated users go to `/login`, authenticated users without a family go to onboarding.
+- [x] Stage 10.10: Add lightweight auth/profile/onboarding smoke with temporary data cleanup.
+- [x] Stage 10.11: Add password reset request/confirm flow and normalized auth errors.
 - [x] Unsubscribe on route/range/family/member changes.
 - [x] Add badge entry point and mark-all-read.
 
@@ -560,7 +564,21 @@
 - Manual backend family isolation passed.
 - Manual server smoke test passed.
 
-## Подход к коммитам
+## Локальный предрелизный этап: 2026-09-11
+
+- [x] Stage 13.1: auth/context races, family isolation, права действий и regression tests.
+- [x] Stage 13.2: рабочие экраны, поиск/подробности, адаптивность и scoped drafts.
+- [x] Stage 13.3: периодические дела/поручения и информационные расписания,
+  перенос одного события, архивирование и диапазонная генерация.
+- [x] Stage 11.1: static PWA shell, индикация offline, проверка SPA refresh и SW.
+- [x] Локальный release gate: check/lint, 200 unit tests, build, backend isolation,
+  browser desktop/mobile и реальный UI повторов.
+- [ ] Stage 12.1: выбор площадки. Сервер и VPN до отдельного решения не изменять.
+- [ ] Production gate: HTTPS, реальные устройства, внешняя доставка писем и restore.
+
+Подробности и ограничения: `docs/technical/2026-09-11-product-audit.md`.
+
+## Коммиты реализации
 
 Рекомендуемый порядок:
 
