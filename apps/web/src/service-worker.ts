@@ -22,7 +22,9 @@ worker.addEventListener('install', (event) => {
 worker.addEventListener('activate', (event) => {
   async function deleteOldCaches() {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith('familytime-shell-') && key !== CACHE).map((key) => caches.delete(key)));
+    // Other tabs can still be running the previous bundle and lazy-loading its chunks.
+    const windows = await worker.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    if (windows.length <= 1) await Promise.all(keys.filter((key) => key.startsWith('familytime-shell-') && key !== CACHE).map((key) => caches.delete(key)));
     await worker.clients.claim();
   }
 
@@ -38,11 +40,17 @@ worker.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
   if (url.origin !== worker.location.origin) return;
-  if (!ASSETS.includes(url.pathname) && event.request.mode !== 'navigate') return;
+  const immutable = url.pathname.startsWith('/_app/immutable/');
+  if (!ASSETS.includes(url.pathname) && !immutable && event.request.mode !== 'navigate') return;
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_/')) return;
 
   async function respond() {
     const cache = await caches.open(CACHE);
+
+    if (immutable) {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+    }
 
     if (ASSETS.includes(url.pathname)) {
       const response = await cache.match(url.pathname);

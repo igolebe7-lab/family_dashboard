@@ -327,6 +327,8 @@
   });
 </script>
 
+<svelte:window on:online={() => { loadedYearKey = null; if (currentFamilyState) void loadAnnotationsFromFamilyState(currentFamilyState); }} />
+
 <MobileShell {activeRoute} labelledBy="calendar-title-mobile" calendar>
   <div class="calendar-mobile-sticky">
     <header class="top-row">

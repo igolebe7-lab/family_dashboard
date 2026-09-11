@@ -1,0 +1,47 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+assert.equal(process.env.SMOKE_ISOLATED, '1');
+const root = process.env.PB_URL;
+async function req(path, token, body, method = 'POST') {
+  const response = await fetch(root + path, { method, headers: { Authorization: token || '', 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const data = await response.json().catch(() => null);
+  return { status: response.status, data };
+}
+async function ok(...args) { const r = await req(...args); assert.equal(r.status, 200, JSON.stringify(r)); return r.data; }
+const admin = (await ok('/api/collections/_superusers/auth-with-password', '', { identity: process.env.PB_SUPERUSER_EMAIL, password: process.env.PB_SUPERUSER_PASSWORD })).token;
+const password = randomUUID(); const email = `series.${randomUUID()}@familytime.local`;
+const user = await ok('/api/collections/users/records', admin, { email, password, passwordConfirm: password });
+const token = (await ok('/api/collections/users/auth-with-password', '', { identity: email, password })).token;
+const family = await ok('/api/collections/families/records', token, { name: 'Series test', slug: randomUUID(), owner_user: user.id, timezone: 'UTC' });
+const member = await ok('/api/collections/family_members/records', admin, { family: family.id, user: user.id, display_name: 'Parent', role: 'owner', active: true });
+const date = (days, hour = 12) => { const d = new Date(); d.setUTCDate(d.getUTCDate() + days); d.setUTCHours(hour, 0, 0, 0); return d.toISOString(); };
+const item = await ok('/api/collections/items/records', token, { family: family.id, created_by: member.id, owner: member.id, title: 'Series', kind: 'event', category: 'work', priority: 'normal', visibility: 'family', timezone: 'UTC', start_at: date(-3), end_at: date(-3,13), recurrence_rule: 'FREQ=DAILY', recurrence_until: date(8,23) });
+const materialize = () => ok('/api/familytime/occurrences/materialize', token, { family: family.id, from: date(-4), to: date(10) });
+const list = async () => (await ok(`/api/collections/item_occurrences/records?perPage=500&sort=start_at&filter=${encodeURIComponent(`item="${item.id}"`)}`, token, null, 'GET')).items;
+await materialize();
+let rows = await list();
+const past = rows.find(r => Date.parse(r.start_at) === Date.parse(date(-2)));
+const moved = rows.find(r => Date.parse(r.start_at) === Date.parse(date(2)));
+await ok(`/api/familytime/occurrences/${moved.id}/schedule`, token, { startAt: date(2,18), endAt: date(2,19) }, 'PATCH');
+const expected = { startAt: item.start_at, endAt: item.end_at, recurrenceRule: item.recurrence_rule, recurrenceUntil: item.recurrence_until };
+const body = { startAt: date(1,14), endAt: date(1,15), recurrenceRule: 'FREQ=DAILY;INTERVAL=1', recurrenceUntil: date(6,23), expected };
+await ok(`/api/familytime/items/${item.id}/series`, token, body, 'PATCH');
+await materialize(); rows = await list();
+assert.equal(rows.find(r => r.id === past.id).start_at, past.start_at);
+assert.equal(Date.parse(rows.find(r => r.id === moved.id).start_at), Date.parse(date(2,18)));
+assert.equal(rows.filter(r => r.start_at.slice(0,10) === date(2).slice(0,10)).length, 1);
+assert(rows.some(r => Date.parse(r.start_at) === Date.parse(date(3,14))));
+assert(!rows.some(r => Date.parse(r.start_at) === Date.parse(date(3,12))));
+assert(!rows.some(r => Date.parse(r.start_at) > Date.parse(date(6,23))));
+const count = rows.length; await materialize(); assert.equal((await list()).length, count);
+assert.equal((await req(`/api/familytime/items/${item.id}/series`, token, body, 'PATCH')).status, 400);
+assert.equal((await req(`/api/familytime/items/${item.id}/series`, '', body, 'PATCH')).status, 401);
+console.log('PASS series: future dates replaced; history and override preserved; no duplicate; until, stale edit and auth enforced');
+const foreignPassword = randomUUID(); const foreignEmail = `foreign.${randomUUID()}@familytime.local`;
+const outsider = await ok('/api/collections/users/records', admin, { email: foreignEmail, password: foreignPassword, passwordConfirm: foreignPassword });
+const foreignToken = (await ok('/api/collections/users/auth-with-password', '', { identity: foreignEmail, password: foreignPassword })).token;
+assert.equal((await req(`/api/familytime/items/${item.id}/series`, foreignToken, body, 'PATCH')).status, 404);
+await ok('/api/collections/family_members/records', admin, { family: family.id, user: outsider.id, display_name: 'Child', role: 'child', active: true });
+assert.equal((await req(`/api/familytime/items/${item.id}/series`, foreignToken, body, 'PATCH')).status, 404);
+assert.equal((await list()).length, count);
+console.log('PASS unrelated account and child cannot edit series');

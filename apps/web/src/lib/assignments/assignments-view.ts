@@ -2,6 +2,7 @@ import type {
   ActivityRecord,
   FamilyMember,
   Item,
+  ItemPriority,
   ItemOccurrence,
   NotificationRecord,
   OccurrenceStatus
@@ -17,6 +18,7 @@ export type AssignmentAction =
 export type WorkStatusGroup = 'open' | 'review' | 'completed' | 'cancelled';
 
 export type AssignmentCardModel = {
+  priority?: ItemPriority;
   id: string;
   itemId: string;
   group: WorkStatusGroup;
@@ -117,9 +119,10 @@ export function createTaskViewModels(input: AssignmentInput): AssignmentCardMode
     .sort(compareAssignments).map((occurrence) => mapAssignmentOccurrence(occurrence, input));
 }
 
-export function filterWorkCards(cards: AssignmentCardModel[], status: WorkStatusGroup | 'all', memberId = '', query = ''): AssignmentCardModel[] {
+export function filterWorkCards(cards: AssignmentCardModel[], status: WorkStatusGroup | 'all', memberId = '', query = '', priority: ItemPriority | 'all' = 'all'): AssignmentCardModel[] {
   const search = query.trim().toLocaleLowerCase('ru');
   return cards.filter((card) => (status === 'all' || card.group === status)
+    && (priority === 'all' || (card.priority ?? 'normal') === priority)
     && (!memberId || card.assigneeIds.includes(memberId))
     && (!search || card.title.toLocaleLowerCase('ru').includes(search)));
 }
@@ -230,6 +233,7 @@ function mapAssignmentOccurrence(
   return {
     id: occurrence.id,
     itemId: occurrence.item,
+    priority: item?.priority ?? 'normal',
     group,
     assigneeIds,
     memberTone: ['green', 'lavender', 'blue', 'peach', 'yellow'].includes(assignees[0]?.colorKey ?? '') ? assignees[0].colorKey! : 'green',

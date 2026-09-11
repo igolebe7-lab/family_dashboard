@@ -85,5 +85,13 @@ Events require valid date order: `end_at >= start_at`.
 Work/club schedules are informational events, not tasks. They cannot be marked
 done or approved. The authenticated schedule endpoint can move one occurrence
 without modifying the series; it writes activity and notifies eligible participants.
-Changing the base recurrence via a generic item PATCH is rejected: archive the
-old series and create a replacement. Archive is reversible and does not erase history.
+Changing the base recurrence via a generic item PATCH is rejected. The authenticated
+`PATCH /api/familytime/items/{id}/series` endpoint replaces untouched future event
+occurrences in one transaction, verifies the expected old schedule and preserves
+past instances, individual overrides, non-todo statuses and instances with comments.
+Their original local calendar days are retained in `recurrence_exdates_json` to
+prevent duplicate materialization with the new time. JSON fields must be decoded
+from `getString()` in JSVM, not tested as native arrays returned by `get()`.
+The new anchor is in the future; existing history is not regenerated under the
+new rule. Work and assignment recurrence editing is not exposed by this endpoint.
+Archive remains reversible and does not erase history.

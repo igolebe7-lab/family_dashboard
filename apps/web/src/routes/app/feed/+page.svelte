@@ -95,6 +95,8 @@
   });
 </script>
 
+<svelte:window on:online={() => { void loadFeed(); void connectRealtime(); }} />
+
 {#snippet feedContent()}
   {#if error}
     <p class="today-action-message today-action-message--error" role="alert">{error}</p>

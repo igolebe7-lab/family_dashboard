@@ -130,6 +130,7 @@
   });
 </script>
 
+
 <svelte:head>
   <title>FamilyTime</title>
   <meta
@@ -139,7 +140,7 @@
 </svelte:head>
 
 <ConnectionStatus />
-<svelte:window on:click|capture={openItemDetails} />
+<svelte:window on:click|capture={openItemDetails} on:online={() => { if (mounted && bootstrapError) void guardRoute(get(page).url.pathname, true); }} />
 
 {#if canRender}
   <slot />

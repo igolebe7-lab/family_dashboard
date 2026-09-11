@@ -11,7 +11,10 @@
     let active = true;
     let registration: ServiceWorkerRegistration | undefined;
     let installing: ServiceWorker | null = null;
-    const updateOnline = () => { offline = !navigator.onLine; };
+    const updateOnline = () => {
+      offline = !navigator.onLine;
+      if (!offline) void registration?.update().catch(() => {});
+    };
     const inspectWorker = () => {
       if (active && navigator.serviceWorker.controller) waitingWorker = registration?.waiting ?? null;
     };
@@ -30,6 +33,8 @@
         if (!active) return;
         registration = value;
         inspectWorker();
+        onUpdate();
+        if (navigator.onLine) void registration?.update().catch(() => {});
         registration?.addEventListener('updatefound', onUpdate);
       }).catch(() => {});
     }
@@ -44,6 +49,7 @@
   });
 
   function updateApp() {
+    if (!waitingWorker || !window.confirm('Обновить приложение? Страница перезагрузится. Сохраните незавершённые изменения перед обновлением.')) return;
     refreshing = true;
     waitingWorker?.postMessage({ type: 'ACTIVATE_UPDATE' });
   }

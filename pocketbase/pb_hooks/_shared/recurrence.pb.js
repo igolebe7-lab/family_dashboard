@@ -55,7 +55,7 @@ function datesInRange(item, from, to) {
   const baseWall = toWall(anchor, zone);
   const end = item.getString('end_at');
   const duration = end ? toWall(new Date(end), zone) - baseWall : 0;
-  const exceptions = item.get('recurrence_exdates_json') || [];
+  const exceptions = JSON.parse(item.getString('recurrence_exdates_json') || '[]');
   const lower = toWall(new Date(from.getTime() - Math.max(0, duration)), zone);
   const upper = toWall(new Date(to.getTime() + DAY), zone);
   return rule.between(lower, upper, true, (_, index) => index < 800).map((wall) => {

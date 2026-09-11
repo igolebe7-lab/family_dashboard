@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, tick } from 'svelte';
+  import SeriesEditor from './SeriesEditor.svelte';
   import CalendarClock from '@lucide/svelte/icons/calendar-clock';
   import type { ActiveFamilyContext } from '$lib/api/pocketbase';
   import { listEventSchedule, updateScheduledOccurrence } from '$lib/api/schedule.api';
@@ -89,6 +90,7 @@
 </script>
 
 <section class="event-schedule" aria-label="Расписание события">
+  {#if canEdit && item.recurrenceRule}<SeriesEditor {item} {context} onsaved={(updated) => { item = updated; void load(item.id, context.familyId, context.memberId); }} />{/if}
   <header class="schedule-heading"><h2>Ближайшие события</h2><span class="results-count">{item.timezone}</span></header>
   <label class="schedule-past"><input type="checkbox" bind:checked={showPast} />Показать прошедшие за месяц</label>
   {#if loading}<p role="status">Загружаем расписание…</p>

@@ -133,7 +133,7 @@
       {#if item.recurrenceRule}<p class="results-count">{describeRecurrence(item.recurrenceRule, item.recurrenceUntil, item.timezone)}</p>{/if}
       {#if item.archived}<p class="results-count">В архиве · новые повторы остановлены</p>{/if}
       {#if canEdit}<button type="button" class="button button--soft" disabled={archiving} on:click={toggleArchive}>{#if item.archived}<ArchiveRestore size={18} aria-hidden="true" />{:else}<Archive size={18} aria-hidden="true" />{/if}{archiving ? 'Сохраняем…' : item.archived ? 'Вернуть из архива' : 'В архив'}</button>{/if}
-      {#if item.kind === 'event' && context}<details class="item-schedule-details"><summary>{item.recurrenceRule ? 'Расписание и перенос' : 'Дата и перенос события'}</summary><EventSchedule {item} {context} canEdit={Boolean(canEdit) && !item.archived && !archiving} /></details>{/if}
+      {#if item.kind === 'event' && context}<details class="item-schedule-details"><summary>{item.recurrenceRule ? 'Расписание и перенос' : 'Дата и перенос события'}</summary><EventSchedule bind:item {context} canEdit={Boolean(canEdit) && !item.archived && !archiving} /></details>{/if}
       {#if item.kind === 'assignment'}<a class="button button--primary" href="/app/assignments">Перейти к поручениям</a>{/if}
       {#if item.kind === 'task'}<a class="button button--primary" href="/app/tasks">Перейти к делам</a>{/if}
     {/if}

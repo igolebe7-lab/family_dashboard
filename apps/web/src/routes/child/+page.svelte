@@ -35,6 +35,8 @@
   });
 </script>
 
+<svelte:window on:online={list.reload} />
+
 <main class="child-mode" aria-labelledby="child-title">
   {#if access.adult || access.children.length > 1}
     <div class="parent-controls">

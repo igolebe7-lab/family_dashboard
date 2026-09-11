@@ -286,7 +286,7 @@ export function getComposerRepeatDays(date: string, days?: ComposerWeekday[]): C
   return [COMPOSER_WEEKDAYS[(new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7]];
 }
 
-function createRecurrenceRule(values: ComposerFormValues): string | undefined {
+export function createRecurrenceRule(values: Pick<ComposerFormValues, 'repeat' | 'repeatInterval' | 'repeatDays' | 'date'>): string | undefined {
   if (values.repeat === 'none') return undefined;
   const freq = values.repeat === 'daily' ? 'DAILY' : values.repeat === 'monthly' ? 'MONTHLY' : 'WEEKLY';
   const rule = `FREQ=${freq};INTERVAL=${values.repeatInterval}`;

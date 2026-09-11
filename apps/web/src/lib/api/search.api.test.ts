@@ -5,6 +5,9 @@ import { resetPocketBaseClient, setPocketBaseClient } from './pocketbase';
 afterEach(resetPocketBaseClient);
 
 describe('family item search', () => {
+  it('applies priority before server pagination without losing family and kind filters', () => {
+    expect(buildItemSearchFilter('a', 'Ёлка', 'event', false, 'high')).toBe('family = "a" && archived = false && search_text ~ "елка" && kind = "event" && priority = "high"');
+  });
   it('keeps archived records discoverable without mixing them into active results', () => {
     expect(buildItemSearchFilter('a', '', 'all', true)).toBe('family = "a" && archived = true');
     expect(buildItemSearchFilter('a', '', 'all')).toBe('family = "a" && archived = false');

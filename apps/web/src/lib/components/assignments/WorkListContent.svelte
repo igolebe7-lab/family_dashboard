@@ -1,5 +1,7 @@
 <script lang="ts">
   import Plus from '@lucide/svelte/icons/plus';
+  import PriorityFilter from '../composer/PriorityFilter.svelte';
+  import type { ItemPriority } from '$lib/types/domain';
   import RefreshCw from '@lucide/svelte/icons/refresh-cw';
   import Search from '@lucide/svelte/icons/search';
   import AssignmentCard from './AssignmentCard.svelte';
@@ -13,6 +15,7 @@
   export let status: WorkStatusGroup | 'all' = 'open';
   export let memberId = '';
   export let query = '';
+  export let priority: ItemPriority | 'all' = 'all';
   export let oncreate: () => void;
   export let onreload: () => void;
   export let onaction: (action: AssignmentAction, card: AssignmentCardModel, reason?: string) => void | Promise<void>;
@@ -22,7 +25,7 @@
     { value: 'completed', label: 'Готово' }, { value: 'cancelled', label: 'Отменено' }, { value: 'all', label: 'Все' }
   ];
   $: title = kind === 'task' ? 'Дела' : 'Поручения';
-  $: scoped = filterWorkCards(cards, 'all', memberId, query);
+  $: scoped = filterWorkCards(cards, 'all', memberId, query, priority);
   $: filtered = filterWorkCards(scoped, status);
   $: canCreate = Boolean(state.context && state.family?.activeMember && (kind === 'task' ? ['owner', 'parent', 'adult', 'teen'] : ['owner', 'parent', 'adult']).includes(state.family.activeMember.role));
   $: members = (state.family?.members ?? []).filter((member) => member.active && member.family === state.context?.familyId);
@@ -37,6 +40,7 @@
     </div>
   </header>
   <div class="work-filters">
+    <PriorityFilter bind:value={priority} />
     <label class="search-control"><Search size={18} aria-hidden="true" /><input type="search" aria-label={`Поиск: ${title.toLocaleLowerCase('ru')}`} placeholder="Поиск" bind:value={query} /></label>
     <label class="member-control"><span>Исполнитель</span><select bind:value={memberId}><option value="">Все</option>{#each members as member (member.id)}<option value={member.id}>{member.displayName}</option>{/each}</select></label>
   </div>
@@ -52,7 +56,7 @@
   {#if state.loading}<p class="work-state" role="status">{state.loaded ? 'Обновляем список...' : 'Загружаем...'}</p>{/if}
   {#if !state.context}<p class="work-state">{state.family?.status === 'loading' || state.family?.status === 'idle' ? 'Подключаем профиль...' : 'Нет доступного профиля семьи.'}</p>
   {:else if state.loaded && !state.loading && !state.error && filtered.length === 0}
-    <div class="empty-state"><p>{cards.length === 0 ? kind === 'task' ? 'Дел пока нет.' : 'Поручений пока нет.' : 'По этим фильтрам ничего не найдено.'}</p>{#if cards.length > 0}<button type="button" on:click={() => { status = 'all'; memberId = ''; query = ''; }}>Сбросить фильтры</button>{/if}</div>
+    <div class="empty-state"><p>{cards.length === 0 ? kind === 'task' ? 'Дел пока нет.' : 'Поручений пока нет.' : 'По этим фильтрам ничего не найдено.'}</p>{#if cards.length > 0}<button type="button" on:click={() => { status = 'all'; memberId = ''; query = ''; priority = 'all'; }}>Сбросить фильтры</button>{/if}</div>
   {/if}
   <div class="work-cards" aria-busy={state.loading}>
     {#each filtered as card (card.id)}<AssignmentCard {card} busy={state.busyId === card.id} disabled={state.loading || Boolean(state.error) || Boolean(state.busyId && state.busyId !== card.id)} {onaction} />{/each}

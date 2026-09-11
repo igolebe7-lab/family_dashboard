@@ -145,6 +145,8 @@
   });
 </script>
 
+<svelte:window on:online={() => { void loadNotifications(); void connectRealtime(); }} />
+
 {#snippet inboxContent()}
   <div class="inbox-toolbar">
     <div class="inbox-filters" role="group" aria-label="Фильтр уведомлений">

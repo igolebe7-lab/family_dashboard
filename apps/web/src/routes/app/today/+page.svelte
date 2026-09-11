@@ -152,6 +152,16 @@
     syncPage(currentFamilyState, selectedTodayDate, selectedCalendarView, fixtureMode);
   }
 
+  async function recoverConnection() {
+    if (!mounted) return;
+    await refreshTodayAfterCreate();
+    const context = getActiveFamilyContext(currentFamilyState);
+    if (context) {
+      realtimeError = null;
+      await Promise.all([loadAnnotations(generation, context, selectedTodayDate), syncRealtime(generation, context, selectedTodayDate, selectedCalendarView)]);
+    }
+  }
+
   function navigateCalendar(date: Date, view: TodayNavigationView) {
     void goto(buildTodayCalendarHref({ dateKey: formatDateKey(date), view }), { noScroll: true, keepFocus: true });
   }
@@ -219,7 +229,7 @@
   });
 </script>
 
-<svelte:window on:focus={() => { if (mounted) void refreshSummary(); }} />
+<svelte:window on:focus={() => { if (mounted) void refreshSummary(); }} on:online={recoverConnection} />
 
 <MobileShell {activeRoute} labelledBy="today-title-mobile">
   <TodayHeader

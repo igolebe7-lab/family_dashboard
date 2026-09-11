@@ -7,7 +7,9 @@
   import WorkspacePage from '$lib/components/app/WorkspacePage.svelte';
   import { familyStore, getActiveFamilyContext } from '$lib/stores/family.store';
   import { searchItems, type SearchKind } from '$lib/api/search.api';
-  import type { Item } from '$lib/types/domain';
+  import type { Item, ItemPriority } from '$lib/types/domain';
+  import PriorityFilter from '$lib/components/composer/PriorityFilter.svelte';
+  let priority: ItemPriority | 'all' = 'all';
 
   let query = $page.url.searchParams.get('q') ?? '';
   let kind: SearchKind = 'all';
@@ -27,9 +29,9 @@
   const labels: Record<string, string> = { event: 'Событие', task: 'Дело', assignment: 'Поручение', routine: 'Рутина' };
 
   $: context = getActiveFamilyContext($familyStore);
-  $: scheduleSearch(query, kind, archived, context?.familyId, context?.memberId);
+  $: scheduleSearch(query, kind, archived, priority, context?.familyId, context?.memberId);
 
-  function scheduleSearch(_query: string, _kind: SearchKind, _archived: boolean, _family?: string, _member?: string) {
+  function scheduleSearch(_query: string, _kind: SearchKind, _archived: boolean, _priority: ItemPriority | 'all', _family?: string, _member?: string) {
     clearTimeout(timer);
     version += 1;
     items = [];
@@ -46,7 +48,7 @@
     loading = true;
     error = '';
     try {
-      const result = await searchItems(context, query, kind, nextPage, archived);
+      const result = await searchItems(context, query, kind, nextPage, archived, priority);
       if (request !== version) return;
       items = append ? [...items, ...result.items] : result.items;
       total = result.totalItems;
@@ -68,6 +70,8 @@
   onDestroy(() => { clearTimeout(timer); version += 1; });
 </script>
 
+<svelte:window on:online={() => load()} />
+
 <WorkspacePage title="Поиск" activeRoute="/app/search">
   <header class="page-heading"><div><p class="section-kicker">Вся семья</p><h1>Поиск</h1></div></header>
   <form class="search-field" role="search" on:submit|preventDefault={() => { clearTimeout(timer); void load(); }}>
@@ -81,6 +85,7 @@
     {/each}
   </div>
   <label class="archive-filter"><input type="checkbox" bind:checked={archived} />Архив</label>
+  <PriorityFilter bind:value={priority} />
   <p class="results-count" aria-live="polite">{loading ? 'Ищем…' : error ? '' : `Найдено: ${total}`}</p>
   {#if error}
     <div class="page-error" role="alert"><p>{error}</p><button class="button button--soft" on:click={() => load()}>Повторить</button></div>
