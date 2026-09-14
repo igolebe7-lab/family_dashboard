@@ -3,6 +3,9 @@
 # Local tool state
 .serena/
 .worktrees/
+.playwright-mcp/
+/calendar-stage7-month-links.png
+/today-month-stage7.png
 
 # Dependencies
 node_modules/
