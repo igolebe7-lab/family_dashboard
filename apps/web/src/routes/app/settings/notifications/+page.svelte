@@ -8,7 +8,7 @@
   import WorkspacePage from '$lib/components/app/WorkspacePage.svelte';
   import { disablePush, enablePush, getPushConfig, testPush, type PushConfig } from '$lib/api/push.api';
   import { getPushDevice } from '$lib/push/device-storage';
-  import { pushAvailability } from '$lib/push/push-state';
+  import { pushAvailability, pushErrorMessage } from '$lib/push/push-state';
 
   type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
   let availability = 'loading';
@@ -49,13 +49,13 @@
         if (!config) throw new Error('Сервер уведомлений недоступен.');
         await enablePush(config); message = 'Уведомления на этом устройстве включены.';
       }
-    } catch (cause) { error = cause instanceof Error ? cause.message : 'Не удалось изменить настройки.'; }
+    } catch (cause) { error = pushErrorMessage(cause); }
     finally { busy = false; await refresh(); }
   }
   async function sendTest() {
     busy = true; error = ''; message = '';
     try { await testPush(); message = 'Проверочное уведомление поставлено на отправку.'; }
-    catch (cause) { error = cause instanceof Error ? cause.message : 'Не удалось отправить уведомление.'; }
+    catch (cause) { error = pushErrorMessage(cause); }
     finally { busy = false; }
   }
   async function install() {

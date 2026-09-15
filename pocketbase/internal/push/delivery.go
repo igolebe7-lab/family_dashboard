@@ -132,7 +132,8 @@ func (s *Service) deliver(record *core.Record) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
-	response, sendErr := webpush.SendNotificationWithContext(ctx, payload, &subscription, &webpush.Options{HTTPClient: s.client, Subscriber: s.config.Subject, VAPIDPublicKey: s.config.PublicKey, VAPIDPrivateKey: s.config.PrivateKey, TTL: 3600, Topic: record.Id, Urgency: webpush.UrgencyNormal})
+	// webpush-go v1.4 adds mailto itself; Config keeps the standard URI form.
+	response, sendErr := webpush.SendNotificationWithContext(ctx, payload, &subscription, &webpush.Options{HTTPClient: s.client, Subscriber: strings.TrimPrefix(s.config.Subject, "mailto:"), VAPIDPublicKey: s.config.PublicKey, VAPIDPrivateKey: s.config.PrivateKey, TTL: 3600, Topic: record.Id, Urgency: webpush.UrgencyNormal})
 	status := 0
 	if response != nil {
 		status = response.StatusCode

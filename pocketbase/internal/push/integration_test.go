@@ -137,6 +137,22 @@ func TestPushIntegration(t *testing.T) {
 		if client.encoding != "aes128gcm" || client.authorization == "" || len(client.body) < 100 || bytes.Contains(client.body, []byte("Sensitive")) {
 			t.Fatal("missing encryption/VAPID")
 		}
+		jwt := strings.Split(strings.TrimPrefix(client.authorization, "vapid t="), ",")[0]
+		parts := strings.Split(jwt, ".")
+		if len(parts) != 3 {
+			t.Fatal("invalid VAPID token")
+		}
+		payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+		if err != nil {
+			t.Fatal(err)
+		}
+		var claims map[string]any
+		if err := json.Unmarshal(payload, &claims); err != nil {
+			t.Fatal(err)
+		}
+		if claims["sub"] != "mailto:admin@example.test" || claims["aud"] != "https://web.push.apple.com" {
+			t.Fatalf("invalid VAPID contact/audience: %v", claims)
+		}
 	})
 	t.Run("visibility rechecked after enqueue", func(t *testing.T) {
 		n := notice("event.changed")
