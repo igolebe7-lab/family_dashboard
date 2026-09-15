@@ -1,11 +1,13 @@
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { sessionStore } from '$lib/stores/session.store';
 import GlassMemberCard from './GlassMemberCard.svelte';
 import ActiveProfileSwitcher from './ActiveProfileSwitcher.svelte';
 import type { FamilyMember } from '$lib/types/domain';
 
 const member: FamilyMember = { id: 'member', family: 'family', displayName: 'Ева', role: 'child', colorKey: 'peach', active: true, managedBy: ['parent'] };
 const callbacks = { onedit() {}, oninvite() {}, onchild() {}, oncopy() {} };
+afterEach(() => sessionStore.clear());
 
 describe('Family glass specimen', () => {
   it('keeps child action and a named edit control without turning the whole card into a button', () => {
@@ -27,7 +29,8 @@ describe('Family glass specimen', () => {
     expect(body).toContain('aria-label="Скопировать ссылку"');
   });
   it('uses a native select and leaves the default switcher unchanged', () => {
-    const props = { members: [member, { ...member, id: 'parent' }], activeMember: member, canSwitch: true };
+    sessionStore.setSession({ token: 'test', user: { id: 'user', email: 'test@example.test', name: 'Parent' } });
+    const props = { members: [member, { ...member, id: 'parent', user: 'user', role: 'parent' as const }], activeMember: member, canSwitch: true };
     const glass = render(ActiveProfileSwitcher, { props: { ...props, glass: true } }).body;
     expect(glass).toContain('<select');
     expect(glass).toContain('family-glass-select__avatar');

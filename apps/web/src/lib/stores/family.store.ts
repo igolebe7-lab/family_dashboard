@@ -1,4 +1,6 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
+import { sessionStore } from './session.store';
+import { getSelectableProfiles } from '$lib/utils/profile-access';
 
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 import type { Family, FamilyMember } from '$lib/types/domain';
@@ -23,7 +25,7 @@ const initialFamilyState: FamilyState = {
   error: null
 };
 
-export function createFamilyStore() {
+export function createFamilyStore(getUserId: () => string | undefined = () => get(sessionStore).user?.id) {
   const store = writable<FamilyState>(initialFamilyState);
   let revision = 0;
   function update(updater: (state: FamilyState) => FamilyState): void {
@@ -74,11 +76,12 @@ export function createFamilyStore() {
           family && state.activeMember?.family === family.id ? state.activeMember : null
       })),
     setActiveMember: (member: FamilyMember | null) =>
-      update((state) => ({
-        ...state,
-        activeMember: member?.active && member.family === state.activeFamily?.id
-          ? state.members.find((entry) => entry.id === member.id) ?? null : null
-      })),
+      update((state) => {
+        if (!member) return { ...state, activeMember: null };
+        const allowed = getSelectableProfiles(state.members, getUserId()).find(entry =>
+          entry.id === member.id && entry.family === state.activeFamily?.id);
+        return allowed ? { ...state, activeMember: allowed } : state;
+      }),
     setError: (error: string) =>
       update(() => ({
         ...initialFamilyState,

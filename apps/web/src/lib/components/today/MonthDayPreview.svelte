@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import X from '@lucide/svelte/icons/x';
+  import SheetHandle from '$lib/components/ui/SheetHandle.svelte';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import { getIcon } from '$lib/design/icon-registry';
@@ -51,7 +52,8 @@
 </script>
 <svelte:window on:resize={onclose} on:pointerdown={(event) => { if (!touch && event.target instanceof Node && !dialog.contains(event.target) && !anchor.contains(event.target)) onclose(); }} on:keydown={(event) => { if (event.key === 'Escape') onclose(); }} />
 <dialog bind:this={dialog} class:day-preview--touch={touch} class="day-preview" aria-label={`События: ${label}`} on:cancel={dismiss} on:pointerenter={onenter} on:pointerleave={onleave}>
-  <header><strong>{label}</strong><button class="icon-button" aria-label="Закрыть сводку дня" on:click={onclose}><X size={20} /></button></header>
+  <SheetHandle {onclose} />
+  <header><strong>{label}</strong><button class="icon-button sheet-desktop-close" aria-label="Закрыть сводку дня" on:click={onclose}><X size={20} /></button></header>
   <div class="day-preview__list">
     {#if loading}<p role="status">Загружаем события…</p>{/if}
     {#if error}<p role="alert">{error}</p><button class="button" on:click={onretry}>Повторить</button>{/if}

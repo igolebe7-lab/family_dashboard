@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getSelectableProfiles } from '$lib/utils/profile-access';
   import { browser, dev } from '$app/environment';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
@@ -91,7 +92,7 @@
   $: today = fixtureMode ? createTodayViewModel({ fixture: 'desktop-reference' }) : $todayState.model;
   $: todayAnnotations = mergeDayAnnotations($dayAnnotationsStore.projectedAnnotations, publicHolidayAnnotations);
   $: allDayInfo = createTodayAllDayInfoViewModel({ date: selectedTodayDate, annotations: todayAnnotations });
-  $: canSwitchActiveProfile = canAuthenticatedAdultSwitchProfiles(currentFamilyState.members, $sessionStore.user?.id);
+  $: canSwitchActiveProfile = getSelectableProfiles(currentFamilyState.members, $sessionStore.user?.id).length > 1;
   $: notificationCount = fixtureMode ? 0 : $todayState.notificationCount;
   $: if (mounted) syncPage(currentFamilyState, selectedTodayDate, selectedCalendarView, fixtureMode);
   $: loadErrors = [$todayState.error, $dayAnnotationsStore.error, holidayError, $todayState.notificationError, realtimeError].filter(Boolean);
@@ -169,10 +170,6 @@
 
   function openComposer(kind: ComposerKind): void { composerKind = kind; composerOpen = true; }
   function setActiveMember(member: FamilyMember): void { familyStore.setActiveMember(member); }
-  function canAuthenticatedAdultSwitchProfiles(members: FamilyMember[], userId: string | undefined): boolean {
-    return Boolean(userId && members.length > 1 && members.some((member) =>
-      member.user === userId && ['owner', 'parent', 'adult'].includes(member.role)));
-  }
   async function refreshTodayAfterCreate(): Promise<void> { await Promise.all([todayState.refresh(), refreshSummary()]); }
 
   async function runOccurrenceAction(

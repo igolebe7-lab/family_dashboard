@@ -283,6 +283,8 @@ try {
     const row = await occurrence(record);
     const path = `/api/collections/item_occurrences/records/${row.id}`;
     denied(await request(path, child.token, { status: 'done' }, 'PATCH', { 'X-Family-Member-Id': parent.member.id }));
+    denied(await request(path, owner.token, { status: 'done' }, 'PATCH', { 'X-Family-Member-Id': parent.member.id }));
+    denied(await request(path, parent.token, { status: 'done' }, 'PATCH', { 'X-Family-Member-Id': owner.member.id }));
     denied(await request(path, parent.token, { status: 'done' }, 'PATCH', { 'X-Family-Member-Id': outsider.member.id }));
     const result = await request(path, parent.token, { status: 'done' }, 'PATCH', { 'X-Family-Member-Id': child.member.id });
     assert.equal(result.status, 200, JSON.stringify(result));

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SheetHandle from '$lib/components/ui/SheetHandle.svelte';
   import X from '@lucide/svelte/icons/x';
   import { onDestroy, onMount } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
@@ -188,12 +189,13 @@
 </script>
 
 <dialog bind:this={dialog} class="composer-sheet" aria-labelledby={titleId} aria-modal="true" aria-busy={saving} on:click={backdropClick}>
+  <SheetHandle onclose={closeComposer} disabled={saving} />
   <header class="composer-sheet__header">
     <div>
       <p class="section-kicker">Создание</p>
       <h2 id={titleId}>Новая запись</h2>
     </div>
-    <button type="button" disabled={saving} aria-label="Закрыть форму" on:click={() => closeComposer()}>
+    <button class="sheet-desktop-close" type="button" disabled={saving} aria-label="Закрыть форму" on:click={() => closeComposer()}>
       <X size={19} strokeWidth={2.2} aria-hidden="true" />
     </button>
   </header>

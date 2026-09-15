@@ -13,8 +13,17 @@ function run(command, args, cwd = root, env = process.env) {
 }
 run('npx', ['pnpm@10.12.1', 'build']);
 await mkdir(resolve(output, 'backend'), { recursive: true });
-run(process.env.GO_BIN || 'go', ['build', '-trimpath', '-ldflags=-s -w', '-o', resolve(output, 'backend/pocketbase'), '.'], resolve(root, 'pocketbase'),
-  { ...process.env, GOEXPERIMENT: 'nojsonv2', GOOS: 'linux', GOARCH: 'amd64', CGO_ENABLED: '0' });
+if (process.env.FAMILYTIME_BACKEND_RELEASE) {
+  // UI-only packaging retains the deployed executable, not a toolchain rebuild.
+  const previous = resolve(root, process.env.FAMILYTIME_BACKEND_RELEASE);
+  for (const directory of ['pb_hooks', 'pb_migrations']) {
+    run('diff', ['-qr', resolve(previous, 'backend', directory), resolve(root, 'pocketbase', directory)]);
+  }
+  await cp(resolve(previous, 'backend/pocketbase'), resolve(output, 'backend/pocketbase'));
+} else {
+  run(process.env.GO_BIN || 'go', ['build', '-trimpath', '-ldflags=-s -w', '-o', resolve(output, 'backend/pocketbase'), '.'], resolve(root, 'pocketbase'),
+    { ...process.env, GOEXPERIMENT: 'nojsonv2', GOOS: 'linux', GOARCH: 'amd64', CGO_ENABLED: '0' });
+}
 await cp(resolve(root, 'apps/web/build'), resolve(output, 'web'), { recursive: true });
 for (const directory of ['pb_hooks', 'pb_migrations']) await cp(resolve(root, 'pocketbase', directory), resolve(output, 'backend', directory), { recursive: true });
 await cp(resolve(root, 'deploy'), resolve(output, 'deploy'), { recursive: true, filter: (path) => !/\/\.env(?!\.example$)/.test(path) });

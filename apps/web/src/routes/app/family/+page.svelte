@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getSelectableProfiles } from '$lib/utils/profile-access';
   import Plus from '@lucide/svelte/icons/plus';
   import Pencil from '@lucide/svelte/icons/pencil';
   import Smile from '@lucide/svelte/icons/smile';
@@ -54,10 +55,8 @@
   $: if (role === 'child' && !managedBy) {
     managedBy = familyState?.activeMember?.id ?? adultMembers[0]?.id ?? '';
   }
-  $: canSwitchActiveProfile = canAuthenticatedAdultSwitchProfiles(
-    familyState?.members ?? [],
-    currentUserId
-  );
+  $: selectableProfiles = getSelectableProfiles(familyState?.members ?? [], currentUserId);
+  $: canSwitchActiveProfile = selectableProfiles.length > 1;
 
   function setActiveMember(member: FamilyMember): void {
     familyStore.setActiveMember(member);
@@ -66,19 +65,6 @@
   function getRoleLabel(memberRole: MemberRole | string): string {
     if (memberRole === 'owner') return 'Владелец семьи';
     return roleLabelByValue.get(memberRole as MemberRole) ?? memberRole;
-  }
-
-  function canAuthenticatedAdultSwitchProfiles(
-    members: FamilyMember[],
-    userId: string | undefined
-  ): boolean {
-    if (!userId || members.length <= 1) return false;
-
-    return members.some(
-      (member) =>
-        member.user === userId &&
-        (member.role === 'owner' || member.role === 'parent' || member.role === 'adult')
-    );
   }
 
   async function reloadMembers(): Promise<void> {
@@ -185,6 +171,7 @@
   }
 
   async function openChild(member: FamilyMember): Promise<void> {
+    if (!selectableProfiles.some(profile => profile.id === member.id)) return;
     familyStore.setActiveMember(member);
     await goto('/child');
   }
@@ -232,7 +219,7 @@
           <GlassMemberCard {member} roleLabel={getRoleLabel(member.role)}
             own={member.user === currentUserId} editable={canManage}
             invitable={canInviteMember(member)} busy={saving}
-            childMode={canSwitchActiveProfile && ['child', 'teen'].includes(member.role)}
+            childMode={selectableProfiles.some(profile => profile.id === member.id) && ['child', 'teen'].includes(member.role)}
             inviteLink={inviteLinks[member.id] ?? ''}
             onedit={() => editMember(member)} oninvite={() => createInviteForMember(member)}
             onchild={() => openChild(member)} oncopy={() => copyInvite(member)} />
@@ -313,7 +300,7 @@
             {#if canManage}
               <button type="button" title="Изменить профиль" aria-label={`Изменить профиль ${member.displayName}`} on:click={() => editMember(member)}><Pencil size={17} aria-hidden="true" /></button>
             {/if}
-            {#if canSwitchActiveProfile && ['child', 'teen'].includes(member.role)}
+            {#if selectableProfiles.some(profile => profile.id === member.id) && ['child', 'teen'].includes(member.role)}
               <button type="button" on:click={() => openChild(member)}><Smile size={17} aria-hidden="true" />Детский режим</button>
             {/if}
             {#if inviteLinks[member.id]}

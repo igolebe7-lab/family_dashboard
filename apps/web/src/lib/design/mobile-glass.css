@@ -161,6 +161,20 @@
   :root[data-theme] .app-screen--glass .today-attention-card__actions { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
   :root[data-theme] .app-screen--glass .today-attention-card:has(.today-attention-card__actions) .today-attention-card__copy { grid-column: 2 / -1; }
   :root[data-theme] .app-screen--glass .today-timeline-item__card { padding: 14px; }
+  :root[data-theme] .app-screen--glass .today-timeline-item { grid-template-columns: 76px minmax(0, 1fr); column-gap: 12px; align-items: center; }
+  :root[data-theme] .app-screen--glass .today-timeline-item__time { align-self: center; padding-top: 0; gap: 8px; }
+  :root[data-theme] .app-screen--glass .today-timeline-item time { white-space: nowrap; font-size: 14px; }
+  :root[data-theme] .app-screen--glass .today-timeline-item:first-child::before { top: 50%; }
+  :root[data-theme] .app-screen--glass .today-timeline-item:last-child::before { bottom: 50%; }
+  :root[data-theme] .app-screen--glass .today-week-toolbar__arrows {
+    display: flex; gap: 0; padding: 2px; border: 1px solid var(--family-rim); border-radius: 24px;
+    background: var(--family-control); box-shadow: inset 0 1px 0 var(--family-edge), 0 3px 10px var(--family-control-shadow);
+  }
+  :root[data-theme] .app-screen--glass .today-week-toolbar__arrows .icon-button {
+    width: 44px; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 50%;
+    background: transparent; box-shadow: none; color: var(--family-text);
+  }
+  :root[data-theme] .app-screen--glass .today-week-toolbar__arrows .icon-button:active { background: var(--family-fill); }
   :root[data-theme] .app-screen--glass .today-timeline-item__card :is(strong, h3) { font-size: 16px; line-height: 1.4; }
   :root[data-theme] .app-screen--glass .today-timeline-item__icon { flex-shrink: 0; border-radius: 13px; box-shadow: inset 0 1px 0 var(--family-edge); }
   :root[data-theme] .app-screen--glass .today-quick-action { min-height: 88px; }
@@ -179,7 +193,8 @@
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
   :root[data-theme] :is(.item-detail-dialog, .day-preview, dialog.composer-sheet)::backdrop { background: rgb(3 14 20 / .48); }
-  :root[data-theme] :is(.item-detail-dialog, .day-preview)::before { width: 36px; height: 4px; min-height: 4px; flex-shrink: 0; margin: 10px auto 4px; background: var(--family-muted); opacity: .5; }
+  :root[data-theme] :is(.item-detail-dialog, .day-preview)::before { content: none; }
+  :root[data-theme] dialog header .sheet-desktop-close { display: none; }
   :root[data-theme] .item-detail-dialog__header { padding: 12px 18px; border-color: var(--family-rim); }
   :root[data-theme] .item-detail-dialog__body { padding: 18px; scroll-padding-block: 16px; }
   :root[data-theme] .item-detail-dialog .page-heading { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
@@ -190,7 +205,7 @@
   :root[data-theme] .item-detail-dialog .item-details > div:last-child { border: 0; }
   :root[data-theme] .item-detail-dialog .item-description { padding-block: 18px; border-color: var(--family-rim); }
   :root[data-theme] .item-detail-dialog .detail-edit { padding: 0; border: 0; background: transparent; }
-  :root[data-theme] :is(.item-detail-dialog, .day-preview, dialog.composer-sheet) :is(.button, .icon-button, .composer-sheet__header > button) {
+  :root[data-theme] :is(.item-detail-dialog, .day-preview, dialog.composer-sheet) :is(.button, .icon-button, .composer-sheet__header > button):not(.sheet-desktop-close) {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     min-width: 44px; min-height: 44px; border-radius: 12px; border: 1px solid var(--family-rim);
     background: linear-gradient(150deg, var(--family-control), transparent), var(--family-control);
