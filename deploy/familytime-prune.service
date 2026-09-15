@@ -1,0 +1,11 @@
+[Unit]
+Description=Retain current, previous and recent FamilyTime releases
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/familytime/prune_releases.py --apply
+Nice=15
+IOSchedulingClass=idle
+CPUQuota=15%
+MemoryMax=64M
+TimeoutStartSec=5min
