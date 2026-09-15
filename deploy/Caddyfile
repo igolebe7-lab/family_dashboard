@@ -20,6 +20,11 @@ http://{$FAMILYTIME_PUBLIC_IP} {
 https://{$FAMILYTIME_PUBLIC_IP} {
 	tls /etc/familytime/tls/current/fullchain.pem /etc/familytime/tls/current/privkey.pem
 	encode zstd gzip
+	@maintenance file {
+		root /var/lib/familytime-maintenance
+		try_files active
+	}
+	respond @maintenance "FamilyTime is updating. Please retry shortly." 503
 	header {
 		X-Content-Type-Options nosniff
 		Referrer-Policy same-origin

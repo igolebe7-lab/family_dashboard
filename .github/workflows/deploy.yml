@@ -1,0 +1,89 @@
+name: FamilyTime CI and Deploy
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: familytime-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      environment: ${{ steps.policy.outputs.environment }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.25.x'
+          cache-dependency-path: pocketbase/go.sum
+      - run: npm install --global pnpm@10.12.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check && pnpm lint && pnpm test
+      - run: pnpm backend:test
+      - run: pnpm backend:build && node scripts/smoke-backend-isolated.mjs
+      - run: python3 -m unittest discover -s deploy -p 'test_*.py'
+      - run: pnpm build && node scripts/package-ci.mjs
+      - name: Migration approval policy
+        id: policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Compare to the deployed commit, not only the last push.
+          base=$(curl -fsS --max-time 15 https://147.45.136.245/release.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])') || base=921cc1e
+          if git cat-file -e "$base^{commit}" && git diff --quiet "$base" HEAD -- pocketbase/pb_migrations; then
+            echo 'environment=production' >> "$GITHUB_OUTPUT"
+          else
+            echo 'environment=production-migrations' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-${{ github.sha }}
+          path: dist/ci-release.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: ${{ needs.verify.outputs.environment }}
+      url: https://147.45.136.245
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-${{ github.sha }}
+      - name: Deploy over restricted SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_HOST_KEY: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/familytime"
+          printf '%s\n' "$SSH_HOST_KEY" > "$HOME/.ssh/known_hosts"
+          trap 'rm -f "$HOME/.ssh/familytime"' EXIT
+          ssh -T -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 -i "$HOME/.ssh/familytime" familytime-deploy@147.45.136.245 deploy < ci-release.tar.gz
+      - name: Verify public release
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          curl -fsS --retry 3 --max-time 15 https://147.45.136.245/api/health
+          curl -fsS --retry 3 --max-time 15 https://147.45.136.245/release.json | python3 -c 'import json,os,sys; assert json.load(sys.stdin)["commit"] == os.environ["EXPECTED_COMMIT"]'

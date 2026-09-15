@@ -33,3 +33,4 @@ pocketbase/pocketbase
 *.swo
 .idea/
 .vscode/
+__pycache__/
