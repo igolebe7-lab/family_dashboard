@@ -43,8 +43,8 @@ jobs:
         run: |
           set -euo pipefail
           # Compare to the deployed commit, not only the last push.
-          base=$(curl -fsS --max-time 15 https://147.45.136.245/release.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])') || base=921cc1e
-          if git cat-file -e "$base^{commit}" && git diff --quiet "$base" HEAD -- pocketbase/pb_migrations; then
+          base=$(curl -fsS --max-time 15 https://147.45.136.245/release.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["commit"])') || base=''
+          if [[ "$base" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$base^{commit}" && git diff --quiet "$base" HEAD -- pocketbase/pb_migrations; then
             echo 'environment=production' >> "$GITHUB_OUTPUT"
           else
             echo 'environment=production-migrations' >> "$GITHUB_OUTPUT"

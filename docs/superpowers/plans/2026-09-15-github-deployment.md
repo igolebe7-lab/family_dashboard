@@ -20,5 +20,8 @@ root-owned приёмник проверяет архив и миграции н
 - [x] Пакетирование web + backend + commit; тесты валидации архива.
 - [x] Root-owned приёмник с ограничением размера, lock, backup, health и rollback кода/базы.
 - [x] Workflow проверок/сборки/deploy; выделенный ключ и production environments.
-- [ ] Push workflow, настоящий Actions run, проверка релиза и состояния VPN.
+- [x] Push workflow, настоящий Actions run, проверка релиза и состояния VPN.
 - [x] Документация запуска, ограничений, отключения и восстановления: deploy/GITHUB.md.
+
+Первый успешный полный автоматический запуск: https://github.com/igolebe7-lab/family_dashboard/actions/runs/35017027739
+Commit: 2c541c189f63edb9f791f14c479d7cf3472829db. Проверки verify/deploy прошли.
