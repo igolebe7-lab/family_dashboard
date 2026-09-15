@@ -8,7 +8,7 @@ Browser / installed PWA
   -> Caddy
        -> static SvelteKit build for /, /app/* and assets
        -> reverse_proxy /api/* to PocketBase
-       -> reverse_proxy /_/* to PocketBase admin UI with extra protection
+       -> /_/* blocked publicly; admin via SSH tunnel
   -> PocketBase
        -> SQLite
        -> pb_data file storage
@@ -16,9 +16,15 @@ Browser / installed PWA
        -> pb_migrations schema
        -> realtime/SSE
        -> cron jobs
+       -> Go Web Push sender + SQLite push_deliveries (no separate worker service)
 ```
 
 ## Frontend boundaries
+
+Stage 14: установленная PWA использует Web Push, IndexedDB device gate и same-origin
+API. Go backend сохраняет JS hooks и миграции, версии закреплены. HTTPS по IP:
+внешний короткоживущий ACME сертификат + Caddy, инструкция в `deploy/README.md`.
+Подробности безопасности, очереди и ограничений: `docs/technical/web-push.md`.
 
 Целевой frontend — static SvelteKit SPA/PWA. По актуальной документации SvelteKit для SPA direct-route fallback нужен `@sveltejs/adapter-static` с `fallback: '200.html'`, а SSR отключается на root layout через `export const ssr = false`.
 

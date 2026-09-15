@@ -85,6 +85,7 @@
   $: navigationState = parseTodayCalendarSearch($page.url.searchParams);
   $: selectedTodayDate = fixtureMode ? new Date(2024, 4, 24) : navigationState?.date ?? initialDate;
   $: selectedCalendarView = navigationState?.view ?? 'week';
+  $: mobileCalendarView = navigationState?.view ?? 'day';
   $: selectedTodayDateKey = formatDateKey(selectedTodayDate);
   $: currentFamilyState = $familyStore;
   $: today = fixtureMode ? createTodayViewModel({ fixture: 'desktop-reference' }) : $todayState.model;
@@ -241,6 +242,7 @@
 
   <MemberAvatarRow members={today.familyMembers} />
   <ActiveProfileSwitcher
+    glass
     members={currentFamilyState?.members ?? []}
     activeMember={currentFamilyState?.activeMember ?? null}
     canSwitch={canSwitchActiveProfile}
@@ -252,17 +254,11 @@
       <div role="alert"><p>{loadErrors.join(' ')}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>
     {/if}
     <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-mobile" />
-    {#if selectedCalendarView === 'month'}
-      <TodayWeekBoard mobile
+    <TodayWeekBoard mobile
         contextKey={`${currentFamilyState.activeFamily?.id ?? ''}:${currentFamilyState.activeMember?.id ?? ''}`}
-        onnavigate={navigateCalendar} labelledBy="today-month-title-mobile"
-        initialView="month" selectedDate={selectedTodayDate} selectedDateKey={selectedTodayDateKey}
-        weekLabel={today.weekLabel} events={today.weekEvents} annotations={todayAnnotations} />
-    {:else}
-    <div class="today-week-toolbar__view" aria-label="Вид календаря">
-      <button type="button" aria-pressed="true" on:click={() => navigateCalendar(selectedTodayDate, 'day')}>День</button>
-      <button type="button" aria-pressed="false" on:click={() => navigateCalendar(selectedTodayDate, 'month')}>Месяц</button>
-    </div>
+        onnavigate={navigateCalendar} labelledBy="today-board-title-mobile"
+        initialView={mobileCalendarView} selectedDate={selectedTodayDate} selectedDateKey={selectedTodayDateKey}
+        days={today.weekDays} times={today.weekTimes} weekLabel={today.weekLabel} events={today.weekEvents} annotations={todayAnnotations}>
     {#key generation}
     <TodayTimeline
       loading={!fixtureMode && $todayState.status === 'loading'}
@@ -276,7 +272,7 @@
       oncompleteAssignment={completeAssignment}
     />
     {/key}
-    {/if}
+    </TodayWeekBoard>
     {#if actionError}<p class="today-action-message today-action-message--error">{actionError}</p>{/if}
     {#if actionMessage}<p class="today-action-message">{actionMessage}</p>{/if}
     <AttentionPanel

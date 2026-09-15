@@ -1,0 +1,36 @@
+[Unit]
+Description=FamilyTime PocketBase with Web Push
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=familytime
+Group=familytime
+WorkingDirectory=/opt/familytime/current/backend
+EnvironmentFile=/etc/familytime/backend.env
+Environment=GOMEMLIMIT=160MiB
+Environment=GOMAXPROCS=1
+ExecStart=/opt/familytime/current/backend/pocketbase serve --http=127.0.0.1:8090 --dir=/var/lib/familytime/pb_data --hooksDir=/opt/familytime/current/backend/pb_hooks --migrationsDir=/opt/familytime/current/backend/pb_migrations --automigrate=false
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=45
+MemoryHigh=180M
+MemoryMax=240M
+CPUWeight=20
+CPUQuota=50%
+Nice=10
+TasksMax=64
+LimitNOFILE=4096
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/familytime
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

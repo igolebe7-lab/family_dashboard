@@ -5,6 +5,23 @@ import CalendarEventCard from './CalendarEventCard.svelte';
 import { createTodayViewModel } from '$lib/today/today-view-model';
 
 describe('Today calendar controls', () => {
+  it('offers all three mobile views and renders a scrollable seven-column week', () => {
+    const model = createTodayViewModel({ fixture: 'desktop-reference' });
+    const { body } = render(TodayWeekBoard, { props: {
+      mobile: true, initialView: 'week', selectedDate: new Date(2024, 4, 24), selectedDateKey: '2024-05-24',
+      weekLabel: model.weekLabel, days: model.weekDays,
+      events: model.weekEvents.map(event => ({ ...event, itemId: 'abcdefghijklmno' }))
+    } });
+    expect(body).toMatch(/aria-pressed="true"[^>]*>Неделя/);
+    expect(body).toContain('>День</button>');
+    expect(body).toContain('>Месяц</button>');
+    expect(body.match(/class="week-calendar__day-column[" ]/g)).toHaveLength(7);
+    expect(body).toContain('week-calendar--mobile');
+    expect(body).toContain('week-calendar__body-scroll');
+    expect(body).toContain('--mobile-week-width:');
+    expect(body).toContain('Семейный ужин');
+    expect(body).toContain('/app/today?date=2024-05-31&amp;view=week');
+  });
   it('keeps a one-hour card compact without overlapping participant metadata', () => {
     const event = { ...createTodayViewModel({ fixture: 'desktop-reference' }).weekEvents[0], durationMinutes: 60 };
     const { body } = render(CalendarEventCard, { props: { event, positionStyle: 'top:608px;height:76px;' } });

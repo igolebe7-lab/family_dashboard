@@ -42,3 +42,26 @@ export function getCalendarInitialScrollTop(events: readonly CalendarTimeEntry[]
     ...events.map((event) => Math.max(0, Math.min(getCalendarEventTop(event.start), getCalendarBodyHeight())))
   );
 }
+
+export function layoutCalendarEvents<T extends CalendarTimeEntry & { id: string; durationMinutes: number }>(events: readonly T[]) {
+  const rows = events.map(event => ({ event, top: getCalendarEventTop(event.start),
+    height: Math.max(MIN_EVENT_HEIGHT, getCalendarEventHeight(event.durationMinutes) - 4), column: 0, columnCount: 1
+  })).sort((a, b) => a.top - b.top || a.event.id.localeCompare(b.event.id));
+  let group: typeof rows = [];
+  let columnEnds: number[] = [];
+  let groupEnd = -Infinity;
+  const finishGroup = () => { for (const row of group) row.columnCount = columnEnds.length; };
+  // Use rendered bounds, not just durations: a one-minute task still needs a readable card.
+  for (const row of rows) {
+    if (row.top >= groupEnd) {
+      finishGroup(); group = []; columnEnds = []; groupEnd = -Infinity;
+    }
+    const free = columnEnds.findIndex(end => end <= row.top);
+    row.column = free < 0 ? columnEnds.length : free;
+    columnEnds[row.column] = row.top + row.height + 4;
+    groupEnd = Math.max(groupEnd, columnEnds[row.column]);
+    group.push(row);
+  }
+  finishGroup();
+  return rows;
+}

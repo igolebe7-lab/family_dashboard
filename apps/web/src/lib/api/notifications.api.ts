@@ -9,6 +9,7 @@ import {
   escapeFilterValue,
   getPocketBaseClient,
   memberRequestOptions,
+  pocketBaseFilterDate,
   requireActiveContext,
   requireCollectionMethod
 } from './pocketbase';
@@ -34,7 +35,7 @@ export async function listNotifications(
     `family = "${escapeFilterValue(activeContext.familyId)}"`,
     `recipient_member = "${escapeFilterValue(activeContext.memberId)}"`,
     options.unreadOnly ? 'read_at = ""' : '',
-    options.createdBefore ? `created <= "${escapeFilterValue(options.createdBefore)}"` : ''
+    options.createdBefore ? `created <= "${pocketBaseFilterDate(options.createdBefore)}"` : ''
   ]
     .filter(Boolean)
     .join(' && ');

@@ -24,7 +24,7 @@
   $: familyName = familyState?.activeFamily?.name ?? 'Семья';
 
   async function handleLogout(): Promise<void> {
-    logout();
+    await logout();
     sessionStore.clear();
     familyStore.clear();
     await goto('/login', { replaceState: true });

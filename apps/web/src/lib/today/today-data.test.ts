@@ -100,6 +100,14 @@ for (const occurrence of [schoolOccurrence, doneAssignmentOccurrence, overdueAss
 }
 
 describe('today data adapter', () => {
+  it('keeps all-day metadata for the mobile week agenda', () => {
+    const model = createTodayViewModelFromOccurrences({
+      date: new Date(2026, 5, 10), members,
+      occurrences: [schoolOccurrence, { ...schoolOccurrence, id: 'all-day', allDay: true }]
+    });
+    expect(model.weekEvents.find(event => event.id === 'all-day')).toMatchObject({ allDay: true });
+    expect(model.weekEvents.find(event => event.id === schoolOccurrence.id)).toMatchObject({ allDay: false });
+  });
   it('attributes completion to the actual actor rather than the assignee or readers', () => {
     const model = createTodayViewModelFromOccurrences({
       date: new Date(2026, 5, 10), members, activeMemberId: 'member_mom',

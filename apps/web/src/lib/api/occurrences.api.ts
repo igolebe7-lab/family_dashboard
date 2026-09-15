@@ -12,6 +12,7 @@ import {
   escapeFilterValue,
   getPocketBaseClient,
   memberRequestOptions,
+  pocketBaseFilterDate,
   requireActiveContext,
   requireCollectionMethod
 } from './pocketbase';
@@ -192,8 +193,8 @@ export function buildOccurrenceRangeFilter(
   options: { kinds?: Extract<ItemKind, 'event' | 'task' | 'assignment'>[] } = {}
 ): string {
   const family = escapeFilterValue(familyId);
-  const from = escapeFilterValue(range.from);
-  const to = escapeFilterValue(range.to);
+  const from = pocketBaseFilterDate(range.from);
+  const to = pocketBaseFilterDate(range.to);
   const conditions = [
     `family = "${family}"`,
     'item.archived = false',

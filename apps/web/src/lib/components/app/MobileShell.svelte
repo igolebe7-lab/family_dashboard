@@ -7,7 +7,7 @@
   export let calendar = false;
 </script>
 
-<main class:app-screen--calendar={calendar} class="app-screen app-screen--mobile" aria-labelledby={labelledBy}>
+<main class:app-screen--calendar={calendar} class="app-screen app-screen--mobile app-screen--glass" aria-labelledby={labelledBy}>
   <section class="mobile-shell">
     <MobileTools />
     <slot />

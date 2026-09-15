@@ -1,12 +1,12 @@
 import { COLLECTIONS } from '$lib/constants/collections';
 import { mapOccurrenceRecord } from './occurrences.api';
 import { ensureOccurrenceRange } from './recurrence.api';
-import { asRecord, escapeFilterValue, getPocketBaseClient, memberRequestOptions, requireActiveContext, requireCollectionMethod, type ActiveFamilyContext } from './pocketbase';
+import { asRecord, escapeFilterValue, getPocketBaseClient, memberRequestOptions, pocketBaseFilterDate, requireActiveContext, requireCollectionMethod, type ActiveFamilyContext } from './pocketbase';
 import type { ItemOccurrence } from '$lib/types/domain';
 
 export function buildAttentionFilter(familyId: string, now: Date): string {
-  const end = new Date(now.getTime() + 7 * 86400000).toISOString();
-  const at = now.toISOString();
+  const end = pocketBaseFilterDate(new Date(now.getTime() + 7 * 86400000));
+  const at = pocketBaseFilterDate(now);
   return `family = "${escapeFilterValue(familyId)}" && item.archived = false && status != "approved" && status != "cancelled" && status != "skipped" && (status != "done" || (kind = "assignment" && item.approval_required = true)) && ((kind = "assignment" && status = "done") || (kind != "event" && ((due_at != "" && due_at < "${at}") || (due_at = "" && start_at != "" && start_at < "${at}"))) || (start_at >= "${at}" && start_at <= "${end}") || (due_at >= "${at}" && due_at <= "${end}"))`;
 }
 export async function loadAttentionOccurrences(context: ActiveFamilyContext, now = new Date()): Promise<ItemOccurrence[]> {

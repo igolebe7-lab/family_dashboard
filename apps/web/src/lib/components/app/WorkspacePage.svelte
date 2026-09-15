@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head><title>{title} · FamilyTime</title></svelte:head>
-<div class="workspace-page">
+<div class="workspace-page app-screen--glass">
   <div class="workspace-page__sidebar"><Sidebar {activeRoute} /></div>
   <main class="workspace-page__content">
     <MobileTools />

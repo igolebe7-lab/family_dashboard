@@ -1,0 +1,11 @@
+[Unit]
+Description=Consistent FamilyTime backup
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/familytime/current/deploy/backup.sh
+Nice=15
+IOSchedulingClass=idle
+CPUQuota=30%
+MemoryMax=96M
+TimeoutStartSec=15min

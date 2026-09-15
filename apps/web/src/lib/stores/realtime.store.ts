@@ -6,8 +6,18 @@ import {
 } from '$lib/api/occurrences.api';
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 
-type RealtimeUnsubscribe = () => void;
+type RealtimeUnsubscribe = () => void | Promise<void>;
 type RealtimeSubscribe = () => Promise<RealtimeUnsubscribe>;
+
+function releaseSubscription(unsubscribe: RealtimeUnsubscribe | null): void {
+  if (!unsubscribe) return;
+  // SDK detaches local listeners immediately, then submits the remaining topics remotely.
+  try {
+    void Promise.resolve(unsubscribe()).catch(error => console.warn('Realtime subscription cleanup failed.', error));
+  } catch (error) {
+    console.warn('Realtime subscription cleanup failed.', error);
+  }
+}
 
 export type RealtimeStoreDependencies = {
   subscribeNotifications?: (
@@ -47,7 +57,7 @@ export function createRealtimeStore(dependencies: RealtimeStoreDependencies = {}
     setState: (key: string, unsubscribe: RealtimeUnsubscribe) => void
   ): Promise<void> {
     if (currentKey === nextKey) return;
-    unsubscribe?.();
+    releaseSubscription(unsubscribe);
     const nextUnsubscribe = await subscribe();
     setState(nextKey, nextUnsubscribe);
   }
@@ -91,24 +101,24 @@ export function createRealtimeStore(dependencies: RealtimeStoreDependencies = {}
         }
       ),
     stopNotifications: () => {
-      notificationUnsubscribe?.();
+      releaseSubscription(notificationUnsubscribe);
       notificationUnsubscribe = null;
       notificationKey = null;
     },
     stopActivity: () => {
-      activityUnsubscribe?.();
+      releaseSubscription(activityUnsubscribe);
       activityUnsubscribe = null;
       activityKey = null;
     },
     stopOccurrences: () => {
-      occurrencesUnsubscribe?.();
+      releaseSubscription(occurrencesUnsubscribe);
       occurrencesUnsubscribe = null;
       occurrencesKey = null;
     },
     stopAll: () => {
-      notificationUnsubscribe?.();
-      activityUnsubscribe?.();
-      occurrencesUnsubscribe?.();
+      releaseSubscription(notificationUnsubscribe);
+      releaseSubscription(activityUnsubscribe);
+      releaseSubscription(occurrencesUnsubscribe);
       notificationUnsubscribe = null;
       activityUnsubscribe = null;
       occurrencesUnsubscribe = null;

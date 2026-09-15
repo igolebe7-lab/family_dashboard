@@ -4,11 +4,41 @@
 /// <reference types="@sveltejs/kit" />
 
 import { build, files, version } from '$service-worker';
+import { getPushDevice } from './lib/push/device-storage';
+import { safePushPath } from './lib/push/push-state';
 
 const worker = self as unknown as ServiceWorkerGlobalScope;
 const CACHE = `familytime-shell-${version}`;
 const ASSETS = [...build, ...files];
 const SHELL = '/200.html';
+
+worker.addEventListener('push', (event) => {
+  event.waitUntil((async () => {
+    const device = await getPushDevice();
+    let data: Record<string, unknown>;
+    try { data = event.data?.json() ?? {}; } catch { return; }
+    if (!device || device.expiresAt <= Date.now() || data.subscriptionId !== device.id) return;
+    await worker.registration.showNotification('FamilyTime', {
+      body: typeof data.body === 'string' ? data.body : 'В семье есть обновление.',
+      icon: '/icons/icon-192.png', badge: '/icons/icon-192.png',
+      tag: typeof data.tag === 'string' ? data.tag : 'familytime-update',
+      data: { url: safePushPath(data.url), subscriptionId: device.id }
+    });
+  })());
+});
+
+worker.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const device = await getPushDevice();
+    if (!device || device.expiresAt <= Date.now() || event.notification.data?.subscriptionId !== device.id) return;
+    const url = new URL(safePushPath(event.notification.data?.url), worker.location.origin).href;
+    const windows = await worker.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = windows.find((client) => new URL(client.url).origin === worker.location.origin);
+    if (existing) { await existing.navigate(url); await existing.focus(); }
+    else await worker.clients.openWindow(url);
+  })());
+});
 
 worker.addEventListener('install', (event) => {
   async function addFilesToCache() {

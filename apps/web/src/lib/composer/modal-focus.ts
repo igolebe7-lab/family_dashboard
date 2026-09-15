@@ -1,3 +1,17 @@
+export function getDialogTabStops(dialog: HTMLDialogElement): HTMLElement[] {
+  return Array.from(dialog.querySelectorAll<HTMLElement>(
+    'button, input, select, textarea, a[href], summary, [tabindex]'
+  )).filter(element => {
+    if (element.tabIndex < 0 || element.matches(':disabled') || !element.getClientRects().length ||
+      getComputedStyle(element).visibility === 'hidden' || element.closest('[inert]')) return false;
+    // Closed disclosure contents can retain layout boxes, but cannot receive Tab focus.
+    for (let parent = element.parentElement; parent && parent !== dialog; parent = parent.parentElement) {
+      if (parent.matches('details:not([open])') && !(element.tagName === 'SUMMARY' && element.parentElement === parent)) return false;
+    }
+    return true;
+  });
+}
+
 export function openComposerDialog(dialog: HTMLDialogElement, dismiss: () => void): () => void {
   const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const previousOverflow = document.body.style.overflow;
@@ -12,9 +26,7 @@ export function openComposerDialog(dialog: HTMLDialogElement, dismiss: () => voi
 
   function trapTab(event: KeyboardEvent): void {
     if (event.key !== 'Tab') return;
-    const controls = Array.from(dialog.querySelectorAll<HTMLElement>(
-      'button, input, select, textarea, a[href], [tabindex]'
-    )).filter(element => element.tabIndex >= 0 && !element.matches(':disabled') && element.getClientRects().length > 0);
+    const controls = getDialogTabStops(dialog);
     const first = controls[0];
     const last = controls.at(-1);
     if (!first || !last) {

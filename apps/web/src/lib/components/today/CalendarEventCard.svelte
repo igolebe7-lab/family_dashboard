@@ -40,7 +40,7 @@
   .calendar-event-card strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; font-size: 12px; line-height: 15px; margin: 0; }
   .calendar-event-card__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 0 0 auto; margin: 0; }
   .calendar-event-card__meta time, .calendar-event-card__meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; line-height: 14px; }
-  .calendar-event-card__avatar { position: static; flex: 0 0 24px; width: 24px; height: 24px; margin: 0; }
+  .calendar-event-card__avatar { position: relative; flex: 0 0 24px; width: 24px; height: 24px; margin: 0; }
   .calendar-event-card--compact { gap: 3px; padding: 6px; }
   .calendar-event-card--tiny strong { -webkit-line-clamp: 1; line-clamp: 1; }
 </style>

@@ -37,7 +37,7 @@
 
 <svelte:window on:online={list.reload} />
 
-<main class="child-mode" aria-labelledby="child-title">
+<main class="child-mode app-screen--glass" aria-labelledby="child-title">
   {#if access.adult || access.children.length > 1}
     <div class="parent-controls">
       {#if access.adult}<button type="button" class="back" on:click={returnToFamily}><ArrowLeft size={18} aria-hidden="true" />К семье</button>{/if}

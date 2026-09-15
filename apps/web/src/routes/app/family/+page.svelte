@@ -5,6 +5,7 @@
   import Copy from '@lucide/svelte/icons/copy';
   import { goto } from '$app/navigation';
   import ColorPicker from '$lib/components/family/ColorPicker.svelte';
+  import GlassMemberCard from '$lib/components/family/GlassMemberCard.svelte';
   import { onDestroy, onMount } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
@@ -212,12 +213,12 @@
   <section class="family-page">
     <header class="top-row">
       <div>
-        <p class="section-kicker">Профили</p>
         <h1 id="family-title-mobile">Семья</h1>
       </div>
     </header>
 
     <ActiveProfileSwitcher
+      glass
       members={familyState?.members ?? []}
       activeMember={familyState?.activeMember ?? null}
       canSwitch={canSwitchActiveProfile}
@@ -228,31 +229,13 @@
       <h2 id="family-members-title-mobile">Члены семьи</h2>
       <div class="family-member-list">
         {#each familyState?.members ?? [] as member (member.id)}
-          <article class={`family-member-card family-member-card--${member.colorKey ?? 'green'}`}>
-            <span class="family-member-card__avatar">{member.displayName.charAt(0).toUpperCase()}</span>
-            <div>
-              <strong>{member.displayName}</strong>
-              <p>{getRoleLabel(member.role)}{member.user ? ' · связан с аккаунтом' : ''}</p>
-            </div>
-            {#if member.user === currentUserId}
-              <span class="family-member-card__badge">Ваш</span>
-            {/if}
-            {#if canInviteMember(member)}
-              <button type="button" disabled={saving} on:click={() => createInviteForMember(member)}>
-                Пригласить
-              </button>
-            {/if}
-            {#if canManage}
-              <button type="button" title="Изменить профиль" aria-label={`Изменить профиль ${member.displayName}`} on:click={() => editMember(member)}><Pencil size={17} aria-hidden="true" /></button>
-            {/if}
-            {#if canSwitchActiveProfile && ['child', 'teen'].includes(member.role)}
-              <button type="button" on:click={() => openChild(member)}><Smile size={17} aria-hidden="true" />Детский режим</button>
-            {/if}
-            {#if inviteLinks[member.id]}
-              <p class="family-member-card__invite">{inviteLinks[member.id]}</p>
-              <button type="button" title="Скопировать ссылку" aria-label="Скопировать ссылку" on:click={() => copyInvite(member)}><Copy size={17} aria-hidden="true" /></button>
-            {/if}
-          </article>
+          <GlassMemberCard {member} roleLabel={getRoleLabel(member.role)}
+            own={member.user === currentUserId} editable={canManage}
+            invitable={canInviteMember(member)} busy={saving}
+            childMode={canSwitchActiveProfile && ['child', 'teen'].includes(member.role)}
+            inviteLink={inviteLinks[member.id] ?? ''}
+            onedit={() => editMember(member)} oninvite={() => createInviteForMember(member)}
+            onchild={() => openChild(member)} oncopy={() => copyInvite(member)} />
         {/each}
       </div>
     </section>

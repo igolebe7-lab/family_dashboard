@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { get, type Unsubscriber } from 'svelte/store';
   import { getCurrentSession } from '$lib/api/auth.api';
+  import { synchronizePush } from '$lib/api/push.api';
   import ConnectionStatus from '$lib/components/app/ConnectionStatus.svelte';
   import { bootstrapClientApp, clearDevelopmentShell, isProtectedAppRoute, resolveAppRouteRedirect, watchClientSession } from '$lib/stores/app.bootstrap';
   import { familyStore, getActiveFamilyContext } from '$lib/stores/family.store';
@@ -11,6 +12,8 @@
   import { itemDetailsStore } from '$lib/stores/item-details.store';
   import '../app.css';
   import '$lib/design/workspace.css';
+  import '$lib/design/liquid-glass.css';
+  import '$lib/design/mobile-glass.css';
 
   let unsubscribeAuth: Unsubscriber | undefined;
   let mounted = false;
@@ -18,6 +21,11 @@
   let guardVersion = 0;
   let checked = false;
   let bootstrapError = '';
+  let pushSession = '';
+  $: if (mounted && pushSession !== ($sessionStore.token ?? 'signed-out') && $sessionStore.status !== 'loading') {
+    pushSession = $sessionStore.token ?? 'signed-out';
+    void synchronizePush().catch(() => { /* Inbox remains available if device delivery cannot be refreshed. */ });
+  }
   $: detailContextKey = `${$familyStore.activeFamily?.id ?? ''}:${$familyStore.activeMember?.id ?? ''}`;
   $: closeDetailsForContext(detailContextKey);
   function closeDetailsForContext(_key: string) { itemDetailsStore.set(null); }
@@ -140,7 +148,10 @@
 </svelte:head>
 
 <ConnectionStatus />
-<svelte:window on:click|capture={openItemDetails} on:online={() => { if (mounted && bootstrapError) void guardRoute(get(page).url.pathname, true); }} />
+<svelte:window on:click|capture={openItemDetails} on:online={() => {
+  if (mounted && bootstrapError) void guardRoute(get(page).url.pathname, true);
+  if (mounted) void synchronizePush().catch(() => {});
+}} />
 
 {#if canRender}
   <slot />

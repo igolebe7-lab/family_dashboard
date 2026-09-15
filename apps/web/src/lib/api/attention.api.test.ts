@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { loadAttentionOccurrences } from './attention.api';
+import { buildAttentionFilter, loadAttentionOccurrences } from './attention.api';
 import { resetPocketBaseClient, setPocketBaseClient } from './pocketbase';
 
 afterEach(resetPocketBaseClient);
@@ -11,6 +11,11 @@ function client(getList: ReturnType<typeof vi.fn>) {
   return send;
 }
 describe('attention loading', () => {
+  it('compares same-day deadlines using canonical PocketBase UTC timestamps', () => {
+    const filter = buildAttentionFilter('family-a', now);
+    expect(filter).toContain('due_at < "2026-09-11 12:00:00.000Z"');
+    expect(filter).toContain('start_at <= "2026-09-18 12:00:00.000Z"');
+  });
   it('paginates unresolved records while only materializing the next seven days', async () => {
     const getList = vi.fn().mockResolvedValue({ items: [], totalPages: 2 });
     const send = client(getList);

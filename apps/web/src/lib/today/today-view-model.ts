@@ -86,6 +86,7 @@ export type TodayWeekEvent = {
   day: string;
   start: string;
   durationMinutes: number;
+  allDay?: boolean;
   title: string;
   memberName: string;
   memberInitial: string;

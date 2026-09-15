@@ -1543,9 +1543,19 @@ export type NotificationType =
 - Нажатие открывает inbox.
 - В inbox можно отметить все прочитанными.
 
-### 23.3. Web Push post-MVP
+### 23.3. Web Push (Stage 14)
 
-Подготовить архитектуру:
+Stage 14.1-14.4 переводит Web Push из post-MVP в текущую реализацию:
+собственная сборка PocketBase 0.38.2 с Go-расширением/webpush-go, закрытые
+push_subscriptions и push_deliveries в SQLite, session-bound subscriptions,
+server authorization recheck и device revoke при logout. В payload нейтральный
+текст без семейных подробностей. UI настроек доступен из профиля, iPhone требует
+установки на домашний экран и явного разрешения. Описание: docs/technical/web-push.md.
+Production по IP использует доверенный короткоживущий сертификат и Caddy;
+готовятся только локальные файлы, VPS меняется после отдельного разрешения.
+Настоящая доставка на iPhone/desktop проверяется в Stage 14.5.
+
+Компоненты:
 
 - VAPID keys в env/config;
 - `push_subscriptions`;

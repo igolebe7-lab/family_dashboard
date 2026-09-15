@@ -1,4 +1,5 @@
 import { COLLECTIONS } from '$lib/constants/collections';
+import { disablePush } from './push.api';
 
 import {
   asRecord,
@@ -203,8 +204,10 @@ export async function confirmPasswordReset(input: ConfirmPasswordResetInput): Pr
   if (session && getCurrentSession()?.user.id === session.user.id) client.authStore.clear();
 }
 
-export function logout(): void {
+export function logout(): Promise<void> {
+  const cleanup = disablePush();
   getPocketBaseClient().authStore.clear();
+  return cleanup;
 }
 
 export function getAuthErrorMessage(error: unknown, fallback: string): string {

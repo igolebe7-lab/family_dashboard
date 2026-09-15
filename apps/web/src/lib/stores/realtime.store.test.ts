@@ -5,6 +5,21 @@ import { createRealtimeStore } from './realtime.store';
 describe('realtime store lifecycle', () => {
   const context = { familyId: 'family_1', memberId: 'member_mom' };
 
+  it('handles a rejected async unsubscribe when leaving a calendar range', async () => {
+    const error = new Error('Request cancelled during navigation');
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const unsubscribe = vi.fn().mockRejectedValue(error);
+      const store = createRealtimeStore({ subscribeActivity: vi.fn().mockResolvedValue(unsubscribe) });
+      await store.syncActivity(context, vi.fn());
+      store.stopAll();
+      await Promise.resolve();
+      expect(warning).toHaveBeenCalledWith('Realtime subscription cleanup failed.', error);
+      store.stopAll();
+      expect(unsubscribe).toHaveBeenCalledTimes(1);
+    } finally { warning.mockRestore(); }
+  });
+
   it('resubscribes notifications when the active recipient member changes', async () => {
     const firstUnsubscribe = vi.fn();
     const secondUnsubscribe = vi.fn();

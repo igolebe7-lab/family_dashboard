@@ -145,3 +145,8 @@ export function asStringArray(value: unknown): string[] {
 export function escapeFilterValue(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
+
+export function pocketBaseFilterDate(value: string | Date): string {
+  // SQLite date fields compare canonical UTC text, not arbitrary ISO offsets.
+  return new Date(value).toISOString().replace('T', ' ');
+}

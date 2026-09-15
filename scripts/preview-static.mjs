@@ -12,7 +12,7 @@ await stat(resolve(root, '200.html'));
 const server = createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://127.0.0.1:${port}`);
   if (url.pathname.startsWith('/api/')) {
-    const upstream = proxyRequest({ hostname: '127.0.0.1', port: 8090, path: req.url, method: req.method, headers: req.headers }, (response) => {
+    const upstream = proxyRequest({ hostname: '127.0.0.1', port: Number(process.env.PB_PORT || 8090), path: req.url, method: req.method, headers: req.headers }, (response) => {
       res.writeHead(response.statusCode || 502, response.headers);
       response.pipe(res);
     });

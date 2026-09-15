@@ -269,6 +269,7 @@ function mapOccurrenceToWeekEvent(
     day: getOccurrenceDateKey(occurrence) ?? '',
     start: getOccurrenceTime(occurrence),
     durationMinutes: getOccurrenceDurationMinutes(occurrence),
+    allDay: occurrence.allDay,
     title: occurrence.titleSnapshot,
     memberName: member.name,
     memberInitial: member.initial,

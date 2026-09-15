@@ -1,10 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { listOccurrencesInRange, listOccurrenceMarkersInRange, mapOccurrenceRecord } from './occurrences.api';
+import { buildOccurrenceRangeFilter, listOccurrencesInRange, listOccurrenceMarkersInRange, mapOccurrenceRecord } from './occurrences.api';
 import { resetPocketBaseClient, setPocketBaseClient } from './pocketbase';
 
 afterEach(resetPocketBaseClient);
 
 describe('occurrence range completeness', () => {
+  it('normalizes offset and UTC boundaries to PocketBase stored datetime format', () => {
+    const filter = buildOccurrenceRangeFilter('family', {
+      from: '2026-09-14T00:00:00+02:00', to: '2026-09-15T00:00:00.000Z'
+    });
+    expect(filter).toContain('due_at >= "2026-09-13 22:00:00.000Z"');
+    expect(filter).toContain('start_at < "2026-09-15 00:00:00.000Z"');
+    expect(filter).not.toContain('+02:00');
+  });
   it('awaits shared materialization before list and marker reads and regenerates on later reads', async () => {
     let resolve!: () => void;
     const send = vi.fn().mockImplementationOnce(() => new Promise<void>((done) => { resolve = done; })).mockResolvedValue(undefined);

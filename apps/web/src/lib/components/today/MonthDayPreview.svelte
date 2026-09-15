@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import X from '@lucide/svelte/icons/x';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
+  import ChevronRight from '@lucide/svelte/icons/chevron-right';
+  import { getIcon } from '$lib/design/icon-registry';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
   import { openComposerDialog } from '$lib/composer/modal-focus';
   import { itemDetailsStore } from '$lib/stores/item-details.store';
@@ -54,8 +56,9 @@
     {#if loading}<p role="status">Загружаем события…</p>{/if}
     {#if error}<p role="alert">{error}</p><button class="button" on:click={onretry}>Повторить</button>{/if}
     {#each day.events as event (event.id)}
+      {@const Icon = getIcon(event.icon)}
       <button class="day-preview__event" disabled={!event.itemId} on:click={() => openItem(event.itemId)}>
-        <time>{event.start}</time><span><strong>{event.title}</strong><small>{event.memberName}</small></span>
+        <time>{event.allDay ? 'Весь день' : event.start}</time><span class="day-preview__event-icon" style={`--event-tone: var(--color-${event.color})`} aria-hidden="true"><Icon size={18} /></span><span><strong>{event.title}</strong><small>{event.memberName}</small></span><ChevronRight size={16} aria-hidden="true" />
       </button>
     {:else}{#if !loading && !error}<p>Нет событий</p>{/if}{/each}
     {#each day.annotations as annotation (annotation.id)}<p class="day-preview__annotation">{annotation.title}</p>{/each}
@@ -70,7 +73,9 @@
   header > strong { font-size: 16px; }
   .day-preview__list { overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
   .day-preview__event { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 12px; width: 100%; padding: 12px 0; min-height: 48px; text-align: left; border: 0; border-bottom: 1px solid var(--color-border); background: transparent; color: inherit; cursor: pointer; }
-  .day-preview__event:hover { background: var(--color-green-soft); }
+  @media (min-width: 1024px) { .day-preview__event { grid-template-columns: 46px minmax(0, 1fr); } .day-preview__event-icon, .day-preview__event :global(> svg) { display: none; } }
+  @media (hover: hover) { .day-preview__event:hover { background: var(--color-green-soft); } }
+  .day-preview__event:focus-visible { background: var(--color-green-soft); }
   .day-preview__event strong { font-size: 14px; overflow-wrap: anywhere; }
   small { display: block; color: var(--color-text-muted); margin-top: 4px; }
   time { font-size: 13px; }

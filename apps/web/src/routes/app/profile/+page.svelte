@@ -7,6 +7,7 @@
   import type { Unsubscriber } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
+  import ThemeSettings from '$lib/components/app/ThemeSettings.svelte';
   import {
     getAuthErrorMessage,
     logout,
@@ -35,6 +36,7 @@
   let passwordError: string | null = null;
 
   $: currentUser = sessionState?.user ?? null;
+  $: profileTone = $familyStore.members.find(member => member.user === currentUser?.id)?.colorKey || 'blue';
 
   async function submitProfile(): Promise<void> {
     if (!currentUser || !sessionState?.token) {
@@ -134,7 +136,7 @@
   }
 
   async function handleLogout(): Promise<void> {
-    logout();
+    await logout();
     sessionStore.clear();
     familyStore.clear();
     await goto('/login', { replaceState: true });
@@ -167,7 +169,7 @@
     </header>
 
     <section class="profile-summary" aria-label="Текущий аккаунт">
-      <span class="profile-summary__avatar" aria-hidden="true">
+      <span class="profile-summary__avatar" style:color={`var(--color-${profileTone})`} style:background={`var(--color-${profileTone}-soft)`} aria-hidden="true">
         {(currentUser?.name || currentUser?.email || 'А').charAt(0).toUpperCase()}
       </span>
       <div>
@@ -176,6 +178,7 @@
       </div>
     </section>
 
+    <ThemeSettings id="theme-mobile" />
     <form class="family-panel family-form profile-form" on:submit|preventDefault={submitProfile}>
       <h2>Данные профиля</h2>
       {#if profileError}<p class="family-message family-message--error">{profileError}</p>{/if}
@@ -219,6 +222,7 @@
       </button>
     </form>
 
+    <a class="button button--ghost" href="/app/settings/notifications">Уведомления и установка</a>
     <button class="profile-logout" type="button" on:click={handleLogout}>
       <LogOut size={18} strokeWidth={2.35} aria-hidden="true" />
       <span>Выйти из аккаунта</span>
@@ -236,7 +240,7 @@
     </header>
 
     <section class="profile-summary" aria-label="Текущий аккаунт">
-      <span class="profile-summary__avatar" aria-hidden="true">
+      <span class="profile-summary__avatar" style:color={`var(--color-${profileTone})`} style:background={`var(--color-${profileTone}-soft)`} aria-hidden="true">
         {(currentUser?.name || currentUser?.email || 'А').charAt(0).toUpperCase()}
       </span>
       <div>
@@ -290,6 +294,8 @@
       </button>
     </form>
 
+    <ThemeSettings id="theme-desktop" />
+    <a class="button button--ghost" href="/app/settings/notifications">Уведомления и установка</a>
     <button class="profile-logout" type="button" on:click={handleLogout}>
       <LogOut size={18} strokeWidth={2.35} aria-hidden="true" />
       <span>Выйти из аккаунта</span>

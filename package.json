@@ -11,7 +11,10 @@
     "test": "pnpm --filter @familytime/web test",
     "build": "pnpm --filter @familytime/web build",
     "preview": "node scripts/preview-static.mjs",
-    "smoke:auth": "node scripts/smoke-auth-profile-flow.mjs"
+    "smoke:auth": "node scripts/smoke-auth-profile-flow.mjs",
+    "release:package": "node scripts/package-release.mjs",
+    "backend:build": "node scripts/backend.mjs build",
+    "backend:test": "node scripts/backend.mjs test"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

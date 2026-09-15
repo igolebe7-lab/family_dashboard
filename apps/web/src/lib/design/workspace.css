@@ -33,7 +33,16 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .today-mobile-surface, .today-timeline-card, .family-panel { background: transparent; box-shadow: none; border: 0; border-radius: 0; padding: 0; }
 .today-mobile-surface { display: grid; gap: 24px; }
 .today-timeline-card { gap: 16px; }
-.today-timeline-list { max-height: none; overflow: visible; }
+.today-mobile-surface .today-timeline-list { max-height: none; overflow: visible; grid-auto-rows: max-content; gap: 12px; }
+.today-timeline-list::before { content: none; }
+/* Each row owns its axis segment, so variable-height cards cannot truncate the line. */
+.today-timeline-item { align-items: start; }
+.today-timeline-item::before { content: ''; position: absolute; top: 0; bottom: -12px; left: calc(var(--timeline-axis-x) - 1px); width: 2px; background: var(--color-border); }
+.today-timeline-item:first-child::before { top: 24px; }
+.today-timeline-item:last-child::before { bottom: calc(100% - 24px); }
+.today-timeline-item:only-child::before { content: none; }
+.today-timeline-item__time { padding-top: 14px; line-height: 20px; }
+.today-timeline-item__body p { white-space: normal; overflow-wrap: anywhere; }
 .today-timeline-item__card { border-radius: 8px; box-shadow: none; min-height: 70px; background: var(--color-surface); }
 .today-timeline-item__body h3 { font-size: 15px; font-weight: 600; line-height: 1.35; }
 .today-timeline-item__body p { font-size: 13px; }
@@ -231,17 +240,44 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
 .year-calendar:focus-visible { outline: 2px solid var(--color-green); outline-offset: -2px; }
 
 @media (max-width: 1023px) {
+  .today-week-board--mobile .today-week-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 12px; }
+  .today-week-board--mobile .today-week-toolbar__range { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+  .today-week-board--mobile .today-week-toolbar__range h2 { flex-basis: 100%; font-size: 17px; margin: 0; }
+  .today-week-board--mobile .today-week-toolbar__view { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; padding: 4px; border-radius: 8px; }
+  .today-week-board--mobile.today-week-board--day .today-week-toolbar__view { grid-column: 1 / -1; }
+  .today-week-board--mobile .today-week-toolbar__view button { min-height: 44px; padding: 6px; border-radius: 6px; font-size: 14px; }
+  .today-week-board--mobile .today-week-toolbar__view button[aria-pressed=true] { background: var(--color-green); color: white; font-weight: 600; }
+  .today-week-board--mobile .week-calendar--mobile { display: block; height: min(65dvh, 560px); min-height: 300px; overflow: auto; overscroll-behavior-x: contain; border-radius: 8px; background: var(--color-surface); }
+  .week-calendar--mobile .week-calendar__header, .week-calendar--mobile .week-calendar__body { grid-template-columns: var(--mobile-week-columns); width: var(--mobile-week-width); }
+  .week-calendar--mobile .week-calendar__header { position: sticky; top: 0; z-index: 4; height: 56px; background: var(--color-surface); }
+  .week-calendar--mobile .week-calendar__body-scroll { overflow: visible; width: var(--mobile-week-width); }
+  .week-calendar--mobile .week-calendar__time-scale, .week-calendar--mobile .week-calendar__corner { position: sticky; left: 0; z-index: 3; background: var(--color-surface); box-shadow: 1px 0 var(--color-border); }
+  .week-calendar--mobile .calendar-event-card { border-radius: 6px; }
+  .week-all-day-pill { grid-template-columns: minmax(0, 1fr); }
+  .app-screen--mobile,
+  .workspace-page__content {
+    padding-bottom: max(7.5rem, calc(96px + env(safe-area-inset-bottom, 0px)));
+  }
+  /* The former decorative surface used a negative margin that cancelled nav clearance. */
+  .today-mobile-surface { margin-bottom: 0; }
   .today-mobile-surface .today-week-board { min-height: 0; height: auto; }
   .today-mobile-surface .today-month-grid { padding: 6px; border-radius: 8px; }
   .today-mobile-surface .today-month-grid__header, .today-mobile-surface .today-month-grid__week { grid-template-columns: 18px repeat(7, minmax(0, 1fr)); gap: 2px; }
   .today-mobile-surface .today-month-day { min-height: 54px; padding: 4px 1px; border-radius: 4px; }
   .today-mobile-surface .today-month-day__annotation { display: none; }
-  .today-mobile-surface .today-week-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
-  .today-mobile-surface .today-week-toolbar__range { flex: 1 1 100%; flex-wrap: wrap; }
   .app-screen--calendar { height: 100dvh; min-height: 0; overflow: hidden; }
   .app-screen--calendar .mobile-shell { display: flex; flex-direction: column; height: 100%; min-height: 0; padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
   .app-screen--calendar .mobile-shell > :not(.year-calendar) { flex-shrink: 0; }
   .app-screen--calendar .year-calendar { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; align-content: start; padding-bottom: 16px; }
+}
+
+@media (max-width: 1023px), (pointer: coarse) {
+  /* Keep editable controls readable without iOS focus zoom; retain manual pinch zoom. */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
+  select,
+  textarea {
+    font-size: max(16px, 1rem) !important;
+  }
 }
 @media (min-width: 1024px) {
   .desktop-shell--today { height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: minmax(0, 1fr); }

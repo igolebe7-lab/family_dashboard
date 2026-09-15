@@ -1,0 +1,13 @@
+{
+	admin 127.0.0.1:2019
+	auto_https off
+}
+http://{$FAMILYTIME_PUBLIC_IP} {
+	handle /.well-known/acme-challenge/* {
+		root * /var/lib/familytime-acme
+		file_server
+	}
+	handle {
+		respond "FamilyTime is not deployed yet" 503
+	}
+}

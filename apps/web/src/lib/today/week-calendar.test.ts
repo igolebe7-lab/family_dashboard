@@ -9,10 +9,41 @@ import {
   getCalendarEventHeight,
   getCalendarEventTop,
   getCalendarHourTop,
-  getCalendarInitialScrollTop
+  getCalendarInitialScrollTop,
+  layoutCalendarEvents
 } from './week-calendar';
 
 describe('week calendar coordinates', () => {
+  it('separates overlapping cards and reuses columns once a group ends', () => {
+    const events = [
+      { id: 'a', start: '08:00', durationMinutes: 60 },
+      { id: 'b', start: '08:30', durationMinutes: 60 },
+      { id: 'c', start: '10:00', durationMinutes: 60 }
+    ];
+    expect(layoutCalendarEvents(events).map(row => [row.event.id, row.column, row.columnCount])).toEqual([
+      ['a', 0, 2], ['b', 1, 2], ['c', 0, 1]
+    ]);
+  });
+
+  it('also separates short adjacent entries whose minimum visual height overlaps', () => {
+    const rows = layoutCalendarEvents([
+      { id: 'a', start: '17:52', durationMinutes: 1 },
+      { id: 'b', start: '18:00', durationMinutes: 1 },
+      { id: 'c', start: '18:05', durationMinutes: 1 }
+    ]);
+    expect(rows.map(row => row.column)).toEqual([0, 1, 2]);
+    expect(rows.every(row => row.columnCount === 3)).toBe(true);
+    expect(layoutCalendarEvents([])).toEqual([]);
+  });
+
+  it('keeps back-to-back hour-long events in one column with a small gap', () => {
+    const rows = layoutCalendarEvents([
+      { id: 'a', start: '08:00', durationMinutes: 60 },
+      { id: 'b', start: '09:00', durationMinutes: 60 }
+    ]);
+    expect(rows.every(row => row.columnCount === 1)).toBe(true);
+    expect(rows[1].top - rows[0].top - rows[0].height).toBe(4);
+  });
   it('maps a full 24-hour day to stable pixel offsets', () => {
     expect(CALENDAR_START_HOUR).toBe(0);
     expect(CALENDAR_END_HOUR).toBe(24);

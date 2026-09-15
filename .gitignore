@@ -20,6 +20,7 @@ playwright-report/
 test-results/
 
 # Environment and local runtime data
+.local/
 .env
 .env.*
 !.env.example

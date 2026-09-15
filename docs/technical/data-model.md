@@ -22,13 +22,22 @@ paginated on the server; it does not download all family items to the browser.
 - `item_comments` — comments and reactions.
 - `item_activity` — family feed records.
 - `notifications` — in-app notifications.
-- `push_subscriptions` — post-MVP push architecture.
+- `push_subscriptions` — закрытые подписки auth user/устройства: endpoint, public/auth keys,
+  secret hash, token key hash, session expiry, enabled_at и test throttling timestamp.
+- `push_deliveries` — закрытые доставки, уникальные по notification/subscription;
+  state, attempts, next_at, last_status. Удаляются каскадно при отзыве подписки.
 - `invitations` — family invite codes.
 - `chore_templates` — optional home routine templates.
 
 ## Required invariant
 
 Every family-scoped collection has `family`. API rules and hooks must prevent cross-family access.
+
+Push subscriptions относятся к auth user, не к переключаемому семейному профилю.
+Обе push-коллекции полностью закрыты для стандартного клиентского REST CRUD.
+Доступ только через Go endpoints; перед доставкой проверяется актуальное viewRule
+семейного notification. `notifications.push_enqueued` служебный, клиент может
+изменять только read_at. Подробная схема и ограничения: `web-push.md`.
 
 `invitations.member` can point to a pre-created unlinked `family_members` profile. When a logged-in
 adult accepts the invite, the server links that profile to the accepting `users` account instead of

@@ -627,7 +627,7 @@ describe('PocketBase API layer', () => {
       })
     );
     expect(occurrences.getList.mock.calls[0][2].filter).toContain(
-      'start_at < "2026-06-15T00:00:00.000Z"'
+      'start_at < "2026-06-15 00:00:00.000Z"'
     );
     expect(result.items).toEqual([]);
 
@@ -1101,7 +1101,7 @@ describe('PocketBase API layer', () => {
     );
     expect(occurrences.subscribe.mock.calls[0][2].filter).toContain('family = "family_1"');
     expect(occurrences.subscribe.mock.calls[0][2].filter).toContain(
-      'start_at < "2026-06-22T00:00:00.000Z"'
+      'start_at < "2026-06-22 00:00:00.000Z"'
     );
     expect(onNotificationsChange).toHaveBeenCalledTimes(1);
     expect(onActivityChange).toHaveBeenCalledTimes(1);

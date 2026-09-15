@@ -1,0 +1,14 @@
+[Unit]
+Description=Renew FamilyTime IP certificate
+After=network-online.target familytime-caddy.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/familytime-certbot/bin/certbot renew --quiet --cert-name 147.45.136.245
+MemoryMax=192M
+CPUQuota=25%
+Nice=15
+TimeoutStartSec=15min
+PrivateTmp=true
+NoNewPrivileges=true

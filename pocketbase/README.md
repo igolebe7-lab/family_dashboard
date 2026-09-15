@@ -2,6 +2,19 @@
 
 PocketBase backend lives here.
 
+## Stage 14: собственная сборка
+
+Для Web Push используется `main.go` с PocketBase 0.38.2, стандартными JS plugins
+и `internal/push`. Из корня: `pnpm backend:build`, `pnpm backend:test`.
+Go должен быть в PATH или указан в GO_BIN. Scripts включают GOEXPERIMENT=nojsonv2
+для совместимости PocketBase с Go 1.27; обычный несовместимый build блокируется.
+`./pocketbase vapid-keygen` генерирует ключи; они хранятся вне git.
+Настройка: FAMILYTIME_VAPID_PUBLIC_KEY, FAMILYTIME_VAPID_PRIVATE_KEY,
+FAMILYTIME_VAPID_SUBJECT (mailto с реальным контактом). Без всех трёх push отключён.
+Запуск существующими командами ниже сохраняется. Старый стандартный бинарник
+не имеет `/api/familytime/push/*`: для системных уведомлений нужен новый build.
+Подробности: `../docs/technical/web-push.md` и `../deploy/README.md`.
+
 The local smoke target is PocketBase `v0.38.2` (`darwin_arm64` on the current
 development machine). Keep the binary local only.
 
@@ -109,6 +122,10 @@ metadata updates are restricted to the original creator. Occurrence creation
 and deletion are server-only; clients can request permitted status transitions.
 
 ## Verified functional gaps
+
+Исторический список раннего аудита ниже. Повторение, reschedule и reminder cron
+в последующих Stage реализованы; актуальные ограничения см. `docs/technical/web-push.md`
+и `docs/technical/2026-09-11-product-audit.md` из корня репозитория.
 
 - Recurrence expansion is not implemented. Creation materializes one occurrence
   even when `recurrence_rule` is supplied. Tasks and assignments explicitly

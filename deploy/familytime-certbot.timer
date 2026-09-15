@@ -1,0 +1,11 @@
+[Unit]
+Description=Check FamilyTime IP certificate renewal three times daily
+
+[Timer]
+OnCalendar=*-*-* 00,08,16:15:00
+RandomizedDelaySec=30min
+Persistent=true
+Unit=familytime-certbot.service
+
+[Install]
+WantedBy=timers.target

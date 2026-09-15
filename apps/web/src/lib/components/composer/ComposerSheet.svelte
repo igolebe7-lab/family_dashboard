@@ -198,6 +198,7 @@
     </button>
   </header>
 
+  <div class="composer-sheet__content">
   <fieldset class="composer-kind-controls" disabled={saving} aria-label="Тип записи">
     <ComposerTabs value={values.kind} onchange={changeKind} />
   </fieldset>
@@ -239,10 +240,12 @@
     </div>
     </fieldset>
   </form>
+  </div>
 </dialog>
 
 <style>
   dialog.composer-sheet { margin: 0; top: auto; color: var(--color-text); }
+  .composer-sheet__content { display: contents; }
   dialog.composer-sheet:not([open]) { display: none; }
   dialog.composer-sheet::backdrop { background: rgb(var(--color-shadow) / 0.18); backdrop-filter: blur(8px); }
   .composer-kind-controls, .composer-fields { border: 0; padding: 0; margin: 0; min-width: 0; }

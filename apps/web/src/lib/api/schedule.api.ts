@@ -1,7 +1,7 @@
 import { ensureOccurrenceRange } from './recurrence.api';
 import { mapItemRecord } from './items.api';
 import { mapOccurrenceRecord } from './occurrences.api';
-import { asRecord, escapeFilterValue, getPocketBaseClient, memberRequestOptions, requireActiveContext, requireCollectionMethod, type ActiveFamilyContext } from './pocketbase';
+import { asRecord, escapeFilterValue, getPocketBaseClient, memberRequestOptions, pocketBaseFilterDate, requireActiveContext, requireCollectionMethod, type ActiveFamilyContext } from './pocketbase';
 import type { Item, ItemOccurrence } from '$lib/types/domain';
 
 export type SeriesInput = { startAt: string; endAt: string; recurrenceRule: string; recurrenceUntil?: string };
@@ -29,7 +29,7 @@ export async function listEventSchedule(context: Partial<ActiveFamilyContext>, i
   await ensureOccurrenceRange(active, { from, to });
   const getList = requireCollectionMethod(getPocketBaseClient().collection('item_occurrences'), 'getList');
   const result = asRecord(await getList(1, 200, {
-    filter: `family = "${escapeFilterValue(active.familyId)}" && item = "${escapeFilterValue(itemId)}" && kind = "event" && start_at >= "${from}" && start_at < "${to}"`,
+    filter: `family = "${escapeFilterValue(active.familyId)}" && item = "${escapeFilterValue(itemId)}" && kind = "event" && start_at >= "${pocketBaseFilterDate(from)}" && start_at < "${pocketBaseFilterDate(to)}"`,
     sort: 'start_at,id', requestKey: null, ...memberRequestOptions(active)
   }));
   return Array.isArray(result.items) ? result.items.map(mapOccurrenceRecord) : [];
