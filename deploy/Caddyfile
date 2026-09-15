@@ -20,6 +20,7 @@ http://{$FAMILYTIME_PUBLIC_IP} {
 https://{$FAMILYTIME_PUBLIC_IP} {
 	tls /etc/familytime/tls/current/fullchain.pem /etc/familytime/tls/current/privkey.pem
 	encode zstd gzip
+	route {
 	@maintenance file {
 		root /var/lib/familytime-maintenance
 		try_files active
@@ -53,5 +54,6 @@ https://{$FAMILYTIME_PUBLIC_IP} {
 		header Cache-Control no-cache
 		try_files {path} /200.html
 		file_server
+	}
 	}
 }
