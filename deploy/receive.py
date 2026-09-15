@@ -78,11 +78,11 @@ def preflight(release, stage):
         with sqlite3.connect(clone / 'data.db') as target:
             source.backup(target)
     stage.chmod(0o755)
-    run('chown', '-R', 'familytime:familytime', str(clone))
+    run('chown', '-R', 'familytime-check:familytime-check', str(clone))
     unit = 'familytime-ci-preflight'
     try:
         run('systemd-run', '--quiet', '--collect', '--unit=' + unit,
-            '-p', 'User=familytime', '-p', 'Group=familytime', '-p', 'PrivateNetwork=yes',
+            '-p', 'User=familytime-check', '-p', 'Group=familytime-check', '-p', 'PrivateNetwork=yes',
             '-p', 'PrivateTmp=yes', '-p', 'ProtectSystem=strict', '-p', 'ProtectHome=yes',
             '-p', 'NoNewPrivileges=yes', '-p', 'InaccessiblePaths=/var/lib/familytime /etc/familytime /var/backups/familytime',
             '-p', 'ReadWritePaths=' + str(clone), '-p', 'MemoryMax=180M', '-p', 'CPUQuota=25%',
@@ -114,6 +114,8 @@ def activate(target, old, commit):
     if rollback.exists() or MARKER.exists():
         raise RuntimeError('Pending maintenance; operator intervention required')
     MARKER.touch(mode=0o644)
+    # The receiver's restrictive umask must not hide the gate from Caddy.
+    MARKER.chmod(0o644)
     try:
         try:
             urllib.request.urlopen('https://147.45.136.245/api/health', timeout=10)

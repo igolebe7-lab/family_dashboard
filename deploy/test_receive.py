@@ -1,5 +1,6 @@
 import importlib.util
 import io
+import os
 import json
 import tarfile
 import unittest
@@ -64,13 +65,18 @@ class ArchiveTests(unittest.TestCase):
             (root / 'current').symlink_to(old)
             calls = []
             def health():
+                self.assertEqual(marker.stat().st_mode & 0o777, 0o644)
                 calls.append(1)
                 if len(calls) == 1:
                     (data / 'data.db').write_text('failed migration')
                     raise RuntimeError('failed startup')
             with patch.multiple(receive, ROOT=root, DATA=data, MARKER=marker), patch.object(receive, 'run'), patch.object(receive, 'health', side_effect=health), patch.object(receive.urllib.request, 'urlopen', side_effect=urllib.error.HTTPError('', 503, '', {}, None)):
-                with self.assertRaisesRegex(RuntimeError, 'failed startup'):
-                    receive.activate(new, old, 'a' * 40)
+                previous_umask = os.umask(0o077)
+                try:
+                    with self.assertRaisesRegex(RuntimeError, 'failed startup'):
+                        receive.activate(new, old, 'a' * 40)
+                finally:
+                    os.umask(previous_umask)
             self.assertEqual((root / 'current').resolve(), old.resolve())
             self.assertEqual((data / 'data.db').read_text(), 'original database')
             self.assertFalse(marker.exists())
