@@ -149,6 +149,9 @@ def activate(target, old, commit):
         raise
     MARKER.unlink()
     shutil.rmtree(rollback)
+    previous = ROOT / 'previous-next'
+    previous.symlink_to(old)
+    os.replace(previous, ROOT / 'previous')
 
 
 def receive():
