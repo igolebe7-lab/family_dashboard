@@ -1,6 +1,7 @@
 import importlib.util
 import tempfile
 import tarfile
+from unittest.mock import patch
 import unittest
 from pathlib import Path
 
@@ -61,6 +62,16 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(action(False, True), 'none')
         self.assertEqual(action(True, True), 'close')
         self.assertEqual(action(True, False), 'none')
+
+    def test_manual_notification_is_separate_from_real_incident(self):
+        incident = module('monitor_incident')
+        env = {'NOTIFICATION_TEST': 'true', 'HEALTH': 'success', 'OWNER': 'owner', 'RUN_URL': 'https://example.test/run'}
+        with patch.dict('os.environ', env), patch.object(incident.subprocess, 'check_output', return_value=b'[]'), patch.object(incident.subprocess, 'run') as run:
+            incident.main()
+            self.assertEqual(run.call_count, 1)
+            command = run.call_args.args[0]
+            self.assertIn('[TEST 14.12.2]', command[command.index('--title') + 1])
+            self.assertIn('NOT reported down', command[command.index('--body') + 1])
 
     def test_recovery_rejects_unsafe_archive(self):
         allowed = module('recovery_drill').allowed
