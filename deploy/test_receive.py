@@ -15,6 +15,58 @@ spec.loader.exec_module(receive)
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_assets_keep_three_generations_without_transitive_growth(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            old = root / 'legacy'
+            (old / 'web/_app/immutable').mkdir(parents=True)
+            (old / 'web/_app/immutable/legacy.js').write_text('legacy')
+            for index in range(5):
+                new = root / str(index)
+                assets = new / 'web/_app/immutable'
+                assets.mkdir(parents=True)
+                (assets / (str(index) + '.js')).write_text(str(index))
+                receive.carry_assets(new, old)
+                expected = {str(i) + '.js' for i in range(max(0, index - 2), index + 1)}
+                if index < 2:
+                    expected.add('legacy.js')
+                self.assertEqual({p.name for p in assets.iterdir()}, expected)
+                old = new
+
+    def test_unchanged_assets_do_not_age_out_compatibility(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            old = root / 'old'
+            (old / 'web/_app/immutable').mkdir(parents=True)
+            (old / 'web/_app/immutable/old.js').write_text('old')
+            for index in range(5):
+                new = root / str(index)
+                (new / 'web/_app/immutable').mkdir(parents=True)
+                (new / 'web/_app/immutable/current.js').write_text('current')
+                receive.carry_assets(new, old)
+                self.assertTrue((new / 'web/_app/immutable/old.js').exists())
+                old = new
+
+    def test_asset_manifest_rejects_traversal(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            new, old = root / 'new', root / 'old'
+            for release in (new, old):
+                (release / 'web/_app/immutable').mkdir(parents=True)
+            (old / 'asset-generations.json').write_text(json.dumps([['../secret']]))
+            with self.assertRaises(ValueError):
+                receive.carry_assets(new, old)
+
+    def test_asset_collision_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            old, new = root / 'old', root / 'new'
+            for release, content in ((old, 'old'), (new, 'new')):
+                (release / 'web/_app/immutable').mkdir(parents=True)
+                (release / 'web/_app/immutable/same.js').write_text(content)
+            with self.assertRaises(ValueError):
+                receive.carry_assets(new, old)
+
     def archive(self, extra=None):
         stream = io.BytesIO()
         with tarfile.open(fileobj=stream, mode='w:gz') as archive:

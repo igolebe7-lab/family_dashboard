@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Root-owned receiver; uploaded code runs only as the application user."""
 import fcntl
+import filecmp
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -18,6 +19,43 @@ import urllib.error
 ROOT = Path('/opt/familytime')
 DATA = Path('/var/lib/familytime/pb_data')
 MARKER = Path('/var/lib/familytime-maintenance/active')
+
+
+def carry_assets(release, old):
+    assets = release / 'web/_app/immutable'
+    previous = old / 'web/_app/immutable'
+    native = sorted(str(p.relative_to(assets)) for p in assets.rglob('*') if p.is_file())
+    manifest = old / 'asset-generations.json'
+    history = json.loads(manifest.read_text()) if manifest.exists() else [
+        sorted(str(p.relative_to(previous)) for p in previous.rglob('*') if p.is_file())]
+    if not isinstance(history, list) or len(history) > 3:
+        raise ValueError('Invalid asset history')
+    for generation in history:
+        if not isinstance(generation, list) or len(generation) > 10000:
+            raise ValueError('Invalid asset generation')
+        for name in generation:
+            if (not isinstance(name, str) or not name or str(PurePosixPath(name)) != name
+                    or PurePosixPath(name).is_absolute() or '..' in PurePosixPath(name).parts):
+                raise ValueError('Unsafe asset path')
+    # Rebuilding identical UI must not evict compatibility assets.
+    generations = [native] + [generation for generation in history if generation != native][:2]
+    size = 0
+    inherited = {name for generation in generations[1:] for name in generation}
+    shared = set(native) & {name for generation in history for name in generation}
+    for name in sorted(inherited | shared):
+        source, destination = previous / name, assets / name
+        if source.is_symlink() or not source.is_file() or not source.resolve().is_relative_to(previous.resolve()):
+            raise ValueError('Missing or unsafe compatibility asset')
+        if destination.exists():
+            if not filecmp.cmp(source, destination, shallow=False):
+                raise ValueError('Immutable asset content changed without renaming')
+            continue
+        size += source.stat().st_size
+        if size > 256 * 1024 * 1024:
+            raise ValueError('Compatibility assets exceed limit')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+    (release / 'asset-generations.json').write_text(json.dumps(generations))
 
 
 def validate(archive):
@@ -190,12 +228,7 @@ def receive():
                         shutil.copyfileobj(source, output)
             # Deployment tooling is installed by an administrator, not by the payload.
             shutil.copytree(old / 'deploy', release / 'deploy')
-            assets = old / 'web/_app/immutable'
-            for source in assets.rglob('*'):
-                destination = release / 'web/_app/immutable' / source.relative_to(assets)
-                if source.is_file() and not destination.exists():
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(source, destination)
+            carry_assets(release, old)
             (release / 'web/release.json').write_text(json.dumps(metadata))
             for path in release.rglob('*'):
                 path.chmod(0o755 if path.is_dir() or path == release / 'backend/pocketbase' else 0o644)

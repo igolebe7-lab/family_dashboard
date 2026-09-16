@@ -15,6 +15,12 @@ def action(healthy, has_incident):
 
 
 def main():
+    if os.environ.get('NOTIFICATION_TEST') == 'true':
+        subprocess.run(['gh', 'issue', 'create', '--title', '[TEST 14.12.2] FamilyTime notification delivery',
+                        '--assignee', os.environ['OWNER'], '--body',
+                        'Controlled notification test. The application is NOT reported down. '
+                        'Please confirm receipt of the GitHub/email notification, then close this issue. '
+                        + os.environ['RUN_URL']], check=True)
     issues = json.loads(subprocess.check_output(['gh', 'issue', 'list', '--state', 'open',
                        '--author', 'github-actions[bot]', '--limit', '100', '--json', 'number,title']))
     incident = next((i for i in issues if i['title'] == TITLE), None)
