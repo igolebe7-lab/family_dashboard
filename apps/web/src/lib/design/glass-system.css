@@ -131,7 +131,7 @@
 :root[data-theme] .today-month-day__event-count { background: var(--color-surface-soft); color: var(--color-text-muted); }
 :root[data-theme] .special-date-form { background: var(--family-canvas); color: var(--color-text); border-color: var(--family-edge); border-radius: 20px; box-shadow: var(--material-shadow); }
 :root[data-theme] .special-date-form__date-grid:has(> label:nth-child(2):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-:root[data-theme='light'] .app-screen--glass .family-glass-select__avatar { background: var(--color-blue-soft); color: var(--color-blue); }
+:root[data-theme='light'] .app-screen--glass .family-glass-select__avatar { background: color-mix(in srgb, var(--member-tone) 10%, var(--color-surface)); color: var(--member-tone); }
 :root[data-theme='dark'] .app-screen--glass .family-glass-select__avatar { background: var(--member-tone); color: #102a34; }
 
 @media (min-width: 1024px) {
