@@ -1,5 +1,4 @@
-/* Shared mobile material, promoted from the approved Family specimen. */
-@media (max-width: 1023px) {
+/* Shared material tokens apply to every viewport. Geometry below is mobile-only. */
   :root[data-theme] {
     --family-canvas: #f1f4ed;
     --family-light: rgb(255 255 255 / .88);
@@ -38,6 +37,7 @@
     --family-nav: rgb(25 48 62 / .72);
     --family-avatar-glint: rgb(211 238 255 / .55);
   }
+@media (max-width: 1023px) {
   :root[data-theme] :is(.app-screen--glass, .child-mode) {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--family-text); background: var(--family-canvas); isolation: isolate;
@@ -205,7 +205,7 @@
   :root[data-theme] .item-detail-dialog .item-details > div:last-child { border: 0; }
   :root[data-theme] .item-detail-dialog .item-description { padding-block: 18px; border-color: var(--family-rim); }
   :root[data-theme] .item-detail-dialog .detail-edit { padding: 0; border: 0; background: transparent; }
-  :root[data-theme] :is(.item-detail-dialog, .day-preview, dialog.composer-sheet) :is(.button, .icon-button, .composer-sheet__header > button):not(.sheet-desktop-close) {
+  :root[data-theme] :is(.item-detail-dialog, .day-preview, dialog.composer-sheet) :where(.button, .icon-button, .composer-sheet__header > button):not(.sheet-desktop-close) {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     min-width: 44px; min-height: 44px; border-radius: 12px; border: 1px solid var(--family-rim);
     background: linear-gradient(150deg, var(--family-control), transparent), var(--family-control);

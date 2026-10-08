@@ -14,6 +14,7 @@
   import '$lib/design/workspace.css';
   import '$lib/design/liquid-glass.css';
   import '$lib/design/mobile-glass.css';
+  import '$lib/design/glass-system.css';
 
   let unsubscribeAuth: Unsubscriber | undefined;
   let mounted = false;

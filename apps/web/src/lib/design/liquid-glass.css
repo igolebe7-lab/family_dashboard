@@ -1,11 +1,15 @@
 /* Pearl Garden / Twilight Crystal. Dense content surfaces; blur only on floating chrome. */
 :root[data-theme] {
+  --surface-rgb: 255 255 252;
+  --border-rgb: 220 229 221;
   --glass-fill: rgb(255 255 252 / .88);
   --glass-edge: rgb(255 255 255 / .95);
   --glass-shadow: 0 12px 32px rgb(30 52 39 / .09), inset 0 1px 0 var(--glass-edge);
   --primary-ink: #ffffff;
 }
 :root[data-theme='dark'] {
+  --surface-rgb: 24 44 56;
+  --border-rgb: 54 81 95;
   --color-bg: #0c1923;
   --color-surface: #182c38;
   --color-surface-soft: #203947;
@@ -81,7 +85,6 @@
 :root[data-theme='dark'] :is(.today-all-day-pill, .day-detail-item, .today-timeline-item__icon) { background: color-mix(in srgb, currentColor 12%, var(--color-surface)); }
 :root[data-theme='dark'] :is(.today-timeline-item__dot, .year-calendar__year-controls button) { background: var(--color-surface); }
 
-@media (max-width: 1023px) {
   :root[data-theme='light'] {
     --color-bg: #f5f7ef;
     --color-surface: #fffffc;
@@ -96,7 +99,9 @@
     --color-lavender: #704898;
     --color-peach: #994b32;
     --color-yellow: #795a1d;
+    --color-danger: #b02f43;
   }
+@media (max-width: 1023px) {
   :root[data-theme] body { background: var(--color-bg); }
   :root[data-theme] :is(.app-screen--mobile, .workspace-page__content) { background: transparent; }
   :root[data-theme] .mobile-tools { border-bottom: 0; gap: 4px; padding-bottom: 4px; }
