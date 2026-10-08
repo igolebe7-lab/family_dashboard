@@ -120,11 +120,11 @@ h3 {
   display: grid;
   width: min(100%, 28rem);
   gap: 1rem;
-  border: 1px solid rgb(238 231 220 / 0.72);
+  border: 1px solid rgb(var(--border-rgb) / 0.72);
   border-radius: 1.65rem;
   background:
     radial-gradient(circle at 18% 0%, rgb(237 247 232 / 0.82), transparent 14rem),
-    linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(255 251 245 / 0.92));
+    linear-gradient(180deg, rgb(var(--surface-rgb) / 0.9), rgb(255 251 245 / 0.92));
   box-shadow: var(--shadow-card);
   padding: 1.15rem;
 }
@@ -166,9 +166,9 @@ h3 {
 .auth-form input {
   min-height: 3rem;
   width: 100%;
-  border: 1px solid rgb(238 231 220 / 0.86);
+  border: 1px solid rgb(var(--border-rgb) / 0.86);
   border-radius: 1rem;
-  background: rgb(255 255 255 / 0.86);
+  background: rgb(var(--surface-rgb) / 0.86);
   color: var(--color-text);
   font: inherit;
   padding: 0 0.9rem;
@@ -210,9 +210,9 @@ h3 {
   width: 3.35rem;
   height: 3.35rem;
   place-items: center;
-  border: 1px solid rgb(238 231 220 / 0.76);
+  border: 1px solid rgb(var(--border-rgb) / 0.76);
   border-radius: 1.35rem;
-  background: rgb(255 255 255 / 0.94);
+  background: rgb(var(--surface-rgb) / 0.94);
   box-shadow: 0 15px 34px rgb(28 24 18 / 0.1);
   color: var(--color-text);
   line-height: 0;
@@ -242,7 +242,7 @@ h3 {
   min-height: 5.8rem;
   border: 0;
   border-radius: 1.5rem;
-  background: rgb(255 255 255 / 0.68);
+  background: rgb(var(--surface-rgb) / 0.68);
   color: var(--color-text);
   font-weight: 500;
 }
@@ -259,14 +259,14 @@ h3 {
   width: 3.25rem;
   height: 3.25rem;
   border: 4px solid currentColor;
-  background: white;
+  background: var(--color-surface);
 }
 
 .mini-avatar {
   flex: 0 0 auto;
   width: 2.6rem;
   height: 2.6rem;
-  background: white;
+  background: var(--color-surface);
 }
 
 .member-pill--green,
@@ -303,9 +303,9 @@ h3 {
 .shell-card {
   display: grid;
   gap: 1.15rem;
-  border: 1px solid rgb(238 231 220 / 0.75);
+  border: 1px solid rgb(var(--border-rgb) / 0.75);
   border-radius: 1.65rem;
-  background: rgb(255 255 255 / 0.82);
+  background: rgb(var(--surface-rgb) / 0.82);
   box-shadow: var(--shadow-card);
   padding: 1.25rem;
 }
@@ -328,7 +328,7 @@ h3 {
   min-height: 4.55rem;
   border: 1px solid currentColor;
   border-radius: 1.25rem;
-  background: color-mix(in srgb, currentColor 10%, white);
+  background: color-mix(in srgb, currentColor 10%, var(--color-surface));
   padding: 0.85rem;
 }
 
@@ -354,7 +354,7 @@ h3 {
   gap: 0.85rem;
   min-height: 5rem;
   border-radius: 1.45rem;
-  background: color-mix(in srgb, currentColor 11%, white);
+  background: color-mix(in srgb, currentColor 11%, var(--color-surface));
   padding: 0.9rem;
   color: var(--color-text);
 }
@@ -450,16 +450,16 @@ h3 {
 
 .button--ghost {
   border-color: var(--color-border);
-  background: white;
+  background: var(--color-surface);
   color: var(--color-text);
 }
 
 .active-profile-switcher {
   display: grid;
   gap: 0.38rem;
-  border: 1px solid rgb(238 231 220 / 0.76);
+  border: 1px solid rgb(var(--border-rgb) / 0.76);
   border-radius: 1.25rem;
-  background: rgb(255 255 255 / 0.68);
+  background: rgb(var(--surface-rgb) / 0.68);
   box-shadow: var(--shadow-soft);
   padding: 0.72rem 0.82rem;
 }
@@ -473,9 +473,9 @@ h3 {
 .active-profile-switcher select {
   min-height: 2.55rem;
   width: 100%;
-  border: 1px solid rgb(238 231 220 / 0.8);
+  border: 1px solid rgb(var(--border-rgb) / 0.8);
   border-radius: 0.95rem;
-  background: rgb(255 255 255 / 0.88);
+  background: rgb(var(--surface-rgb) / 0.88);
   color: var(--color-text);
   font: inherit;
   font-size: 0.94rem;
@@ -494,9 +494,9 @@ h3 {
   width: min(calc(100% - 1.6rem), 42rem);
   max-width: 42rem;
   margin: 0;
-  border: 1px solid rgb(238 231 220 / 0.52);
+  border: 1px solid rgb(var(--border-rgb) / 0.52);
   border-radius: 2rem;
-  background: rgb(255 255 255 / 0.98);
+  background: rgb(var(--surface-rgb) / 0.98);
   box-shadow: 0 18px 48px rgb(28 24 18 / 0.14);
   padding: 0.62rem 0.7rem 0.72rem;
   transform: translateX(-50%);
@@ -523,7 +523,7 @@ h3 {
   grid-template-columns: repeat(3, 1fr);
   gap: 0.25rem;
   border-radius: 1.45rem;
-  background: rgb(238 231 220 / 0.55);
+  background: rgb(var(--border-rgb) / 0.55);
   padding: 0.32rem;
 }
 
@@ -538,7 +538,7 @@ h3 {
 }
 
 .segmented__active {
-  background: white !important;
+  background: var(--color-surface) !important;
   color: var(--color-text) !important;
   box-shadow: 0 8px 20px rgb(28 24 18 / 0.07);
 }
@@ -592,7 +592,7 @@ h3 {
 .chip {
   flex: 0 0 auto;
   border: 1px solid var(--color-border);
-  background: white;
+  background: var(--color-surface);
   padding: 0 1rem;
 }
 
@@ -605,9 +605,9 @@ h3 {
   display: grid;
   gap: 0.72rem;
   min-width: 0;
-  border: 1px solid rgb(238 231 220 / 0.72);
+  border: 1px solid rgb(var(--border-rgb) / 0.72);
   border-radius: 1.35rem;
-  background: rgb(255 255 255 / 0.72);
+  background: rgb(var(--surface-rgb) / 0.72);
   box-shadow: 0 12px 28px rgb(28 24 18 / 0.04);
   padding: 0.86rem;
 }
@@ -651,9 +651,9 @@ h3 {
   gap: 0.36rem 0.58rem;
   min-width: min(16rem, 82vw);
   scroll-snap-align: start;
-  border: 1px solid rgb(238 231 220 / 0.62);
+  border: 1px solid rgb(var(--border-rgb) / 0.62);
   border-radius: 1.05rem;
-  background: rgb(255 255 255 / 0.62);
+  background: rgb(var(--surface-rgb) / 0.62);
   padding: 0.68rem;
 }
 
@@ -686,7 +686,7 @@ h3 {
   width: 0.72rem;
   height: 0.72rem;
   box-shadow:
-    0 0 0 4px rgb(255 255 255 / 0.82),
+    0 0 0 4px rgb(var(--surface-rgb) / 0.82),
     0 0 16px currentColor;
 }
 
@@ -719,7 +719,7 @@ h3 {
   grid-area: label;
   justify-self: start;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.62);
+  background: rgb(var(--surface-rgb) / 0.62);
   color: var(--color-text-soft);
   font-size: 0.6rem;
   font-weight: 520;
@@ -748,9 +748,9 @@ h3 {
 }
 
 .calendar-year-toolbar {
-  border: 1px solid rgb(238 231 220 / 0.72);
+  border: 1px solid rgb(var(--border-rgb) / 0.72);
   border-radius: 1.45rem;
-  background: rgb(255 255 255 / 0.78);
+  background: rgb(var(--surface-rgb) / 0.78);
   box-shadow: 0 12px 28px rgb(28 24 18 / 0.045);
   padding: 0.72rem;
 }
@@ -761,9 +761,9 @@ h3 {
   width: 2.75rem;
   height: 2.75rem;
   place-items: center;
-  border: 1px solid rgb(238 231 220 / 0.86);
+  border: 1px solid rgb(var(--border-rgb) / 0.86);
   border-radius: 1rem;
-  background: rgb(255 255 255 / 0.86);
+  background: rgb(var(--surface-rgb) / 0.86);
   color: var(--color-text);
   line-height: 0;
 }
@@ -806,9 +806,9 @@ h3 {
   display: grid;
   gap: 0.62rem;
   min-width: 0;
-  border: 1px solid rgb(238 231 220 / 0.74);
+  border: 1px solid rgb(var(--border-rgb) / 0.74);
   border-radius: 1.45rem;
-  background: rgb(255 255 255 / 0.78);
+  background: rgb(var(--surface-rgb) / 0.78);
   box-shadow: 0 12px 30px rgb(28 24 18 / 0.045);
   padding: 0.78rem;
 }
@@ -828,9 +828,9 @@ h3 {
   display: inline-flex;
   min-height: 1.85rem;
   align-items: center;
-  border: 1px solid rgb(238 231 220 / 0.78);
+  border: 1px solid rgb(var(--border-rgb) / 0.78);
   border-radius: 0.82rem;
-  background: rgb(255 255 255 / 0.68);
+  background: rgb(var(--surface-rgb) / 0.68);
   color: var(--color-text-muted);
   font-size: 0.72rem;
   font-weight: 540;
@@ -874,7 +874,7 @@ h3 {
   gap: 0.1rem;
   border: 0;
   border-radius: 0.78rem;
-  background: rgb(255 255 255 / 0.62);
+  background: rgb(var(--surface-rgb) / 0.62);
   color: var(--color-text);
   padding: 0.16rem;
 }
@@ -919,7 +919,7 @@ h3 {
   height: 0.42rem;
   border-radius: 999px;
   background: var(--color-green);
-  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.78);
+  box-shadow: 0 0 0 2px rgb(var(--surface-rgb) / 0.78);
 }
 
 .year-marker--birthday {
@@ -991,7 +991,7 @@ h3 {
   height: 0.26rem;
   border-radius: 999px;
   background: var(--color-text-soft);
-  box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.8);
+  box-shadow: 0 0 0 1.5px rgb(var(--surface-rgb) / 0.8);
 }
 
 .year-record-marker--event {
@@ -1022,9 +1022,9 @@ h3 {
   display: grid;
   gap: 0.76rem;
   min-width: 0;
-  border: 1px solid rgb(238 231 220 / 0.76);
+  border: 1px solid rgb(var(--border-rgb) / 0.76);
   border-radius: 1.45rem;
-  background: rgb(255 255 255 / 0.78);
+  background: rgb(var(--surface-rgb) / 0.78);
   box-shadow: 0 14px 32px rgb(28 24 18 / 0.05);
   padding: 0.82rem;
 }
@@ -1056,9 +1056,9 @@ h3 {
   width: 2.35rem;
   height: 2.35rem;
   place-items: center;
-  border: 1px solid rgb(238 231 220 / 0.82);
+  border: 1px solid rgb(var(--border-rgb) / 0.82);
   border-radius: 0.9rem;
-  background: rgb(255 255 255 / 0.82);
+  background: rgb(var(--surface-rgb) / 0.82);
   color: var(--color-text-muted);
   line-height: 0;
 }
@@ -1102,9 +1102,9 @@ h3 {
   align-items: center;
   gap: 0.66rem;
   min-width: 0;
-  border: 1px solid rgb(238 231 220 / 0.68);
+  border: 1px solid rgb(var(--border-rgb) / 0.68);
   border-radius: 1.12rem;
-  background: rgb(255 255 255 / 0.64);
+  background: rgb(var(--surface-rgb) / 0.64);
   padding: 0.72rem;
 }
 
@@ -1136,7 +1136,7 @@ h3 {
   width: 0.72rem;
   height: 0.72rem;
   box-shadow:
-    0 0 0 4px rgb(255 255 255 / 0.82),
+    0 0 0 4px rgb(var(--surface-rgb) / 0.82),
     0 0 16px currentColor;
 }
 
@@ -1163,7 +1163,7 @@ h3 {
 .day-detail-item__badge {
   align-self: start;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.7);
+  background: rgb(var(--surface-rgb) / 0.7);
   color: var(--color-text-soft);
   font-size: 0.58rem;
   font-weight: 520;
@@ -1176,9 +1176,9 @@ h3 {
   width: 2rem;
   height: 2rem;
   place-items: center;
-  border: 1px solid rgb(238 231 220 / 0.72);
+  border: 1px solid rgb(var(--border-rgb) / 0.72);
   border-radius: 0.72rem;
-  background: rgb(255 255 255 / 0.72);
+  background: rgb(var(--surface-rgb) / 0.72);
   color: var(--color-text-muted);
   line-height: 0;
 }
@@ -1187,9 +1187,9 @@ h3 {
   display: grid;
   gap: 0.72rem;
   min-width: 0;
-  border: 1px solid rgb(238 231 220 / 0.76);
+  border: 1px solid rgb(var(--border-rgb) / 0.76);
   border-radius: 1.45rem;
-  background: rgb(255 255 255 / 0.86);
+  background: rgb(var(--surface-rgb) / 0.86);
   box-shadow: 0 16px 38px rgb(28 24 18 / 0.07);
   padding: 0.9rem;
 }
@@ -1214,9 +1214,9 @@ h3 {
   width: 2.35rem;
   height: 2.35rem;
   place-items: center;
-  border: 1px solid rgb(238 231 220 / 0.82);
+  border: 1px solid rgb(var(--border-rgb) / 0.82);
   border-radius: 0.9rem;
-  background: rgb(255 255 255 / 0.82);
+  background: rgb(var(--surface-rgb) / 0.82);
   color: var(--color-text-muted);
   line-height: 0;
 }
@@ -1237,9 +1237,9 @@ h3 {
 .special-date-form select,
 .special-date-form textarea {
   min-width: 0;
-  border: 1px solid rgb(238 231 220 / 0.82);
+  border: 1px solid rgb(var(--border-rgb) / 0.82);
   border-radius: 0.9rem;
-  background: rgb(255 255 255 / 0.8);
+  background: rgb(var(--surface-rgb) / 0.8);
   color: var(--color-text);
   font: inherit;
   font-size: var(--font-size-sm);
@@ -1305,7 +1305,7 @@ h3 {
   z-index: 30;
   max-height: min(22rem, calc(100dvh - 9.5rem));
   overflow: hidden;
-  background: rgb(255 255 255 / 0.9);
+  background: rgb(var(--surface-rgb) / 0.9);
   box-shadow: 0 20px 56px rgb(35 38 47 / 0.15);
   backdrop-filter: blur(18px);
 }
@@ -1322,7 +1322,7 @@ h3 {
   z-index: 40;
   max-height: min(38rem, calc(100dvh - 8.8rem));
   overflow-y: auto;
-  background: rgb(255 255 255 / 0.94);
+  background: rgb(var(--surface-rgb) / 0.94);
   box-shadow: 0 22px 60px rgb(35 38 47 / 0.16);
   backdrop-filter: blur(18px);
 }
@@ -1391,10 +1391,10 @@ h3 {
   overflow-y: auto;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  border: 1px solid rgb(238 231 220 / 0.78);
+  border: 1px solid rgb(var(--border-rgb) / 0.78);
   border-radius: 1.65rem 1.65rem 1.35rem 1.35rem;
   background:
-    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 0.98), transparent 18rem),
+    radial-gradient(circle at 50% 0%, rgb(var(--surface-rgb) / 0.98), transparent 18rem),
     linear-gradient(180deg, rgb(255 254 251 / 0.98), rgb(255 251 245 / 0.98));
   box-shadow: 0 24px 70px rgb(28 24 18 / 0.18);
   padding: 1rem;
@@ -1418,9 +1418,9 @@ h3 {
   width: 2.45rem;
   height: 2.45rem;
   place-items: center;
-  border: 1px solid rgb(238 231 220 / 0.76);
+  border: 1px solid rgb(var(--border-rgb) / 0.76);
   border-radius: 0.95rem;
-  background: rgb(255 255 255 / 0.82);
+  background: rgb(var(--surface-rgb) / 0.82);
   color: var(--color-text-muted);
 }
 
@@ -1490,9 +1490,9 @@ h3 {
   min-width: 0;
   max-width: 100%;
   width: 100%;
-  border: 1px solid rgb(238 231 220 / 0.86);
+  border: 1px solid rgb(var(--border-rgb) / 0.86);
   border-radius: 0.92rem;
-  background: rgb(255 255 255 / 0.84);
+  background: rgb(var(--surface-rgb) / 0.84);
   color: var(--color-text);
   font: inherit;
   font-size: 1rem;
@@ -1513,9 +1513,9 @@ h3 {
   min-height: 2.9rem;
   align-items: center;
   gap: 0.55rem !important;
-  border: 1px solid rgb(238 231 220 / 0.72);
+  border: 1px solid rgb(var(--border-rgb) / 0.72);
   border-radius: 0.95rem;
-  background: rgb(255 255 255 / 0.64);
+  background: rgb(var(--surface-rgb) / 0.64);
   padding: 0.62rem 0.78rem;
 }
 
@@ -1533,9 +1533,9 @@ h3 {
   display: flex !important;
   align-items: center;
   gap: 0.45rem !important;
-  border: 1px solid rgb(238 231 220 / 0.72);
+  border: 1px solid rgb(var(--border-rgb) / 0.72);
   border-radius: 0.9rem;
-  background: rgb(255 255 255 / 0.62);
+  background: rgb(var(--surface-rgb) / 0.62);
   padding: 0.58rem 0.66rem;
 }
 
@@ -1568,7 +1568,7 @@ h3 {
   justify-content: flex-end;
   gap: 0.58rem;
   margin: 0 -1rem -1rem;
-  border-top: 1px solid rgb(238 231 220 / 0.58);
+  border-top: 1px solid rgb(var(--border-rgb) / 0.58);
   background: rgb(255 253 249 / 0.96);
   padding: 0.78rem 1rem 1rem;
   backdrop-filter: blur(12px);
@@ -1588,11 +1588,11 @@ h3 {
   display: grid;
   min-width: 0;
   gap: 0.82rem;
-  border: 1px solid rgb(238 231 220 / 0.76);
+  border: 1px solid rgb(var(--border-rgb) / 0.76);
   border-radius: 1.45rem;
   background:
     radial-gradient(circle at 18% 8%, rgb(237 247 232 / 0.58), transparent 12rem),
-    rgb(255 255 255 / 0.74);
+    rgb(var(--surface-rgb) / 0.74);
   box-shadow: var(--shadow-soft);
   padding: 1rem;
 }
@@ -1613,9 +1613,9 @@ h3 {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.72rem;
-  border: 1px solid rgb(238 231 220 / 0.7);
+  border: 1px solid rgb(var(--border-rgb) / 0.7);
   border-radius: 1.1rem;
-  background: rgb(255 255 255 / 0.72);
+  background: rgb(var(--surface-rgb) / 0.72);
   padding: 0.68rem;
 }
 
@@ -1636,7 +1636,7 @@ h3 {
   grid-column: 2 / -1;
   width: 100%;
   border-radius: 0.8rem;
-  background: rgb(255 255 255 / 0.8);
+  background: rgb(var(--surface-rgb) / 0.8);
   color: var(--color-text-muted);
   font-size: 0.72rem;
   line-height: 1.35;
@@ -1655,7 +1655,7 @@ h3 {
   font-size: 0.98rem;
   font-weight: 540;
   box-shadow:
-    inset 0 0 0 2px rgb(255 255 255 / 0.9),
+    inset 0 0 0 2px rgb(var(--surface-rgb) / 0.9),
     0 0 0 0.42rem rgb(237 247 232 / 0.64);
 }
 
@@ -1663,7 +1663,7 @@ h3 {
   background: var(--color-blue-soft);
   color: var(--color-blue);
   box-shadow:
-    inset 0 0 0 2px rgb(255 255 255 / 0.9),
+    inset 0 0 0 2px rgb(var(--surface-rgb) / 0.9),
     0 0 0 0.42rem rgb(234 243 253 / 0.66);
 }
 
@@ -1671,7 +1671,7 @@ h3 {
   background: var(--color-peach-soft);
   color: var(--color-peach);
   box-shadow:
-    inset 0 0 0 2px rgb(255 255 255 / 0.9),
+    inset 0 0 0 2px rgb(var(--surface-rgb) / 0.9),
     0 0 0 0.42rem rgb(255 240 232 / 0.66);
 }
 
@@ -1679,7 +1679,7 @@ h3 {
   background: var(--color-lavender-soft);
   color: var(--color-lavender);
   box-shadow:
-    inset 0 0 0 2px rgb(255 255 255 / 0.9),
+    inset 0 0 0 2px rgb(var(--surface-rgb) / 0.9),
     0 0 0 0.42rem rgb(243 234 250 / 0.66);
 }
 
@@ -1687,7 +1687,7 @@ h3 {
   background: var(--color-yellow-soft);
   color: var(--color-yellow);
   box-shadow:
-    inset 0 0 0 2px rgb(255 255 255 / 0.9),
+    inset 0 0 0 2px rgb(var(--surface-rgb) / 0.9),
     0 0 0 0.42rem rgb(255 245 223 / 0.66);
 }
 
@@ -1717,9 +1717,9 @@ h3 {
   align-items: center;
   justify-content: center;
   gap: 0.28rem;
-  border: 1px solid rgb(238 231 220 / 0.78);
+  border: 1px solid rgb(var(--border-rgb) / 0.78);
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.78);
+  background: rgb(var(--surface-rgb) / 0.78);
   color: var(--color-text);
   font-size: 0.72rem;
   font-weight: 540;
@@ -1746,9 +1746,9 @@ h3 {
 .family-form select {
   min-height: 2.7rem;
   width: 100%;
-  border: 1px solid rgb(238 231 220 / 0.82);
+  border: 1px solid rgb(var(--border-rgb) / 0.82);
   border-radius: 0.95rem;
-  background: rgb(255 255 255 / 0.84);
+  background: rgb(var(--surface-rgb) / 0.84);
   color: var(--color-text);
   font: inherit;
   font-size: 0.94rem;
@@ -1788,9 +1788,9 @@ h3 {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.78rem;
-  border: 1px solid rgb(238 231 220 / 0.76);
+  border: 1px solid rgb(var(--border-rgb) / 0.76);
   border-radius: 1.35rem;
-  background: rgb(255 255 255 / 0.78);
+  background: rgb(var(--surface-rgb) / 0.78);
   box-shadow: var(--shadow-soft);
   padding: 0.9rem;
 }
@@ -1806,7 +1806,7 @@ h3 {
   font-size: 1rem;
   font-weight: 650;
   box-shadow:
-    inset 0 0 0 2px rgb(255 255 255 / 0.9),
+    inset 0 0 0 2px rgb(var(--surface-rgb) / 0.9),
     0 0 0 0.42rem rgb(237 247 232 / 0.64);
 }
 
@@ -1840,9 +1840,9 @@ h3 {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px solid rgb(238 231 220 / 0.86);
+  border: 1px solid rgb(var(--border-rgb) / 0.86);
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.82);
+  background: rgb(var(--surface-rgb) / 0.82);
   color: var(--color-text);
   font: inherit;
   font-size: 0.9rem;
@@ -1904,8 +1904,8 @@ h3 {
   border-bottom: 0;
   border-radius: 2rem 2rem 0 0;
   background:
-    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 0.96), transparent 17rem),
-    linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(255 253 249 / 0.92));
+    radial-gradient(circle at 50% 0%, rgb(var(--surface-rgb) / 0.96), transparent 17rem),
+    linear-gradient(180deg, rgb(var(--surface-rgb) / 0.9), rgb(255 253 249 / 0.92));
   box-shadow: 0 -8px 34px rgb(36 40 52 / 0.035);
   padding: 0.92rem 0.82rem 8.3rem;
 }
@@ -2007,10 +2007,10 @@ h3 {
 .member-avatar-card__halo {
   width: clamp(3.65rem, 15vw, 4.6rem);
   height: clamp(3.65rem, 15vw, 4.6rem);
-  border: 6px solid color-mix(in srgb, currentColor 19%, white);
+  border: 6px solid color-mix(in srgb, currentColor 19%, var(--color-surface));
   box-shadow:
     0 15px 30px rgb(28 24 18 / 0.08),
-    inset 0 0 0 2px rgb(255 255 255 / 0.86);
+    inset 0 0 0 2px rgb(var(--surface-rgb) / 0.86);
 }
 
 .portrait {
@@ -2022,12 +2022,12 @@ h3 {
   overflow: hidden;
   border-radius: 999px;
   background:
-    radial-gradient(circle at 36% 24%, rgb(255 255 255 / 0.76), transparent 34%),
-    linear-gradient(150deg, color-mix(in srgb, currentColor 8%, white), var(--portrait-bg));
+    radial-gradient(circle at 36% 24%, rgb(var(--surface-rgb) / 0.76), transparent 34%),
+    linear-gradient(150deg, color-mix(in srgb, currentColor 8%, var(--color-surface)), var(--portrait-bg));
   color: currentColor;
   isolation: isolate;
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.7),
+    inset 0 0 0 1px rgb(var(--surface-rgb) / 0.7),
     inset 0 -10px 18px rgb(36 40 52 / 0.02);
 }
 
@@ -2035,9 +2035,9 @@ h3 {
   position: absolute;
   inset: 9%;
   z-index: 0;
-  border: 1px solid rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(var(--surface-rgb) / 0.72);
   border-radius: inherit;
-  background: rgb(255 255 255 / 0.24);
+  background: rgb(var(--surface-rgb) / 0.24);
   opacity: 0.88;
   content: '';
 }
@@ -2077,7 +2077,7 @@ h3 {
   font-size: 0.76rem;
   font-weight: 520;
   line-height: 1;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 0.75);
+  text-shadow: 0 1px 0 rgb(var(--surface-rgb) / 0.75);
   box-shadow: none;
 }
 
@@ -2101,7 +2101,7 @@ h3 {
   flex: 0 0 auto;
   border-radius: 999px;
   background: currentColor;
-  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, white);
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, var(--color-surface));
 }
 
 .member-avatar-card__name {
@@ -2168,9 +2168,9 @@ h3 {
   grid-template-columns: 2.18rem minmax(0, 1fr);
   align-items: center;
   gap: 0.58rem;
-  border: 1px solid color-mix(in srgb, currentColor 15%, white);
+  border: 1px solid color-mix(in srgb, currentColor 15%, var(--color-surface));
   border-radius: 1.15rem;
-  background: color-mix(in srgb, currentColor 8%, white);
+  background: color-mix(in srgb, currentColor 8%, var(--color-surface));
   color: var(--color-green);
   padding: 0.5rem 0.64rem;
   text-align: left;
@@ -2203,7 +2203,7 @@ h3 {
   height: 2.18rem;
   place-items: center;
   border-radius: 0.88rem;
-  background: rgb(255 255 255 / 0.72);
+  background: rgb(var(--surface-rgb) / 0.72);
 }
 
 .today-all-day-pill strong,
@@ -2300,9 +2300,9 @@ h3 {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: rgb(255 255 255 / 0.95);
+  background: rgb(var(--surface-rgb) / 0.95);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, currentColor 24%, white),
+    0 0 0 1px color-mix(in srgb, currentColor 24%, var(--color-surface)),
     0 4px 10px rgb(36 40 52 / 0.055);
 }
 
@@ -2323,9 +2323,9 @@ h3 {
   gap: 0.52rem;
   width: 100%;
   min-height: 2.92rem;
-  border: 1px solid color-mix(in srgb, currentColor 17%, white);
+  border: 1px solid color-mix(in srgb, currentColor 17%, var(--color-surface));
   border-radius: 1.15rem;
-  background: rgb(255 255 255 / 0.88);
+  background: rgb(var(--surface-rgb) / 0.88);
   color: inherit;
   padding: 0.42rem 0.5rem 0.42rem 0.52rem;
   text-align: left;
@@ -2335,9 +2335,9 @@ h3 {
   grid-column: 2;
   justify-self: start;
   min-height: 2.2rem;
-  border: 1px solid color-mix(in srgb, currentColor 18%, white);
+  border: 1px solid color-mix(in srgb, currentColor 18%, var(--color-surface));
   border-radius: 999px;
-  background: color-mix(in srgb, currentColor 10%, white);
+  background: color-mix(in srgb, currentColor 10%, var(--color-surface));
   color: currentColor;
   font-size: 0.76rem;
   font-weight: 560;
@@ -2354,7 +2354,7 @@ h3 {
   height: 2.18rem;
   place-items: center;
   border-radius: 0.92rem;
-  background: color-mix(in srgb, currentColor 12%, white);
+  background: color-mix(in srgb, currentColor 12%, var(--color-surface));
   color: currentColor;
 }
 
@@ -2389,7 +2389,7 @@ h3 {
 .today-attention-card__avatar {
   width: 2.05rem;
   height: 2.05rem;
-  border: 3px solid rgb(255 255 255 / 0.9);
+  border: 3px solid rgb(var(--surface-rgb) / 0.9);
   box-shadow: 0 8px 18px rgb(28 24 18 / 0.08);
 }
 
@@ -2496,7 +2496,7 @@ h3 {
 
 .today-detail-sheet__description {
   border-radius: 1rem;
-  background: color-mix(in srgb, currentColor 8%, white);
+  background: color-mix(in srgb, currentColor 8%, var(--color-surface));
   color: var(--color-text);
   font-size: 0.82rem;
   font-weight: 430;
@@ -2508,7 +2508,7 @@ h3 {
   justify-self: end;
   border: 1px solid rgb(238 232 222 / 0.95);
   border-radius: 999px;
-  background: white;
+  background: var(--color-surface);
   color: var(--color-text);
   padding: 0.52rem 0.86rem;
   font-weight: 520;
@@ -2534,10 +2534,10 @@ h3 {
   grid-template-columns: 2.05rem minmax(0, 1fr);
   gap: 0.52rem;
   align-items: start;
-  border: 1px solid color-mix(in srgb, currentColor 18%, white);
+  border: 1px solid color-mix(in srgb, currentColor 18%, var(--color-surface));
   border-radius: 1.65rem;
   background:
-    linear-gradient(135deg, color-mix(in srgb, currentColor 10%, white), rgb(255 255 255 / 0.82));
+    linear-gradient(135deg, color-mix(in srgb, currentColor 10%, var(--color-surface)), rgb(var(--surface-rgb) / 0.82));
   padding: 0.72rem 0.68rem;
   color: var(--color-green);
 }
@@ -2578,7 +2578,7 @@ h3 {
   place-items: center;
   border: 0;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.82);
+  background: rgb(var(--surface-rgb) / 0.82);
   color: currentColor;
   line-height: 0;
   box-shadow: 0 10px 20px rgb(28 24 18 / 0.07);
@@ -2596,9 +2596,9 @@ h3 {
   min-height: 2.1rem;
   min-width: 0;
   flex: 1 1 0;
-  border: 1px solid color-mix(in srgb, currentColor 18%, white);
+  border: 1px solid color-mix(in srgb, currentColor 18%, var(--color-surface));
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.76);
+  background: rgb(var(--surface-rgb) / 0.76);
   color: currentColor;
   font-size: 0.72rem;
   font-weight: 560;
@@ -2606,7 +2606,7 @@ h3 {
 }
 
 .today-attention-card__action--primary {
-  background: color-mix(in srgb, currentColor 13%, white);
+  background: color-mix(in srgb, currentColor 13%, var(--color-surface));
 }
 
 .today-attention-card__action:disabled {
@@ -2653,10 +2653,10 @@ h3 {
   min-height: 6.35rem;
   place-items: center;
   gap: 0.58rem;
-  border: 1px solid color-mix(in srgb, currentColor 16%, white);
+  border: 1px solid color-mix(in srgb, currentColor 16%, var(--color-surface));
   border-radius: 1.55rem;
   background:
-    linear-gradient(135deg, color-mix(in srgb, currentColor 12%, white), rgb(255 255 255 / 0.78));
+    linear-gradient(135deg, color-mix(in srgb, currentColor 12%, var(--color-surface)), rgb(var(--surface-rgb) / 0.78));
   color: var(--color-green);
   font-size: 0.82rem;
   font-weight: 460;
@@ -2716,7 +2716,7 @@ h3 {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 999px;
-  background: white;
+  background: var(--color-surface);
 }
 
 .today-desktop-header {
@@ -2735,7 +2735,7 @@ h3 {
   gap: 0.62rem;
   border: 1px solid rgb(36 40 52 / 0.07);
   border-radius: 1.05rem;
-  background: rgb(255 255 255 / 0.9);
+  background: rgb(var(--surface-rgb) / 0.9);
   color: var(--color-text-muted);
   padding: 0 0.88rem;
   box-shadow: 0 10px 28px rgb(35 38 47 / 0.035);
@@ -2765,7 +2765,7 @@ h3 {
   place-items: center;
   border: 1px solid rgb(36 40 52 / 0.07);
   border-radius: 1.05rem;
-  background: rgb(255 255 255 / 0.92);
+  background: rgb(var(--surface-rgb) / 0.92);
   color: var(--color-text);
   line-height: 0;
   box-shadow: 0 8px 20px rgb(35 38 47 / 0.035);
@@ -2798,9 +2798,9 @@ h3 {
 
 .today-week-toolbar button {
   min-height: 2.45rem;
-  border: 1px solid rgb(238 231 220 / 0.82);
+  border: 1px solid rgb(var(--border-rgb) / 0.82);
   border-radius: 0.92rem;
-  background: rgb(255 255 255 / 0.82);
+  background: rgb(var(--surface-rgb) / 0.82);
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 560;
@@ -2825,9 +2825,9 @@ h3 {
 .today-week-toolbar__arrows {
   gap: 0.25rem;
   overflow: hidden;
-  border: 1px solid rgb(238 231 220 / 0.82);
+  border: 1px solid rgb(var(--border-rgb) / 0.82);
   border-radius: 0.92rem;
-  background: white;
+  background: var(--color-surface);
 }
 
 .today-week-toolbar__arrows button {
@@ -2904,9 +2904,9 @@ h3 {
   grid-template-columns: 2.7rem minmax(0, 1fr);
   align-items: center;
   gap: 0.76rem;
-  border: 1px solid rgb(238 231 220 / 0.78);
+  border: 1px solid rgb(var(--border-rgb) / 0.78);
   border-radius: var(--radius-lg);
-  background: rgb(255 255 255 / 0.88);
+  background: rgb(var(--surface-rgb) / 0.88);
   box-shadow: var(--shadow-soft);
   padding: 0.82rem;
 }
@@ -2924,7 +2924,7 @@ h3 {
   width: 2.7rem;
   height: 2.7rem;
   place-items: center;
-  border: 1px solid rgb(238 231 220 / 0.88);
+  border: 1px solid rgb(var(--border-rgb) / 0.88);
   border-radius: 999px;
   background: var(--color-green-soft);
   color: var(--color-green);
@@ -2955,32 +2955,32 @@ h3 {
   grid-template-columns: 3rem minmax(0, 1fr);
   gap: 0.82rem;
   min-width: 0;
-  border: 1px solid rgb(238 231 220 / 0.78);
+  border: 1px solid rgb(var(--border-rgb) / 0.78);
   border-radius: var(--radius-lg);
-  background: rgb(255 255 255 / 0.92);
+  background: rgb(var(--surface-rgb) / 0.92);
   color: var(--color-text);
   box-shadow: 0 15px 36px rgb(35 38 47 / 0.06);
   padding: 0.92rem;
 }
 
 .assignment-card--green {
-  border-color: color-mix(in srgb, var(--color-green) 26%, white);
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), color-mix(in srgb, var(--color-green) 11%, white));
+  border-color: color-mix(in srgb, var(--color-green) 26%, var(--color-surface));
+  background: linear-gradient(135deg, rgb(var(--surface-rgb) / 0.94), color-mix(in srgb, var(--color-green) 11%, var(--color-surface)));
 }
 
 .assignment-card--yellow {
-  border-color: color-mix(in srgb, var(--color-yellow) 28%, white);
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), color-mix(in srgb, var(--color-yellow) 13%, white));
+  border-color: color-mix(in srgb, var(--color-yellow) 28%, var(--color-surface));
+  background: linear-gradient(135deg, rgb(var(--surface-rgb) / 0.94), color-mix(in srgb, var(--color-yellow) 13%, var(--color-surface)));
 }
 
 .assignment-card--peach {
-  border-color: color-mix(in srgb, var(--color-peach) 26%, white);
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), color-mix(in srgb, var(--color-peach) 12%, white));
+  border-color: color-mix(in srgb, var(--color-peach) 26%, var(--color-surface));
+  background: linear-gradient(135deg, rgb(var(--surface-rgb) / 0.94), color-mix(in srgb, var(--color-peach) 12%, var(--color-surface)));
 }
 
 .assignment-card--blue {
-  border-color: color-mix(in srgb, var(--color-blue) 24%, white);
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), color-mix(in srgb, var(--color-blue) 10%, white));
+  border-color: color-mix(in srgb, var(--color-blue) 24%, var(--color-surface));
+  background: linear-gradient(135deg, rgb(var(--surface-rgb) / 0.94), color-mix(in srgb, var(--color-blue) 10%, var(--color-surface)));
 }
 
 .assignment-card__avatar {
@@ -2989,7 +2989,7 @@ h3 {
   height: 3rem;
   place-items: center;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.86);
+  background: rgb(var(--surface-rgb) / 0.86);
   box-shadow: inset 0 0 0 1px rgb(36 40 52 / 0.06);
   color: var(--color-text);
   font-weight: 640;
@@ -3045,7 +3045,7 @@ h3 {
   gap: 0.38rem;
   border: 1px solid rgb(36 40 52 / 0.08);
   border-radius: 0.9rem;
-  background: rgb(255 255 255 / 0.9);
+  background: rgb(var(--surface-rgb) / 0.9);
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -3053,7 +3053,7 @@ h3 {
 }
 
 .assignment-card__button--primary {
-  border-color: color-mix(in srgb, var(--color-green) 34%, white);
+  border-color: color-mix(in srgb, var(--color-green) 34%, var(--color-surface));
   background: var(--color-green);
   color: white;
 }
@@ -3084,7 +3084,7 @@ h3 {
   border-radius: 1.8rem;
   background:
     radial-gradient(circle at 85% 10%, rgb(129 198 112 / 0.22), transparent 11rem),
-    linear-gradient(135deg, color-mix(in srgb, var(--color-yellow) 18%, white), rgb(255 255 255 / 0.94));
+    linear-gradient(135deg, color-mix(in srgb, var(--color-yellow) 18%, var(--color-surface)), rgb(var(--surface-rgb) / 0.94));
   box-shadow: var(--shadow-card);
   padding: 1.12rem;
 }
@@ -3105,7 +3105,7 @@ h3 {
 
 .child-mode__section {
   border-radius: var(--radius-lg);
-  background: rgb(255 255 255 / 0.68);
+  background: rgb(var(--surface-rgb) / 0.68);
   padding: 0.9rem;
 }
 
@@ -3120,7 +3120,7 @@ h3 {
   align-items: center;
   gap: 0.72rem;
   border-radius: var(--radius-md);
-  background: rgb(255 255 255 / 0.84);
+  background: rgb(var(--surface-rgb) / 0.84);
   padding: 0.76rem;
 }
 
@@ -3141,9 +3141,9 @@ h3 {
   display: grid;
   min-width: 0;
   gap: 0.72rem;
-  border: 1px solid rgb(238 231 220 / 0.78);
+  border: 1px solid rgb(var(--border-rgb) / 0.78);
   border-radius: var(--radius-lg);
-  background: rgb(255 255 255 / 0.9);
+  background: rgb(var(--surface-rgb) / 0.9);
   box-shadow: 0 12px 30px rgb(35 38 47 / 0.045);
   padding: 0.92rem;
 }
@@ -3159,31 +3159,31 @@ h3 {
 }
 
 .inbox-card--unread {
-  border-color: color-mix(in srgb, var(--color-peach) 34%, white);
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.95), color-mix(in srgb, var(--color-peach) 10%, white));
+  border-color: color-mix(in srgb, var(--color-peach) 34%, var(--color-surface));
+  background: linear-gradient(135deg, rgb(var(--surface-rgb) / 0.95), color-mix(in srgb, var(--color-peach) 10%, var(--color-surface)));
 }
 
 .feed-page-card--green {
-  border-color: color-mix(in srgb, var(--color-green) 25%, white);
+  border-color: color-mix(in srgb, var(--color-green) 25%, var(--color-surface));
 }
 
 .feed-page-card--yellow {
-  border-color: color-mix(in srgb, var(--color-yellow) 28%, white);
+  border-color: color-mix(in srgb, var(--color-yellow) 28%, var(--color-surface));
 }
 
 .feed-page-card--peach {
-  border-color: color-mix(in srgb, var(--color-peach) 27%, white);
+  border-color: color-mix(in srgb, var(--color-peach) 27%, var(--color-surface));
 }
 
 .feed-page-card--blue {
-  border-color: color-mix(in srgb, var(--color-blue) 24%, white);
+  border-color: color-mix(in srgb, var(--color-blue) 24%, var(--color-surface));
 }
 
 .page-empty-state {
   min-width: 0;
   border: 1px dashed rgb(173 165 151 / 0.36);
   border-radius: var(--radius-md);
-  background: rgb(255 255 255 / 0.58);
+  background: rgb(var(--surface-rgb) / 0.58);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   line-height: 1.42;
@@ -3214,7 +3214,7 @@ h3 {
   min-width: 0;
   border: 1px solid rgb(36 40 52 / 0.075);
   border-radius: 1.5rem;
-  background: rgb(255 255 255 / 0.84);
+  background: rgb(var(--surface-rgb) / 0.84);
 }
 
 .week-calendar__header,
@@ -3334,7 +3334,7 @@ h3 {
   overflow: hidden;
   border: 1px solid rgb(36 40 52 / 0.075);
   border-radius: 1.5rem;
-  background: rgb(255 255 255 / 0.84);
+  background: rgb(var(--surface-rgb) / 0.84);
   padding: 0.78rem;
 }
 
@@ -3373,7 +3373,7 @@ h3 {
   gap: 0.22rem;
   border: 1px solid rgb(36 40 52 / 0.045);
   border-radius: 1.08rem;
-  background: rgb(255 255 255 / 0.7);
+  background: rgb(var(--surface-rgb) / 0.7);
   color: var(--color-text);
   padding: 0.58rem;
   text-decoration: none;
@@ -3474,7 +3474,7 @@ h3 {
   height: 1rem;
   place-items: center;
   border-radius: 0.46rem;
-  background: rgb(255 255 255 / 0.72);
+  background: rgb(var(--surface-rgb) / 0.72);
   color: currentColor;
 }
 
@@ -3514,7 +3514,7 @@ h3 {
 .calendar-event-card__avatar {
   width: 1.14rem;
   height: 1.14rem;
-  border: 2px solid rgb(255 255 255 / 0.9);
+  border: 2px solid rgb(var(--surface-rgb) / 0.9);
   box-shadow: 0 6px 14px rgb(35 38 47 / 0.08);
 }
 
@@ -3565,7 +3565,7 @@ h3 {
   gap: 0.62rem;
   color: var(--color-green);
   border-radius: 1rem;
-  background: color-mix(in srgb, currentColor 7%, white);
+  background: color-mix(in srgb, currentColor 7%, var(--color-surface));
   padding: 0.46rem 0.5rem;
 }
 
@@ -3587,7 +3587,7 @@ h3 {
   height: 2.15rem;
   place-items: center;
   border-radius: 0.75rem;
-  background: color-mix(in srgb, currentColor 16%, white);
+  background: color-mix(in srgb, currentColor 16%, var(--color-surface));
   color: currentColor;
 }
 
@@ -3691,7 +3691,7 @@ h3 {
     border-width: 5px;
     box-shadow:
       0 9px 18px rgb(35 38 47 / 0.04),
-      inset 0 0 0 2px rgb(255 255 255 / 0.78);
+      inset 0 0 0 2px rgb(var(--surface-rgb) / 0.78);
   }
 
   .member-avatar-card__name {
@@ -3701,7 +3701,7 @@ h3 {
   .member-avatar-card__dot {
     width: 0.58rem;
     height: 0.58rem;
-    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, white);
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, var(--color-surface));
   }
 
   .today-timeline-card {
@@ -3742,7 +3742,7 @@ h3 {
     gap: 0.6rem;
     border-color: rgb(36 40 52 / 0.075);
     border-radius: 1.28rem;
-    background: rgb(255 255 255 / 0.92);
+    background: rgb(var(--surface-rgb) / 0.92);
     padding: 0.5rem 0.62rem 0.5rem 0.58rem;
   }
 
@@ -3750,7 +3750,7 @@ h3 {
     width: 2.36rem;
     height: 2.36rem;
     border-radius: 1rem;
-    background: color-mix(in srgb, currentColor 13%, white);
+    background: color-mix(in srgb, currentColor 13%, var(--color-surface));
   }
 
   .today-timeline-item__icon svg {
@@ -3796,8 +3796,8 @@ h3 {
     align-items: start;
     border-radius: 1.45rem;
     padding: 0.68rem 0.62rem;
-    border-color: color-mix(in srgb, currentColor 10%, white);
-    background: linear-gradient(130deg, color-mix(in srgb, currentColor 7%, white), rgb(255 255 255 / 0.88));
+    border-color: color-mix(in srgb, currentColor 10%, var(--color-surface));
+    background: linear-gradient(130deg, color-mix(in srgb, currentColor 7%, var(--color-surface)), rgb(var(--surface-rgb) / 0.88));
     box-shadow: 0 8px 18px rgb(35 38 47 / 0.03);
   }
 
@@ -3849,7 +3849,7 @@ h3 {
     font-size: 0.78rem;
     font-weight: 420;
     text-align: center;
-    background: linear-gradient(140deg, color-mix(in srgb, currentColor 7%, white), rgb(255 255 255 / 0.88));
+    background: linear-gradient(140deg, color-mix(in srgb, currentColor 7%, var(--color-surface)), rgb(var(--surface-rgb) / 0.88));
     box-shadow: 0 8px 18px rgb(35 38 47 / 0.025);
   }
 
@@ -3934,7 +3934,7 @@ h3 {
   .desktop-aside {
     border: 1px solid rgb(36 40 52 / 0.07);
     border-radius: 1.75rem;
-    background: rgb(255 255 255 / 0.86);
+    background: rgb(var(--surface-rgb) / 0.86);
     box-shadow: 0 18px 48px rgb(35 38 47 / 0.06);
     backdrop-filter: blur(18px);
   }
@@ -4007,7 +4007,7 @@ h3 {
     display: grid;
     gap: 0.72rem;
     padding-top: 0.55rem;
-    border-top: 1px solid rgb(238 231 220 / 0.72);
+    border-top: 1px solid rgb(var(--border-rgb) / 0.72);
   }
 
   .sidebar-family > p {
@@ -4033,7 +4033,7 @@ h3 {
   .sidebar-family__avatar {
     width: 2.35rem;
     height: 2.35rem;
-    border: 3px solid color-mix(in srgb, currentColor 34%, white);
+    border: 3px solid color-mix(in srgb, currentColor 34%, var(--color-surface));
     box-shadow: 0 8px 18px rgb(28 24 18 / 0.08);
   }
 
@@ -4066,7 +4066,7 @@ h3 {
     height: 0.46rem;
     border-radius: 999px;
     background: currentColor;
-    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, white);
+    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, var(--color-surface));
   }
 
   .family-progress {
@@ -4076,7 +4076,7 @@ h3 {
     border: 1px solid rgb(36 40 52 / 0.07);
     border-radius: 1.3rem;
     background:
-      linear-gradient(140deg, rgb(237 247 232 / 0.72), rgb(255 255 255 / 0.72));
+      linear-gradient(140deg, rgb(237 247 232 / 0.72), rgb(var(--surface-rgb) / 0.72));
     padding: 1rem;
   }
 
@@ -4130,7 +4130,7 @@ h3 {
     display: grid;
     gap: 0.48rem;
     margin-top: auto;
-    border-top: 1px solid rgb(238 231 220 / 0.72);
+    border-top: 1px solid rgb(var(--border-rgb) / 0.72);
     padding-top: 0.7rem;
   }
 
@@ -4180,8 +4180,8 @@ h3 {
 
   .sidebar-account__logout {
     width: 100%;
-    border: 1px solid rgb(238 231 220 / 0.78);
-    background: rgb(255 255 255 / 0.68);
+    border: 1px solid rgb(var(--border-rgb) / 0.78);
+    background: rgb(var(--surface-rgb) / 0.68);
     font: inherit;
     justify-content: flex-start;
   }
@@ -4237,7 +4237,7 @@ h3 {
   .desktop-aside > section {
     border: 1px solid rgb(36 40 52 / 0.07);
     border-radius: 1.45rem;
-    background: rgb(255 255 255 / 0.82);
+    background: rgb(var(--surface-rgb) / 0.82);
     box-shadow: 0 14px 34px rgb(35 38 47 / 0.045);
     padding: 1.15rem;
   }
@@ -4434,7 +4434,7 @@ h3 {
 
   .desktop-aside .today-feed__item {
     grid-template-columns: 2.35rem minmax(0, 1fr) auto;
-    background: color-mix(in srgb, currentColor 7%, white);
+    background: color-mix(in srgb, currentColor 7%, var(--color-surface));
     padding: 0.46rem 0.5rem;
   }
 
@@ -4453,7 +4453,7 @@ h3 {
     grid-template-columns: repeat(7, minmax(0, 1fr));
     min-height: 4.9rem;
     border-bottom: 1px solid var(--color-border);
-    background: rgb(255 255 255 / 0.9);
+    background: rgb(var(--surface-rgb) / 0.9);
   }
 
   .desktop-calendar-day-heading {
@@ -4518,7 +4518,7 @@ h3 {
     gap: 0.2rem;
     margin-bottom: 0.65rem;
     border-radius: var(--radius-md);
-    background: color-mix(in srgb, currentColor 11%, white);
+    background: color-mix(in srgb, currentColor 11%, var(--color-surface));
     color: var(--color-green);
     padding: 0.7rem;
   }

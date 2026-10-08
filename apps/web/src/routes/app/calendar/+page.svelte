@@ -388,7 +388,7 @@
   {/if}
 </MobileShell>
 
-<FloatingCreateButton onclick={() => openComposer('event')} />
+{#if !isFormOpen}<FloatingCreateButton onclick={() => openComposer('event')} />{/if}
 
 <DesktopShell {activeRoute} labelledBy="calendar-title-desktop">
   <div class="desktop-header">

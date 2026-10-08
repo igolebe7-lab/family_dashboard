@@ -19,6 +19,8 @@ describe('Today calendar controls', () => {
     expect(body).toContain('week-calendar--mobile');
     expect(body).toContain('week-calendar__body-scroll');
     expect(body).toContain('--mobile-week-width:');
+    expect(body).toContain('--desktop-week-width:');
+    expect(body).toContain('--desktop-week-columns:');
     expect(body).toContain('Семейный ужин');
     expect(body).toContain('/app/today?date=2024-05-31&amp;view=week');
   });
@@ -29,6 +31,17 @@ describe('Today calendar controls', () => {
     expect(body).not.toContain('calendar-event-card__avatar');
     expect(body).toMatch(new RegExp(`<time[^>]*>${event.start}</time>`));
     expect(body).toContain(`aria-label="${event.title}, ${event.start}, ${event.memberName}"`);
+  });
+  it('reserves readable columns for overlapping events on desktop', () => {
+    const model = createTodayViewModel({ fixture: 'desktop-reference' });
+    const event = model.weekEvents[0];
+    const { body } = render(TodayWeekBoard, { props: {
+      initialView: 'week', selectedDate: new Date(2024, 4, 24), selectedDateKey: '2024-05-24',
+      weekLabel: model.weekLabel, days: model.weekDays,
+      events: [event, { ...event, id: `${event.id}-overlap` }]
+    } });
+    expect(body).toContain('minmax(192px, 1fr)');
+    expect(body).toContain('tabindex="0"');
   });
   it('renders working period links and the selected monthly heading', () => {
     const model = createTodayViewModel(new Date(2026, 5, 10));

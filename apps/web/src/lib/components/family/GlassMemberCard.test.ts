@@ -28,6 +28,13 @@ describe('Family glass specimen', () => {
     expect(body).toContain('https://example.test/invite/code');
     expect(body).toContain('aria-label="Скопировать ссылку"');
   });
+  it('keeps the invite command in the action area, separate from the edit icon', () => {
+    const { body } = render(GlassMemberCard, { props: { member: { ...member, role: 'parent', displayName: 'Взрослый с длинным именем' }, roleLabel: 'Родитель', editable: true, invitable: true, busy: true, ...callbacks } });
+    expect(body).toContain('family-glass-member__actions');
+    expect(body).toContain('Пригласить');
+    expect(body).toContain('disabled');
+    expect(body).toContain('aria-label="Изменить профиль Взрослый с длинным именем"');
+  });
   it('uses a native select and leaves the default switcher unchanged', () => {
     sessionStore.setSession({ token: 'test', user: { id: 'user', email: 'test@example.test', name: 'Parent' } });
     const props = { members: [member, { ...member, id: 'parent', user: 'user', role: 'parent' as const }], activeMember: member, canSwitch: true };

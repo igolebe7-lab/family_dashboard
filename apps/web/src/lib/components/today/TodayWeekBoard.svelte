@@ -47,13 +47,25 @@
   let focusedRange: string | null = null;
 
   $: calendarBodyHeight = getCalendarBodyHeight();
-  $: calendarStyle = `--calendar-start-hour:${CALENDAR_START_HOUR}; --calendar-end-hour:${CALENDAR_END_HOUR}; --hour-height:${HOUR_HEIGHT}px; --mobile-week-columns:52px ${dayLayouts.map(day => `${day.width}px`).join(' ')}; --mobile-week-width:${52 + dayLayouts.reduce((sum, day) => sum + day.width, 0)}px;`;
+  $: calendarStyle = [
+    `--calendar-start-hour:${CALENDAR_START_HOUR}`,
+    `--calendar-end-hour:${CALENDAR_END_HOUR}`,
+    `--hour-height:${HOUR_HEIGHT}px`,
+    `--mobile-week-columns:52px ${dayLayouts.map(day => `${day.width}px`).join(' ')}`,
+    `--mobile-week-width:${52 + dayLayouts.reduce((sum, day) => sum + day.width, 0)}px`,
+    `--desktop-week-columns:52px ${dayLayouts.map(day => `minmax(${day.desktopWidth}px, 1fr)`).join(' ')}`,
+    `--desktop-week-width:${52 + dayLayouts.reduce((sum, day) => sum + day.desktopWidth, 0)}px`
+  ].join('; ');
   $: selectedDay = days.find((day) => day.dateKey === selectedDateKey) ?? days.find((day) => day.isToday);
   $: visibleDays = selectedView === 'day' ? (selectedDay ? [selectedDay] : days.slice(0, 1)) : days;
   $: visibleEvents = filteredEvents.filter((event) => visibleDays.some((day) => day.dateKey === event.day));
   $: dayLayouts = visibleDays.map(day => {
     const entries = layoutCalendarEvents(filteredEvents.filter(event => event.day === day.dateKey && !event.allDay));
-    return { day, entries, width: Math.max(168, ...entries.map(entry => entry.columnCount * 128)) };
+    return {
+      day, entries,
+      width: Math.max(168, ...entries.map(entry => entry.columnCount * 128)),
+      desktopWidth: Math.max(112, ...entries.map(entry => entry.columnCount * 96))
+    };
   });
   $: scrollRangeKey = `${contextKey}:${selectedDateKey}:${selectedView}:${selectedCategories.join(',')}`;
   $: if (calendarScrollElement) void scrollToFirstEvent(visibleEvents, scrollRangeKey);
@@ -74,15 +86,14 @@
     if (rangeKey !== scrollRangeKey || currentEvents !== visibleEvents) return;
     if (!calendarScrollElement?.clientHeight || !currentEvents.length || focusedRange === rangeKey) return;
     calendarScrollElement.scrollTop = getCalendarInitialScrollTop(currentEvents.filter(event => !event.allDay));
-    if (mobile) {
+    if (mobile || calendarScrollElement.scrollWidth > calendarScrollElement.clientWidth) {
       const index = visibleDays.findIndex(day => day.dateKey === selectedDateKey);
-      calendarScrollElement.scrollLeft = dayLayouts.slice(0, Math.max(0, index)).reduce((sum, day) => sum + day.width, 0);
+      calendarScrollElement.scrollLeft = dayLayouts.slice(0, Math.max(0, index)).reduce((sum, day) => sum + (mobile ? day.width : day.desktopWidth), 0);
     }
     focusedRange = rangeKey;
   }
 
-  function observeCalendarSize(element: HTMLDivElement, enabled: boolean) {
-    if (!enabled) return;
+  function observeCalendarSize(element: HTMLDivElement) {
     calendarScrollElement = element;
     let wasVisible = false;
     const observer = new ResizeObserver(() => {
@@ -171,7 +182,7 @@
       </div>
     {/if}
     <!-- svelte-ignore a11y_no_noninteractive_tabindex (The two-axis scroll region must be keyboard focusable.) -->
-    <div use:observeCalendarSize={mobile} class:week-calendar--mobile={mobile} class:week-calendar--day={selectedView === 'day'} class="week-calendar" style={calendarStyle} tabindex={mobile ? 0 : undefined} role="region" aria-label="Расписание недели">
+    <div use:observeCalendarSize class:week-calendar--mobile={mobile} class:week-calendar--day={selectedView === 'day'} class="week-calendar" style={calendarStyle} tabindex="0" role="region" aria-label="Расписание недели">
     <div class="week-calendar__header">
       <div class="week-calendar__corner" aria-hidden="true"></div>
       {#each visibleDays as day (day.id)}
@@ -182,7 +193,7 @@
       {/each}
     </div>
 
-    <div use:observeCalendarSize={!mobile} class="week-calendar__body-scroll" aria-label="Сетка времени недели">
+    <div class="week-calendar__body-scroll" aria-label="Сетка времени недели">
       <div class="week-calendar__body" style={`height:${calendarBodyHeight + 64}px;`}>
         <div class="week-calendar__time-scale">
           {#each times as time (`time-${time}`)}
