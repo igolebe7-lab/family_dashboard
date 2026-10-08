@@ -12,6 +12,12 @@ function props() {
 }
 
 describe('Day preview', () => {
+  it('shows birthday age in hover and touch previews', () => {
+    const input = props();
+    input.day.annotations = [{ id: 'birthday', family: 'family', kind: 'birthday', title: 'День рождения · Ева', birthDate: '2018-09-15',
+      month: 9, day: 15, recurrence: 'yearly', color: 'peach', tone: 'positive', visibility: 'family', source: 'family_member', readonly: true }];
+    for (const touch of [false, true]) expect(render(MonthDayPreview, { props: { ...input, touch } }).body).toContain('Исполняется 8 лет');
+  });
   it('labels all-day events, includes a category icon and preserves the day navigation', () => {
     const { body } = render(MonthDayPreview, { props: props() });
     expect(body).toContain('Весь день');

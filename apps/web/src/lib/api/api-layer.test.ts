@@ -785,6 +785,7 @@ describe('PocketBase API layer', () => {
         items: [
           {
             id: 'birthday_vladimir',
+            birth_date: '1980-03-12 00:00:00.000Z',
             family: 'family_1',
             kind: 'birthday' satisfies DayAnnotationKind,
             title: 'День рождения Владимира',
@@ -845,6 +846,7 @@ describe('PocketBase API layer', () => {
     expect(dayAnnotations.getList.mock.calls[0][2].filter).toContain('year = 2026');
     expect(result.items[0]).toMatchObject({
       id: 'birthday_vladimir',
+      birthDate: '1980-03-12',
       personName: 'Владимир',
       personRelation: 'коллега',
       personContact: '+7 999 000-00-00'
@@ -889,6 +891,7 @@ describe('PocketBase API layer', () => {
       {
         kind: 'birthday',
         title: 'День рождения Владимира',
+        birthDate: '1980-03-12',
         month: 3,
         day: 12,
         recurrence: 'yearly',
@@ -917,6 +920,7 @@ describe('PocketBase API layer', () => {
         created_by: 'member_1',
         source: 'manual',
         person_name: 'Владимир',
+        birth_date: '1980-03-12',
         person_relation: 'коллега',
         person_contact: '+7 999 000-00-00'
       }),

@@ -116,6 +116,23 @@ describe('special date form model', () => {
         kind: 'birthday',
         title: ''
       })
-    ).toEqual(['Добавьте имя именинника']);
+    ).toEqual(['Добавьте имя именинника', 'Укажите дату рождения']);
+  });
+
+  it('uses the actual birth date, not the selected calendar year', () => {
+    const values = { ...createSpecialDateFormValues({ selectedDate: new Date(2026, 9, 8) }),
+      kind: 'birthday' as const, personName: 'Ева', birthDate: '2018-02-28', recurrence: 'one_time' as const };
+    expect(validateSpecialDateForm(values)).toEqual([]);
+    expect(createSpecialDateInput(values)).toMatchObject({ birthDate: '2018-02-28', month: 2, day: 28, recurrence: 'yearly', year: undefined });
+    expect(createSpecialDateFormValues({ annotation: { ...birthday, birthDate: '1985-06-18' } }).birthDate).toBe('1985-06-18');
+  });
+
+  it('rejects nonexistent and future birth dates without guessing a legacy birth year', () => {
+    const values = { ...createSpecialDateFormValues(), kind: 'birthday' as const, personName: 'Ева' };
+    for (const birthDate of ['2018-02-29', '2200-01-01']) {
+      expect(validateSpecialDateForm({ ...values, birthDate })).toContain('Проверьте дату рождения');
+    }
+    expect(validateSpecialDateForm({ ...values, birthDate: '2020-02-29' })).toEqual([]);
+    expect(createSpecialDateFormValues({ annotation: birthday }).birthDate).toBe('');
   });
 });

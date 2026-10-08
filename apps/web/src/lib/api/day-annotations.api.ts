@@ -26,6 +26,7 @@ export type DayAnnotationInput = {
   month: number;
   day: number;
   year?: number;
+  birthDate?: string;
   recurrence: DayAnnotation['recurrence'];
   color: DayAnnotation['color'];
   tone: DayAnnotation['tone'];
@@ -112,15 +113,7 @@ export function buildDayAnnotationsYearFilter(familyId: string, year: number): s
 
   return [
     `family = "${family}"`,
-    [
-      '(',
-      'recurrence = "yearly"',
-      ')',
-      '||',
-      '(',
-      `recurrence = "one_time" && year = ${year}`,
-      ')'
-    ].join(' ')
+    `(recurrence = "yearly" || (recurrence = "one_time" && year = ${year}))`
   ].join(' && ');
 }
 
@@ -136,6 +129,7 @@ export function mapDayAnnotationRecord(value: unknown): DayAnnotation {
     month: asNumber(record.month),
     day: asNumber(record.day),
     year: asOptionalNumber(record.year),
+    birthDate: asString(record.birth_date).slice(0, 10) || undefined,
     recurrence: asString(record.recurrence) as DayAnnotation['recurrence'],
     color: asString(record.color, 'gray') as AccentColor,
     tone: asString(record.tone, 'neutral') as DayAnnotation['tone'],
@@ -165,6 +159,7 @@ function mapDayAnnotationInput(input: DayAnnotationUpdateInput): Record<string, 
     month: input.month,
     day: input.day,
     year: input.year,
+    birth_date: input.birthDate,
     recurrence: input.recurrence,
     color: input.color,
     tone: input.tone,

@@ -1,4 +1,5 @@
 import type { DayAnnotation } from '$lib/types/domain';
+import { formatBirthdayMeta } from '$lib/day-annotations/day-annotations';
 import type { YearCalendarDay } from './year-calendar';
 
 export type DayDetailItem = {
@@ -9,6 +10,7 @@ export type DayDetailItem = {
   kindLabel: string;
   color: DayAnnotation['color'];
   readonly: boolean;
+  source: DayAnnotation['source'];
 };
 
 export type DayDetailViewModel = {
@@ -46,19 +48,20 @@ export function createDayDetailViewModel(day: YearCalendarDay): DayDetailViewMod
     dateKey: day.dateKey,
     title: `${day.day} ${MONTH_LABELS[day.month - 1] ?? ''}`.trim(),
     subtitle: formatSubtitle(day.annotations.length),
-    items: day.annotations.map(mapAnnotation)
+    items: day.annotations.map((annotation) => mapAnnotation(annotation, Number(day.dateKey.slice(0, 4))))
   };
 }
 
-function mapAnnotation(annotation: DayAnnotation): DayDetailItem {
+function mapAnnotation(annotation: DayAnnotation, year: number): DayDetailItem {
   return {
     id: annotation.id,
     title: annotation.title,
-    meta: formatAnnotationMeta(annotation),
+    meta: formatAnnotationMeta(annotation, year),
     kind: annotation.kind,
     kindLabel: KIND_LABELS[annotation.kind],
     color: annotation.color,
-    readonly: annotation.readonly
+    readonly: annotation.readonly,
+    source: annotation.source
   };
 }
 
@@ -69,9 +72,9 @@ function formatSubtitle(count: number): string {
   return `${count} особых дат`;
 }
 
-function formatAnnotationMeta(annotation: DayAnnotation): string {
+function formatAnnotationMeta(annotation: DayAnnotation, year: number): string {
   if (annotation.kind === 'birthday') {
-    return [annotation.personRelation, annotation.personContact].filter(Boolean).join(' · ') || 'День рождения';
+    return formatBirthdayMeta(annotation, year);
   }
 
   return KIND_LABELS[annotation.kind];

@@ -15,6 +15,7 @@
   import { sessionStore, type SessionState } from '$lib/stores/session.store';
   import type { FamilyMember } from '$lib/types/domain';
   import type { MemberRole } from '$lib/constants/roles';
+  import { localToday } from '$lib/calendar/special-date-form';
 
   const activeRoute = '/app/family';
   const roleOptions: Array<{ value: MemberRole; label: string }> = [
@@ -242,7 +243,7 @@
         </select>
       </label>
       <ColorPicker bind:value={colorKey} />
-      <label><span>День рождения</span><input type="date" bind:value={birthday} /></label>
+      <label><span>Дата рождения</span><input type="date" bind:value={birthday} min="1900-01-01" max={localToday()} /></label>
       {#if role === 'child'}
         <label>
           <span>Кто управляет профилем</span>
@@ -309,7 +310,7 @@
         </select>
       </label>
       <ColorPicker bind:value={colorKey} />
-      <label><span>День рождения</span><input type="date" bind:value={birthday} /></label>
+      <label><span>Дата рождения</span><input type="date" bind:value={birthday} min="1900-01-01" max={localToday()} /></label>
       {#if role === 'child'}
         <label>
           <span>Кто управляет профилем</span>

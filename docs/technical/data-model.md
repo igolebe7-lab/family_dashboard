@@ -91,6 +91,16 @@ be stored as local YYYY-MM-DD or UTC instants; there is no exdate editor yet.
 
 Manual birthday annotations can point to `family_members` or store an external person's optional `person_name`, `person_relation` and `person_contact`. Public holidays are read-only annotations synced from a verified provider and cached with source metadata.
 
+Birthdays store the actual optional `birth_date` (calendar date, no timezone shift).
+New manual birthdays require it and always repeat yearly; `year` remains the occurrence
+year for one-time non-birthday dates, never a guessed birth year. Member model hooks
+transactionally maintain one read-only `source=family_member` birthday per linked profile
+with a DOB, syncing name/date/color and removing it on deactivation, DOB removal or deletion.
+The migration backfills existing profiles, reconciles linked birthday duplicates while
+retaining the first record's notes, and leaves unlinked legacy birthdays' age unknown.
+Age is visible-year minus birth-year; dates before birth are omitted. February 29 appears
+only in leap years. No occurrences, completion status or additional polling are added.
+
 ## Assignment invariant
 
 Assignment must have at least one assignee. For a single assignee equal to creator, UI should suggest creating a personal task instead.

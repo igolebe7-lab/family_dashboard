@@ -146,6 +146,7 @@ export type DayAnnotation = {
   month: number;
   day: number;
   year?: number;
+  birthDate?: string;
   recurrence: DayAnnotationRecurrence;
   color: AccentColor;
   tone: DayAnnotationTone;

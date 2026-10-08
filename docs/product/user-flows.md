@@ -120,7 +120,9 @@ adult can edit or delete the annotation later
 
 Manual acceptance:
 
-- External birthday can be created with name and date only.
+- External birthday requires a name and the actual full date of birth, then repeats yearly.
+- Creating/editing an active family member with a date of birth automatically maintains their calendar birthday. Edit that date in Family; no second manual birthday is needed.
+- Hover on desktop or tap on touch shows the age reached in the displayed year, also in Today day information. Legacy external dates without a known year do not show age.
 - Relation/status, contact/phone and note are optional.
 - Yearly special dates are stored once and appear in future years.
 - Special dates do not appear as tasks, assignments or timed events.

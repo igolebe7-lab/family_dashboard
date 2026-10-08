@@ -1,4 +1,4 @@
-import { getAnnotationsForDate } from '$lib/day-annotations/day-annotations';
+import { getAnnotationsForDate, formatBirthdayMeta } from '$lib/day-annotations/day-annotations';
 import type { DayAnnotation } from '$lib/types/domain';
 import { formatDateKey } from './today-view-model';
 
@@ -42,15 +42,15 @@ export function createTodayAllDayInfoViewModel(
     dateKey,
     title: 'Информация о дне',
     subtitle: formatSubtitle(annotations.length),
-    items: annotations.map(mapAnnotation)
+    items: annotations.map((annotation) => mapAnnotation(annotation, input.date.getFullYear()))
   };
 }
 
-function mapAnnotation(annotation: DayAnnotation): TodayAllDayInfoItem {
+function mapAnnotation(annotation: DayAnnotation, year: number): TodayAllDayInfoItem {
   return {
     id: annotation.id,
     title: annotation.title,
-    meta: formatAnnotationMeta(annotation),
+    meta: formatAnnotationMeta(annotation, year),
     kind: annotation.kind,
     kindLabel: KIND_LABELS[annotation.kind],
     color: annotation.color,
@@ -58,9 +58,9 @@ function mapAnnotation(annotation: DayAnnotation): TodayAllDayInfoItem {
   };
 }
 
-function formatAnnotationMeta(annotation: DayAnnotation): string {
+function formatAnnotationMeta(annotation: DayAnnotation, year: number): string {
   if (annotation.kind === 'birthday') {
-    return [annotation.personRelation, annotation.personContact].filter(Boolean).join(' · ') || 'День рождения';
+    return formatBirthdayMeta(annotation, year);
   }
 
   return KIND_LABELS[annotation.kind];

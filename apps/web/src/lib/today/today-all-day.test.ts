@@ -53,6 +53,10 @@ const annotations: DayAnnotation[] = [
 ];
 
 describe('createTodayAllDayInfoViewModel', () => {
+  it('shows birthday age in the selected day year, independent of real time', () => {
+    const model = createTodayAllDayInfoViewModel({ date: new Date(2030, 5, 18), annotations: [{ ...annotations[0], birthDate: '2018-06-18' }] });
+    expect(model.items[0].meta).toBe('Исполняется 12 лет · коллега');
+  });
   it('maps selected day annotations into a calm all-day strip', () => {
     const model = createTodayAllDayInfoViewModel({
       date: new Date(2026, 5, 18),

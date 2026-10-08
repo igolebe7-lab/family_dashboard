@@ -9,6 +9,7 @@
   import { openComposerDialog } from '$lib/composer/modal-focus';
   import { itemDetailsStore } from '$lib/stores/item-details.store';
   import type { TodayMonthDay } from '$lib/today/today-month-calendar';
+  import { formatBirthdayMeta } from '$lib/day-annotations/day-annotations';
   export let day: TodayMonthDay;
   export let anchor: HTMLElement;
   export let touch = false;
@@ -57,13 +58,17 @@
   <div class="day-preview__list">
     {#if loading}<p role="status">Загружаем события…</p>{/if}
     {#if error}<p role="alert">{error}</p><button class="button" on:click={onretry}>Повторить</button>{/if}
+    {#each day.annotations as annotation (annotation.id)}
+      <p class="day-preview__annotation"><strong>{annotation.title}</strong>
+        {#if annotation.kind === 'birthday'}<small>{formatBirthdayMeta(annotation, Number(day.dateKey.slice(0, 4)))}</small>{/if}
+      </p>
+    {/each}
     {#each day.events as event (event.id)}
       {@const Icon = getIcon(event.icon)}
       <button class="day-preview__event" disabled={!event.itemId} on:click={() => openItem(event.itemId)}>
         <time>{event.allDay ? 'Весь день' : event.start}</time><span class="day-preview__event-icon" style={`--event-tone: var(--color-${event.color})`} aria-hidden="true"><Icon size={18} /></span><span><strong>{event.title}</strong><small>{event.memberName}</small></span><ChevronRight size={16} aria-hidden="true" />
       </button>
     {:else}{#if !loading && !error}<p>Нет событий</p>{/if}{/each}
-    {#each day.annotations as annotation (annotation.id)}<p class="day-preview__annotation">{annotation.title}</p>{/each}
   </div>
   {#if onannotations}<button class="button button--ghost" on:click={onannotations}>Особые даты</button>{/if}
   <a class="button button--soft" href={buildTodayCalendarHref({ dateKey: day.dateKey, view: 'day' })} on:click={onclose}>Открыть день<ArrowRight size={18} /></a>
@@ -81,7 +86,7 @@
   .day-preview__event strong { font-size: 14px; overflow-wrap: anywhere; }
   small { display: block; color: var(--color-text-muted); margin-top: 4px; }
   time { font-size: 13px; }
-  .day-preview__annotation { color: var(--color-text-muted); font-size: 13px; }
+  .day-preview__annotation { color: var(--color-text); font-size: 14px; padding: 8px 0 12px; margin: 0; border-bottom: 1px solid var(--color-border); overflow-wrap: anywhere; }
   .day-preview > a { flex-shrink: 0; }
   .day-preview--touch { inset: auto 12px max(12px, env(safe-area-inset-bottom)); width: auto; max-height: 70dvh; }
   .day-preview::backdrop { background: rgb(0 0 0 / 30%); }

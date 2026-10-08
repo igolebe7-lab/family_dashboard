@@ -75,4 +75,11 @@ describe('createDayDetailViewModel', () => {
     expect(model.subtitle).toBe('Нет особых дат');
     expect(model.items).toEqual([]);
   });
+
+  it('shows the age reached in the hovered calendar year', () => {
+    const annotations = [{ ...day.annotations[0], birthDate: '2018-06-18' }];
+    expect(createDayDetailViewModel({ ...day, annotations }).items[0].meta).toBe('Исполняется 8 лет · коллега · +7 999 000-00-00');
+    expect(createDayDetailViewModel({ ...day, dateKey: '2039-06-18', annotations }).items[0].meta).toContain('Исполняется 21 год');
+    expect(createDayDetailViewModel({ ...day, dateKey: '2040-06-18', annotations }).items[0].meta).toContain('Исполняется 22 года');
+  });
 });

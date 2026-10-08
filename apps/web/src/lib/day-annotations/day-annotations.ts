@@ -9,10 +9,20 @@ const KIND_ORDER: Record<DayAnnotationKind, number> = {
 };
 
 export function getAnnotationDateForYear(annotation: DayAnnotation, year: number): string | null {
+  if (annotation.kind === 'birthday' && annotation.birthDate && year < Number(annotation.birthDate.slice(0, 4))) return null;
   if (annotation.recurrence === 'one_time' && annotation.year !== year) return null;
   if (!isValidMonthDay(annotation.month, annotation.day, year)) return null;
 
   return formatDateKey(year, annotation.month, annotation.day);
+}
+
+export function formatBirthdayMeta(annotation: DayAnnotation, year: number): string {
+  const birthYear = Number(annotation.birthDate?.slice(0, 4));
+  const age = year - birthYear;
+  const unit = new Intl.PluralRules('ru').select(age);
+  const ageLabel = birthYear > 0 && Number.isInteger(age) && age >= 0
+    ? `Исполняется ${age} ${unit === 'one' ? 'год' : unit === 'few' ? 'года' : 'лет'}` : '';
+  return [ageLabel, annotation.personRelation, annotation.personContact].filter(Boolean).join(' · ') || 'День рождения';
 }
 
 export function getAnnotationsForYear(
