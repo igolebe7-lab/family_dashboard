@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import type { Item } from '$lib/types/domain';
+  import type { Item, WeekdayTimes } from '$lib/types/domain';
   import type { ActiveFamilyContext } from '$lib/api/pocketbase';
   import { updateEventSeries } from '$lib/api/schedule.api';
   import { createScheduleFormValues, createScheduleInput } from '$lib/composer/schedule-form';
-  import { COMPOSER_WEEKDAYS, createRecurrenceRule, createDateTimeIso, type ComposerRepeat } from '$lib/composer/composer-form';
+  import { COMPOSER_WEEKDAYS, createRecurrenceRule, createDateTimeIso, createWeekdayTimes, type ComposerRepeat } from '$lib/composer/composer-form';
   import RepeatRuleEditor from '../composer/RepeatRuleEditor.svelte';
   export let item: Item;
   export let context: ActiveFamilyContext;
@@ -17,10 +17,14 @@
   let interval = 1;
   let days = [...COMPOSER_WEEKDAYS];
   let until = '';
+  let individualTimes = false;
+  let times: WeekdayTimes = {};
   let disposed = false;
   onDestroy(() => { disposed = true; });
   function edit() {
     values = createScheduleFormValues(item, item.timezone);
+    times = item.recurrenceTimes ?? {};
+    individualTimes = Object.keys(times).length > 0;
     const durationDays = Math.round((Date.parse(values.endDate) - Date.parse(values.startDate)) / 86400000);
     const tomorrow = createScheduleFormValues({ startAt: new Date(Date.now() + 86400000).toISOString(), allDay: false }, item.timezone).startDate;
     if (values.startDate < tomorrow) {
@@ -40,9 +44,14 @@
     if (!scheduled.ok) { error = scheduled.error; return; }
     if (Date.parse(scheduled.input.startAt) <= Date.now()) { error = 'Выберите будущую дату'; return; }
     if (repeat === 'none' || !Number.isInteger(interval) || interval < 1 || interval > 52 || repeat === 'weekly' && !days.length || until && until < values.startDate) { error = 'Проверьте периодичность и окончание повтора'; return; }
+    const recurrenceTimes = individualTimes && !values.allDay ? createWeekdayTimes(repeat, values.startDate, days, times, values.startTime, values.endTime) : undefined;
+    if (recurrenceTimes && (values.startDate !== values.endDate || Object.values(recurrenceTimes).some(time => !/^([01]\d|2[0-3]):[0-5]\d$/.test(time.startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time.endTime) || time.endTime <= time.startTime))) {
+      error = 'Для каждого дня укажите окончание позже начала в пределах одного дня'; return;
+    }
     saving = true; error = '';
     try {
       const updated = await updateEventSeries(context, item, { ...scheduled.input,
+        recurrenceTimes,
         recurrenceRule: createRecurrenceRule({ repeat, repeatInterval: interval, repeatDays: days, date: values.startDate })!,
         recurrenceUntil: until ? new Date(Date.parse(createDateTimeIso(until, '23:59', item.timezone)) + 59999).toISOString() : undefined
       });
@@ -61,7 +70,8 @@
       {#if !values.allDay}<label>Время начала<input type="time" required bind:value={values.startTime} /></label>{/if}
       <label>Окончание первого занятия<input type="date" required min={values.startDate} bind:value={values.endDate} /></label>
       {#if !values.allDay}<label>Время окончания<input type="time" required bind:value={values.endTime} /></label>{/if}
-      <RepeatRuleEditor bind:value={repeat} bind:interval bind:days bind:until date={values.startDate} />
+      <RepeatRuleEditor bind:value={repeat} bind:interval bind:days bind:until date={values.startDate}
+        enableDayTimes={!values.allDay} bind:individualTimes bind:times startTime={values.startTime} endTime={values.endTime} />
       {#if error}<p role="alert">{error}</p>{/if}
       <div class="series-actions"><button class="button button--primary" type="submit">{saving ? 'Сохраняем…' : 'Сохранить расписание'}</button><button type="button" class="button button--ghost" on:click={() => open = false}>Отмена</button></div>
     </fieldset>

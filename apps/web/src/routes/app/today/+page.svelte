@@ -255,7 +255,7 @@
         contextKey={`${currentFamilyState.activeFamily?.id ?? ''}:${currentFamilyState.activeMember?.id ?? ''}`}
         onnavigate={navigateCalendar} labelledBy="today-board-title-mobile"
         initialView={mobileCalendarView} selectedDate={selectedTodayDate} selectedDateKey={selectedTodayDateKey}
-        days={today.weekDays} times={today.weekTimes} weekLabel={today.weekLabel} events={today.weekEvents} annotations={todayAnnotations}>
+        days={today.weekDays} weekLabel={today.weekLabel} events={today.weekEvents} annotations={todayAnnotations}>
     {#key generation}
     <TodayTimeline
       loading={!fixtureMode && $todayState.status === 'loading'}
@@ -312,7 +312,6 @@
     selectedDateKey={selectedTodayDateKey}
     weekLabel={today.weekLabel}
     days={today.weekDays}
-    times={today.weekTimes}
     events={today.weekEvents}
     annotations={todayAnnotations}
   />

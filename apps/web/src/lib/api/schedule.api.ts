@@ -2,16 +2,16 @@ import { ensureOccurrenceRange } from './recurrence.api';
 import { mapItemRecord } from './items.api';
 import { mapOccurrenceRecord } from './occurrences.api';
 import { asRecord, escapeFilterValue, getPocketBaseClient, memberRequestOptions, pocketBaseFilterDate, requireActiveContext, requireCollectionMethod, type ActiveFamilyContext } from './pocketbase';
-import type { Item, ItemOccurrence } from '$lib/types/domain';
+import type { Item, ItemOccurrence, WeekdayTimes } from '$lib/types/domain';
 
-export type SeriesInput = { startAt: string; endAt: string; recurrenceRule: string; recurrenceUntil?: string };
+export type SeriesInput = { startAt: string; endAt: string; recurrenceRule: string; recurrenceUntil?: string; recurrenceTimes?: WeekdayTimes };
 export async function updateEventSeries(context: ActiveFamilyContext, item: Item, input: SeriesInput): Promise<Item> {
   const active = requireActiveContext(context);
   const client = getPocketBaseClient();
   if (!client.send) throw new Error('Сервис расписания недоступен');
   return mapItemRecord(await client.send(`/api/familytime/items/${encodeURIComponent(item.id)}/series`, {
     method: 'PATCH', requestKey: null, ...memberRequestOptions(active), body: { ...input, expected: {
-      startAt: item.startAt, endAt: item.endAt, recurrenceRule: item.recurrenceRule, recurrenceUntil: item.recurrenceUntil
+      startAt: item.startAt, endAt: item.endAt, recurrenceRule: item.recurrenceRule, recurrenceUntil: item.recurrenceUntil, recurrenceTimes: item.recurrenceTimes
     } }
   }));
 }

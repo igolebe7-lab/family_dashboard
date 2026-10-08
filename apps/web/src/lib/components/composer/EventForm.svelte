@@ -70,7 +70,8 @@
 
   <ReminderPicker bind:value={values.reminder} />
   <PriorityPicker bind:value={values.priority} />
-  <RepeatRuleEditor bind:value={values.repeat} bind:interval={values.repeatInterval} bind:days={values.repeatDays} bind:until={values.repeatUntil} date={values.date} />
+  <RepeatRuleEditor bind:value={values.repeat} bind:interval={values.repeatInterval} bind:days={values.repeatDays} bind:until={values.repeatUntil} date={values.date}
+    enableDayTimes={!values.allDay} bind:individualTimes={values.repeatIndividualTimes} bind:times={values.repeatTimes} startTime={values.startTime} endTime={values.endTime} />
 
   <fieldset class="composer-fieldset composer-field--wide">
     <legend>Участники</legend>

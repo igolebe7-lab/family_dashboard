@@ -12,6 +12,7 @@
   import { CATEGORY_META } from '$lib/constants/categories';
   import type { Item } from '$lib/types/domain';
   import { describeRecurrence } from '$lib/composer/recurrence-summary';
+  import { COMPOSER_WEEKDAYS } from '$lib/composer/composer-form';
   import EventSchedule from './EventSchedule.svelte';
   import Archive from '@lucide/svelte/icons/archive';
   import ArchiveRestore from '@lucide/svelte/icons/archive-restore';
@@ -40,6 +41,8 @@
   const kinds = { event: 'Событие', task: 'Дело', assignment: 'Поручение', routine: 'Рутина' };
   $: participantIds = item ? [...new Set([item.owner, ...item.assignees, ...item.participants].filter(Boolean))] : [];
   $: people = $familyStore.members.filter((member) => participantIds.includes(member.id));
+  const weekdayLabels = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+  $: weekdayTimes = COMPOSER_WEEKDAYS.filter(day => item?.recurrenceTimes?.[day]).map(day => ({ day, ...item!.recurrenceTimes![day]! }));
 
   async function loadItem(id?: string, _family?: string, _member?: string) {
     const request = ++version;
@@ -123,7 +126,7 @@
     {:else}
       <dl class="item-details">
         <div><dt>Приоритет</dt><dd>{{ low: 'Низкий', normal: 'Обычный', high: 'Высокий', urgent: 'Срочно' }[item.priority]}</dd></div>
-        <div><dt><CalendarDays size={19} aria-hidden="true" />{item.kind === 'event' ? 'Когда' : 'Срок'}</dt><dd>{formatDate(item.startAt || item.dueAt)}{#if item.endAt}<br />до {formatDate(item.endAt)}{/if}</dd></div>
+        <div><dt><CalendarDays size={19} aria-hidden="true" />{item.kind === 'event' ? 'Когда' : 'Срок'}</dt><dd>{#if weekdayTimes.length}{#each weekdayTimes as time}<p class="item-weekday-time"><span>{weekdayLabels[COMPOSER_WEEKDAYS.indexOf(time.day)]}</span><span>{time.startTime} – {time.endTime}</span></p>{/each}{:else}{formatDate(item.startAt || item.dueAt)}{#if item.endAt}<br />до {formatDate(item.endAt)}{/if}{/if}</dd></div>
         <div><dt><Users size={19} aria-hidden="true" />Участники</dt><dd>{people.map((member) => member.displayName).join(', ') || 'Не указаны'}</dd></div>
         <div><dt><ShieldCheck size={19} aria-hidden="true" />Видимость</dt><dd>{visibility[item.visibility]}</dd></div>
         {#if item.locationText}<div><dt><MapPin size={19} aria-hidden="true" />Место</dt><dd>{item.locationText}</dd></div>{/if}
@@ -143,4 +146,5 @@
 <style>
   .item-schedule-details { margin-top: 20px; border-top: 1px solid var(--color-border); padding-top: 12px; }
   summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-weight: 600; }
+  .item-weekday-time { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin: 0 0 8px; line-height: 1.5; }
 </style>

@@ -39,6 +39,17 @@ describe('composer form', () => {
       .toMatchObject({ ok: true, input: { recurrenceRule: undefined, recurrenceUntil: undefined } });
   });
 
+  it('defaults weekday times to the common time and sends only selected overrides', () => {
+    const values = { ...scheduled(), repeat: 'weekly' as const, repeatDays: ['MO', 'WE'] as const,
+      repeatIndividualTimes: true, repeatTimes: { WE: { startTime: '17:00', endTime: '18:30' }, FR: { startTime: '12:00', endTime: '13:00' } } };
+    expect(createComposerItemInput({ ...values, repeatDays: [...values.repeatDays] }, 'UTC')).toMatchObject({ ok: true, input: {
+      recurrenceTimes: { MO: { startTime: '09:00', endTime: '10:00' }, WE: { startTime: '17:00', endTime: '18:30' } }
+    } });
+    const result = createComposerItemInput({ ...values, repeatDays: [...values.repeatDays], repeatIndividualTimes: false }, 'UTC');
+    expect(result.ok && result.input.recurrenceTimes).toBeUndefined();
+    expect(createComposerItemInput({ ...values, repeatDays: [...values.repeatDays], repeatTimes: { WE: { startTime: '17:00', endTime: '16:00' } } }, 'UTC').ok).toBe(false);
+  });
+
   it('converts event and task wall-clock times in the passed family timezone', () => {
     expect(createComposerItemInput(scheduled(), 'Europe/Amsterdam'))
       .toMatchObject({ ok: true, input: { startAt: '2026-06-11T07:00:00.000Z', endAt: '2026-06-11T08:00:00.000Z' } });

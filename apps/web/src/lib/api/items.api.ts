@@ -4,7 +4,8 @@ import type {
   Item,
   ItemKind,
   ItemPriority,
-  ItemVisibility
+  ItemVisibility,
+  WeekdayTimes
 } from '$lib/types/domain';
 
 import {
@@ -36,6 +37,7 @@ export type CreateItemInput = {
   timezone: string;
   recurrenceRule?: string;
   recurrenceUntil?: string;
+  recurrenceTimes?: WeekdayTimes;
   reminderOffsetMinutes?: number;
   approvalRequired?: boolean;
   checklist?: unknown;
@@ -71,6 +73,7 @@ export async function createItem(
       timezone: input.timezone,
       recurrence_rule: input.recurrenceRule,
       recurrence_until: input.recurrenceUntil,
+      recurrence_times_json: input.recurrenceTimes,
       reminder_offset_minutes: input.reminderOffsetMinutes,
       reminder_enabled: input.reminderOffsetMinutes !== undefined,
       approval_required: input.approvalRequired || false,
@@ -122,6 +125,8 @@ export function mapItemRecord(value: unknown): Item {
     timezone: asString(record.timezone),
     recurrenceRule: asString(record.recurrence_rule) || undefined,
     recurrenceUntil: asString(record.recurrence_until) || undefined,
+    recurrenceTimes: record.recurrence_times_json && typeof record.recurrence_times_json === 'object'
+      ? record.recurrence_times_json as WeekdayTimes : undefined,
     reminderOffsetMinutes:
       asBoolean(record.reminder_enabled) && typeof record.reminder_offset_minutes === 'number' ? record.reminder_offset_minutes : undefined,
     reminderEnabled: asBoolean(record.reminder_enabled),

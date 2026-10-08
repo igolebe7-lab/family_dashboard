@@ -1,6 +1,6 @@
 <script lang="ts">
   import CalendarDays from '@lucide/svelte/icons/calendar-days';
-  import ChevronRight from '@lucide/svelte/icons/chevron-right';
+  import AgendaRow from './AgendaRow.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import { getIcon } from '$lib/design/icon-registry';
   import type { TodayAllDayItem, TodayTimelineItem } from '$lib/today/today-view-model';
@@ -85,28 +85,7 @@
   {:else}
     <div class="today-timeline-list">
       {#each items as item (item.id)}
-        {@const Icon = getIcon(item.icon)}
-        <article class={`today-timeline-item today-timeline-item--${item.color}`}>
-          <div class="today-timeline-item__time">
-            <span class="today-timeline-item__dot" aria-hidden="true"></span>
-            <time>{item.time}</time>
-          </div>
-          <button class="today-timeline-item__card" type="button" on:click={() => openItem(item)}>
-            <div class="today-timeline-item__icon" aria-hidden="true">
-              <svelte:component this={Icon} size={24} strokeWidth={2.25} />
-            </div>
-            <div class="today-timeline-item__body">
-              <h3>{item.title}</h3>
-              <p>{item.subtitle}</p>
-            </div>
-            <span
-              class={`today-timeline-item__member portrait portrait--${item.memberPortrait}`}
-              aria-label={item.memberName}
-            >
-              <span class="portrait__face">{item.memberInitial}</span>
-            </span>
-            <ChevronRight class="today-timeline-item__chevron" size={22} strokeWidth={2.1} aria-hidden="true" />
-          </button>
+        <AgendaRow {item} onopen={() => openItem(item)}>
           {#if item.actionKind === 'mark_assignment_done'}
             <button
               class="today-timeline-item__action"
@@ -117,7 +96,7 @@
               {busyOccurrenceId === item.id ? 'Отмечаем...' : item.actionLabel}
             </button>
           {/if}
-        </article>
+        </AgendaRow>
       {/each}
     </div>
   {/if}
