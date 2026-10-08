@@ -30,6 +30,8 @@ try {
   await cp(resolve(root, 'pocketbase/pb_migrations'), migrations, {
     recursive: true, filter: (source) => !upgrade || !source.endsWith(`/${repair}`)
   });
+  await copyFile(resolve(root, 'scripts/fixtures/20261009085900_birthdays_fixture.js'),
+    resolve(migrations, '20261009085900_birthdays_fixture.js'));
   if (upgrade) {
     // Reproduce an already-applied 091000 migration that skipped wrapped Go string rules.
     // This fixture exists only under the runner-owned temporary directory.
@@ -73,7 +75,7 @@ migrate((app) => {
   }
   if (!ready) throw new Error(`PocketBase did not start: ${output}`);
   console.log(`Isolated backend smoke: ${upgrade ? 'legacy repair' : 'fresh migrations'}, port ${port}, automigrate=false`);
-  for (const script of process.argv.slice(2).length ? process.argv.slice(2) : ['smoke-backend-security.mjs', 'smoke-pocketbase-stage4.mjs', 'smoke-series.mjs']) {
+  for (const script of process.argv.slice(2).length ? process.argv.slice(2) : ['smoke-backend-security.mjs', 'smoke-pocketbase-stage4.mjs', 'smoke-series.mjs', 'smoke-birthdays.mjs']) {
     const child = spawn(process.execPath, [resolve(root, 'scripts', script)], {
       cwd: root, stdio: 'inherit', env: { ...process.env, PB_URL: url,
         PB_SUPERUSER_EMAIL: email, PB_SUPERUSER_PASSWORD: password,

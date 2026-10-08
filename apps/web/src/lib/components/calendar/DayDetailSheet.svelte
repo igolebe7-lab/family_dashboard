@@ -38,7 +38,11 @@
               <p>{item.meta}</p>
             </div>
             {#if item.readonly}
-              <span class="day-detail-item__badge">системное</span>
+              {#if item.source === 'family_member'}
+                <a class="day-detail-item__badge" href="/app/family">Из профиля</a>
+              {:else}
+                <span class="day-detail-item__badge">системное</span>
+              {/if}
             {:else if onedit}
               <button type="button" aria-label={`Изменить ${item.title}`} on:click={() => onedit?.(item.id)}>
                 <Pencil size={15} strokeWidth={2.2} aria-hidden="true" />

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { DayAnnotation } from '$lib/types/domain';
 import {
   getAnnotationDateForYear,
+  formatBirthdayMeta,
   getAnnotationsForDate,
   getAnnotationsForYear,
   sortDayAnnotations
@@ -64,6 +65,17 @@ const publicHoliday: DayAnnotation = {
 };
 
 describe('day annotations', () => {
+  it('keeps legacy age unknown, never projects before birth and preserves February 29', () => {
+    expect(formatBirthdayMeta(birthday, 2026)).not.toContain('Исполняется');
+    const leapBirthday = { ...birthday, birthDate: '2020-02-29', month: 2, day: 29 };
+    expect(getAnnotationDateForYear(leapBirthday, 2016)).toBeNull();
+    expect(getAnnotationDateForYear(leapBirthday, 2027)).toBeNull();
+    expect(getAnnotationDateForYear(leapBirthday, 2028)).toBe('2028-02-29');
+    expect(formatBirthdayMeta(leapBirthday, 2028)).toContain('Исполняется 8 лет');
+    for (const [year, label] of [[2021, '1 год'], [2022, '2 года'], [2031, '11 лет'], [2034, '14 лет'], [2041, '21 год']] as const) {
+      expect(formatBirthdayMeta(leapBirthday, year)).toContain(label);
+    }
+  });
   it('projects yearly annotations into any selected year', () => {
     expect(getAnnotationDateForYear(birthday, 2026)).toBe('2026-03-12');
     expect(getAnnotationDateForYear(birthday, 2027)).toBe('2027-03-12');

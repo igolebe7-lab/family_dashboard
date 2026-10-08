@@ -5,6 +5,7 @@
   import {
     createSpecialDateFormValues,
     createSpecialDateInput,
+    localToday,
     validateSpecialDateForm
   } from '$lib/calendar/special-date-form';
   import type { DayAnnotation } from '$lib/types/domain';
@@ -105,6 +106,12 @@
     </label>
   {/if}
 
+  {#if isBirthday}
+    <label>
+      <span>Дата рождения</span>
+      <input type="date" bind:value={values.birthDate} min="1900-01-01" max={localToday()} required />
+    </label>
+  {:else}
   <div class="special-date-form__date-grid">
     <label>
       <span>День</span>
@@ -127,6 +134,7 @@
       <option value="one_time">Только один раз</option>
     </select>
   </label>
+  {/if}
 
   <div class="special-date-form__date-grid">
     <label>
