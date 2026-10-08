@@ -73,7 +73,7 @@ migrate((app) => {
   }
   if (!ready) throw new Error(`PocketBase did not start: ${output}`);
   console.log(`Isolated backend smoke: ${upgrade ? 'legacy repair' : 'fresh migrations'}, port ${port}, automigrate=false`);
-  for (const script of process.argv.slice(2).length ? process.argv.slice(2) : ['smoke-backend-security.mjs', 'smoke-pocketbase-stage4.mjs']) {
+  for (const script of process.argv.slice(2).length ? process.argv.slice(2) : ['smoke-backend-security.mjs', 'smoke-pocketbase-stage4.mjs', 'smoke-series.mjs']) {
     const child = spawn(process.execPath, [resolve(root, 'scripts', script)], {
       cwd: root, stdio: 'inherit', env: { ...process.env, PB_URL: url,
         PB_SUPERUSER_EMAIL: email, PB_SUPERUSER_PASSWORD: password,

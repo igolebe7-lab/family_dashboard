@@ -15,12 +15,10 @@ describe('Today calendar controls', () => {
     expect(body).toMatch(/aria-pressed="true"[^>]*>Неделя/);
     expect(body).toContain('>День</button>');
     expect(body).toContain('>Месяц</button>');
-    expect(body.match(/class="week-calendar__day-column[" ]/g)).toHaveLength(7);
-    expect(body).toContain('week-calendar--mobile');
-    expect(body).toContain('week-calendar__body-scroll');
-    expect(body).toContain('--mobile-week-width:');
-    expect(body).toContain('--desktop-week-width:');
-    expect(body).toContain('--desktop-week-columns:');
+    expect(body.match(/class="week-agenda__day[" ]/g)).toHaveLength(7);
+    expect(body).toContain('week-agenda');
+    expect(body).toContain('today-timeline-item__card');
+    expect(body).not.toContain('week-calendar__events-layer');
     expect(body).toContain('Семейный ужин');
     expect(body).toContain('/app/today?date=2024-05-31&amp;view=week');
   });
@@ -32,7 +30,7 @@ describe('Today calendar controls', () => {
     expect(body).toMatch(new RegExp(`<time[^>]*>${event.start}</time>`));
     expect(body).toContain(`aria-label="${event.title}, ${event.start}, ${event.memberName}"`);
   });
-  it('reserves readable columns for overlapping events on desktop', () => {
+  it('stacks overlapping events as readable agenda rows on desktop', () => {
     const model = createTodayViewModel({ fixture: 'desktop-reference' });
     const event = model.weekEvents[0];
     const { body } = render(TodayWeekBoard, { props: {
@@ -40,8 +38,21 @@ describe('Today calendar controls', () => {
       weekLabel: model.weekLabel, days: model.weekDays,
       events: [event, { ...event, id: `${event.id}-overlap` }]
     } });
-    expect(body).toContain('minmax(192px, 1fr)');
+    expect(body.match(/class="today-timeline-item__card"/g)).toHaveLength(2);
+    expect(body).not.toContain('position:absolute');
     expect(body).toContain('tabindex="0"');
+  });
+  it('uses the same agenda rows for the desktop day, sorted by time', () => {
+    const model = createTodayViewModel({ fixture: 'desktop-reference' });
+    const event = model.weekEvents[0];
+    const { body } = render(TodayWeekBoard, { props: {
+      initialView: 'day', selectedDate: new Date(event.day + 'T12:00:00'), selectedDateKey: event.day,
+      weekLabel: model.weekLabel, days: model.weekDays,
+      events: [{ ...event, id: 'later', start: '18:30', title: 'Позднее' }, { ...event, id: 'early', start: '08:00', title: 'Раньше' }]
+    } });
+    expect(body.match(/class="today-timeline-item__card"/g)).toHaveLength(2);
+    expect(body.indexOf('Раньше')).toBeLessThan(body.indexOf('Позднее'));
+    expect(body).not.toContain('calendar-event-card');
   });
   it('renders working period links and the selected monthly heading', () => {
     const model = createTodayViewModel(new Date(2026, 5, 10));

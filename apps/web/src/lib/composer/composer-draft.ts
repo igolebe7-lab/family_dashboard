@@ -21,6 +21,8 @@ const draftSchema = z.object({
     repeatInterval: z.number().default(1),
     repeatDays: z.array(z.enum(COMPOSER_WEEKDAYS)).optional(),
     repeatUntil: z.string().default(''),
+    repeatIndividualTimes: z.boolean().default(false),
+    repeatTimes: z.partialRecord(z.enum(COMPOSER_WEEKDAYS), z.object({ startTime: z.string(), endTime: z.string() })).default({}),
     approvalRequired: z.boolean(), points: z.string()
   })
 });

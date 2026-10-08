@@ -75,6 +75,14 @@ from being regenerated at its original date. Independent statuses belong to each
 
 RRULE uses vendored RRule 2.8.1 with DAILY/WEEKLY/MONTHLY, INTERVAL, BYDAY and
 optional COUNT. Composer supports an inclusive last date via `recurrence_until`.
+Timed weekly events optionally store `recurrence_times_json`, a weekday map such
+as `{"MO":{"startTime":"09:00","endTime":"10:00"}}`. All BYDAY weekdays must
+be present; extra weekdays, invalid times, non-events, all-day and non-weekly
+rules are rejected. Each end must be later than its start on the same day.
+Absent/empty maps preserve the existing common-time behavior. RRule generates
+calendar dates and the server applies each weekday's wall-clock time before
+range filtering and materialization. Series optimistic locking includes this map;
+different planned durations are not mistaken for individual overrides.
 Go timezone conversion preserves local wall-clock time across DST. Dates absent
 from a month and nonexistent spring-forward local times are skipped. Exdates can
 be stored as local YYYY-MM-DD or UTC instants; there is no exdate editor yet.

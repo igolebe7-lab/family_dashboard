@@ -74,6 +74,8 @@ export type FamilyMember = {
   active: boolean;
 };
 
+export type WeekdayTimes = Partial<Record<'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU', { startTime: string; endTime: string }>>;
+
 export type Item = {
   id: string;
   family: string;
@@ -95,6 +97,7 @@ export type Item = {
   timezone: string;
   recurrenceRule?: string;
   recurrenceUntil?: string;
+  recurrenceTimes?: WeekdayTimes;
   reminderOffsetMinutes?: number;
   reminderEnabled?: boolean;
   approvalRequired: boolean;

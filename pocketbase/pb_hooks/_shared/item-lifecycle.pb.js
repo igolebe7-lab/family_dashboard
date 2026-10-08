@@ -6,7 +6,7 @@ function validateBeforeSave(app, item, auth, isSuperuser) {
         throw newApiError(400, 'Нельзя менять принадлежность или автора записи', { field });
       }
     }
-    for (const field of ['start_at', 'end_at', 'due_at', 'timezone', 'recurrence_rule', 'recurrence_until', 'recurrence_exdates_json']) {
+    for (const field of ['start_at', 'end_at', 'due_at', 'timezone', 'recurrence_rule', 'recurrence_until', 'recurrence_exdates_json', 'recurrence_times_json']) {
       if (JSON.stringify(item.get(field)) !== JSON.stringify(original.get(field))) {
         throw newApiError(400, 'Измените отдельную дату расписания или создайте новую серию', { field });
       }
@@ -37,7 +37,12 @@ function afterCreate(app, item) {
   }
   if (item.getString('recurrence_rule')) {
     const recurrence = require(`${__hooks}/_shared/recurrence.pb.js`);
-    const anchor = new Date(item.getString('start_at') || item.getString('due_at'));
+    let anchor = new Date(item.getString('start_at') || item.getString('due_at'));
+    if (Object.keys(recurrence.weekdayTimes(item)).length) {
+      const wall = recurrence.toWall(anchor, item.getString('timezone') || 'UTC');
+      wall.setUTCHours(0, 0, 0, 0);
+      anchor = recurrence.fromWall(wall, item.getString('timezone') || 'UTC');
+    }
     const from = new Date(Math.max(anchor.getTime(), Date.now() - 86400000));
     recurrence.materializeItem(app, item, from,
       new Date(from.getTime() + recurrence.DEFAULT_MATERIALIZATION_DAYS * 86400000));

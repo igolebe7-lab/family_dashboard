@@ -247,7 +247,7 @@
 
 <style>
   dialog.composer-sheet { margin: 0; top: auto; color: var(--color-text); }
-  .composer-sheet__content { display: contents; }
+  .composer-sheet__content { display: block; flex: 1 1 auto; min-height: 0; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: none; touch-action: pan-y; padding: 4px; }
   dialog.composer-sheet:not([open]) { display: none; }
   dialog.composer-sheet::backdrop { background: rgb(var(--color-shadow) / 0.18); backdrop-filter: blur(8px); }
   .composer-kind-controls, .composer-fields { border: 0; padding: 0; margin: 0; min-width: 0; }

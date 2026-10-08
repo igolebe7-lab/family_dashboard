@@ -1,6 +1,6 @@
 import type { CreateItemInput } from '$lib/api/items.api';
 import type { ItemCategory } from '$lib/constants/categories';
-import type { ItemKind, ItemPriority, ItemVisibility } from '$lib/types/domain';
+import type { ItemKind, ItemPriority, ItemVisibility, WeekdayTimes } from '$lib/types/domain';
 
 export type ComposerKind = Extract<ItemKind, 'event' | 'task'>;
 export type ComposerReminder = 'none' | 'at_time' | 'before_15' | 'before_60' | 'before_day';
@@ -34,6 +34,8 @@ export type ComposerFormValues = {
   // Undefined follows the selected date; an empty array is an invalid explicit selection.
   repeatDays: ComposerWeekday[] | undefined;
   repeatUntil: string;
+  repeatIndividualTimes: boolean;
+  repeatTimes: WeekdayTimes;
   approvalRequired: boolean;
   points: string;
 };
@@ -73,6 +75,8 @@ export function createComposerFormValues(input: {
     repeatInterval: 1,
     repeatDays: undefined,
     repeatUntil: '',
+    repeatIndividualTimes: false,
+    repeatTimes: {},
     approvalRequired: false,
     points: ''
   };
@@ -111,6 +115,8 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
     timezone,
     recurrenceRule: createRecurrenceRule(values),
     recurrenceUntil,
+    recurrenceTimes: values.kind === 'event' && !values.allDay && values.repeatIndividualTimes
+      ? createWeekdayTimes(values.repeat, values.date, values.repeatDays, values.repeatTimes, values.startTime, values.endTime) : undefined,
     reminderOffsetMinutes: createReminderOffsetMinutes(values.reminder)
   } satisfies Partial<CreateItemInput>;
 
@@ -190,6 +196,12 @@ export function validateComposerForm(values: ComposerFormValues): string[] {
   }
 
   if (values.kind === 'event') {
+    if (!values.allDay && values.repeatIndividualTimes) {
+      const times = createWeekdayTimes(values.repeat, values.date, values.repeatDays, values.repeatTimes, values.startTime, values.endTime);
+      if (times && Object.values(times).some(time => !isValidTimeInput(time.startTime) || !isValidTimeInput(time.endTime) || time.endTime <= time.startTime)) {
+        errors.push('Для каждого дня окончание должно быть позже начала');
+      }
+    }
     if (!values.allDay && !isValidTimeInput(values.startTime)) errors.push('Проверьте время начала');
     if (!values.allDay && !isValidTimeInput(values.endTime)) errors.push('Проверьте время окончания');
     if (getEventParticipants(values, getFamilyMemberIds(values)).length === 0) errors.push('Выберите участников события');
@@ -293,6 +305,12 @@ export function createRecurrenceRule(values: Pick<ComposerFormValues, 'repeat' |
   if (values.repeat === 'weekdays') return `${rule};BYDAY=MO,TU,WE,TH,FR`;
   if (values.repeat === 'weekly') return `${rule};BYDAY=${getComposerRepeatDays(values.date, values.repeatDays).join(',')}`;
   return rule;
+}
+
+export function createWeekdayTimes(repeat: ComposerRepeat, date: string, days: ComposerWeekday[] | undefined, times: WeekdayTimes, startTime: string, endTime: string): WeekdayTimes | undefined {
+  if (repeat !== 'weekly' && repeat !== 'weekdays') return undefined;
+  const selected = repeat === 'weekdays' ? COMPOSER_WEEKDAYS.slice(0, 5) : getComposerRepeatDays(date, days);
+  return Object.fromEntries(selected.map(day => [day, times[day] ?? { startTime, endTime }]));
 }
 
 function createReminderOffsetMinutes(reminder: ComposerReminder): number | undefined {

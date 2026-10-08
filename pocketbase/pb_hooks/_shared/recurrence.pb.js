@@ -1,5 +1,36 @@
 const DAY = 86400000;
 const DEFAULT_MATERIALIZATION_DAYS = 60;
+const WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
+function weekdayTimes(item) {
+  const times = JSON.parse(item.getString('recurrence_times_json') || 'null');
+  if (times === null) return {};
+  if (typeof times !== 'object' || Array.isArray(times)) throw newApiError(400, 'Проверьте время по дням недели', {});
+  const keys = Object.keys(times);
+  if (!keys.length) return {};
+  const rule = item.getString('recurrence_rule');
+  const byday = /(?:^|;)BYDAY=([^;]+)/.exec(rule)?.[1].split(',') || [];
+  if (item.getString('kind') !== 'event' || item.get('all_day') || !/^(RRULE:)?FREQ=WEEKLY(?:;|$)/.test(rule) || !byday.length ||
+    keys.length !== new Set(byday).size || keys.some(key => !byday.includes(key))) throw newApiError(400, 'Разное время доступно для выбранных дней недельного события', {});
+  for (const key of keys) {
+    const value = times[key];
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(field => !['startTime', 'endTime'].includes(field)) ||
+      typeof value.startTime !== 'string' || typeof value.endTime !== 'string' ||
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(value.startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value.endTime) || value.endTime <= value.startTime) {
+      throw newApiError(400, 'Для каждого дня окончание должно быть позже начала', {});
+    }
+  }
+  return times;
+}
+
+function minutes(time) { const parts = time.split(':').map(Number); return parts[0] * 60 + parts[1]; }
+
+function durationAt(item, wall) {
+  const times = weekdayTimes(item)[WEEKDAYS[wall.getUTCDay()]];
+  if (times) return (minutes(times.endTime) - minutes(times.startTime)) * 60000;
+  const end = item.getString('end_at');
+  return end ? toWall(new Date(end), item.getString('timezone') || 'UTC') - toWall(new Date(item.getString('start_at')), item.getString('timezone') || 'UTC') : 0;
+}
 
 function shouldMaterializeSingleOccurrence(record) {
   return !record.getString('recurrence_rule') &&
@@ -22,6 +53,7 @@ function toWall(date, zone) {
 }
 
 function parseRule(item) {
+  const times = weekdayTimes(item);
   const text = item.getString('recurrence_rule').replace(/^RRULE:/, '');
   if (!text) return null;
   if (text.length > 240 || !/^FREQ=(DAILY|WEEKLY|MONTHLY)(;(INTERVAL=\d{1,2}|BYDAY=(MO|TU|WE|TH|FR|SA|SU)(,(MO|TU|WE|TH|FR|SA|SU))*|COUNT=\d{1,4}))*$/.test(text)) {
@@ -39,10 +71,13 @@ function parseRule(item) {
   if (!anchor || !Number.isFinite(new Date(anchor).getTime())) throw newApiError(400, 'Для повтора нужна дата', {});
   const zone = item.getString('timezone') || 'UTC';
   options.dtstart = toWall(new Date(anchor), zone);
+  // Custom times apply to calendar dates, not the common time used as the series anchor.
+  if (Object.keys(times).length) options.dtstart.setUTCHours(0, 0, 0, 0);
   const until = item.getString('recurrence_until');
   if (until) {
     if (new Date(until) < new Date(anchor)) throw newApiError(400, 'Окончание повтора раньше начала', {});
     options.until = toWall(new Date(until), zone);
+    if (Object.keys(times).length) options.until.setUTCHours(23, 59, 59, 999);
   }
   return new RRule(options, true);
 }
@@ -55,16 +90,21 @@ function datesInRange(item, from, to) {
   const baseWall = toWall(anchor, zone);
   const end = item.getString('end_at');
   const duration = end ? toWall(new Date(end), zone) - baseWall : 0;
+  const times = weekdayTimes(item);
+  const custom = Object.keys(times).length > 0;
   const exceptions = JSON.parse(item.getString('recurrence_exdates_json') || '[]');
-  const lower = toWall(new Date(from.getTime() - Math.max(0, duration)), zone);
+  const lower = toWall(new Date(from.getTime() - Math.max(0, duration, custom ? DAY : 0)), zone);
   const upper = toWall(new Date(to.getTime() + DAY), zone);
   return rule.between(lower, upper, true, (_, index) => index < 800).map((wall) => {
+    const time = times[WEEKDAYS[wall.getUTCDay()]];
+    if (time) wall.setUTCHours(0, minutes(time.startTime), 0, 0);
+    const plannedDuration = time ? (minutes(time.endTime) - minutes(time.startTime)) * 60000 : duration;
     const start = fromWall(wall, zone);
-    const finish = end ? fromWall(new Date(wall.getTime() + duration), zone) : null;
-    return { start, finish, wall };
-  }).filter(({ start, finish, wall }) => {
+    const finish = end ? fromWall(new Date(wall.getTime() + plannedDuration), zone) : null;
+    return { start, finish, wall, plannedDuration };
+  }).filter(({ start, finish, wall, plannedDuration }) => {
     // Skip nonexistent local times during a spring-forward transition.
-    if (toWall(start, zone).getTime() !== wall.getTime()) return false;
+    if (toWall(start, zone).getTime() !== wall.getTime() || finish && toWall(finish, zone).getTime() !== wall.getTime() + plannedDuration) return false;
     if (start >= to || (finish || start) < from) return false;
     return !Array.isArray(exceptions) || !exceptions.some((value) =>
       value === wall.toISOString().slice(0, 10) || new Date(value).getTime() === start.getTime());
@@ -112,4 +152,4 @@ function materializeFamily(app, familyId, from, to) {
 }
 
 module.exports = { DEFAULT_MATERIALIZATION_DAYS, shouldMaterializeSingleOccurrence,
-  parseRule, datesInRange, materializeItem, materializeFamily, toWall, fromWall };
+  parseRule, datesInRange, materializeItem, materializeFamily, toWall, fromWall, weekdayTimes, durationAt };

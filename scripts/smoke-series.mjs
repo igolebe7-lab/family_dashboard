@@ -45,3 +45,41 @@ await ok('/api/collections/family_members/records', admin, { family: family.id, 
 assert.equal((await req(`/api/familytime/items/${item.id}/series`, foreignToken, body, 'PATCH')).status, 404);
 assert.equal((await list()).length, count);
 console.log('PASS unrelated account and child cannot edit series');
+
+const monday = new Date(date(7));
+monday.setUTCDate(monday.getUTCDate() + (8 - monday.getUTCDay()) % 7);
+const at = (offset, hour, minute = 0) => { const d = new Date(monday); d.setUTCDate(d.getUTCDate() + offset); d.setUTCHours(hour, minute, 0, 0); return d.toISOString(); };
+const recurrenceTimes = { MO: { startTime: '08:00', endTime: '08:30' }, WE: { startTime: '17:00', endTime: '18:30' } };
+const weeklyInput = { family: family.id, created_by: member.id, owner: member.id, title: 'Weekday times', kind: 'event', category: 'work', priority: 'normal', visibility: 'family', timezone: 'UTC', start_at: at(0,9), end_at: at(0,10), recurrence_rule: 'FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE', recurrence_until: at(9,23), recurrence_times_json: recurrenceTimes, reminder_enabled: true, reminder_offset_minutes: 15 };
+const weekly = await ok('/api/collections/items/records', token, weeklyInput);
+const weeklyList = async () => (await ok(`/api/collections/item_occurrences/records?perPage=500&sort=start_at&filter=${encodeURIComponent(`item="${weekly.id}"`)}`, token, null, 'GET')).items;
+let weeklyRows = await weeklyList();
+assert.equal(weeklyRows.length, 4);
+assert.equal(Date.parse(weeklyRows[0].start_at), Date.parse(at(0,8)));
+assert.equal(Date.parse(weeklyRows[0].end_at), Date.parse(at(0,8,30)));
+assert.equal(Date.parse(weeklyRows[1].start_at), Date.parse(at(2,17)));
+assert.equal(Date.parse(weeklyRows[1].end_at), Date.parse(at(2,18,30)));
+await ok(`/api/familytime/occurrences/${weeklyRows[1].id}/schedule`, token, { startAt: at(2,19), endAt: at(2,20) }, 'PATCH');
+const replacement = { MO: { startTime: '07:30', endTime: '09:00' }, WE: { startTime: '18:00', endTime: '20:00' } };
+const weeklyEdit = { startAt: at(0,9), endAt: at(0,10), recurrenceRule: weekly.recurrence_rule, recurrenceUntil: at(9,23), recurrenceTimes: replacement,
+  expected: { startAt: weekly.start_at, endAt: weekly.end_at, recurrenceRule: weekly.recurrence_rule, recurrenceUntil: weekly.recurrence_until, recurrenceTimes } };
+await ok(`/api/familytime/items/${weekly.id}/series`, token, weeklyEdit, 'PATCH');
+weeklyRows = await weeklyList();
+assert.equal(weeklyRows.length, 4);
+assert.equal(Date.parse(weeklyRows[0].start_at), Date.parse(at(0,7,30)));
+assert.equal(Date.parse(weeklyRows[1].start_at), Date.parse(at(2,19)));
+assert.equal(Date.parse(weeklyRows[3].start_at), Date.parse(at(9,18)));
+await ok('/api/familytime/occurrences/materialize', token, { family: family.id, from: at(0,0), to: at(10,0) });
+assert.equal((await weeklyList()).length, 4);
+assert.equal((await req(`/api/familytime/items/${weekly.id}/series`, token, weeklyEdit, 'PATCH')).status, 400);
+assert.equal((await req(`/api/collections/items/records/${weekly.id}`, token, { recurrence_times_json: recurrenceTimes }, 'PATCH')).status, 400);
+assert.equal((await req(`/api/familytime/items/${weekly.id}/series`, foreignToken, weeklyEdit, 'PATCH')).status, 404);
+for (const invalid of [{ MO: recurrenceTimes.MO }, { ...recurrenceTimes, WE: { startTime: '18:00', endTime: '17:00' } }, { ...recurrenceTimes, WE: { startTime: '25:00', endTime: '26:00' } }, []]) {
+  assert.equal((await req('/api/collections/items/records', token, { ...weeklyInput, recurrence_times_json: invalid })).status, 400);
+}
+assert.equal((await req('/api/collections/items/records', token, { ...weeklyInput, all_day: true })).status, 400);
+const dst = await ok('/api/collections/items/records', token, { ...weeklyInput, timezone: 'Europe/Amsterdam', start_at: '2027-03-22T08:00:00Z', end_at: '2027-03-22T09:00:00Z', recurrence_until: '2027-03-30T21:59:59Z' });
+const dstRows = (await ok(`/api/collections/item_occurrences/records?perPage=500&sort=start_at&filter=${encodeURIComponent(`item="${dst.id}"`)}`, token, null, 'GET')).items;
+assert(dstRows.some(row => Date.parse(row.start_at) === Date.parse('2027-03-22T07:00:00Z')));
+assert(dstRows.some(row => Date.parse(row.start_at) === Date.parse('2027-03-29T06:00:00Z')));
+console.log('PASS weekday times: earlier first time, different durations, whole-series editing, moved instance, until, idempotency, DST, validation and permissions');
