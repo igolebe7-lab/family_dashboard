@@ -7,6 +7,7 @@
   import { displayTimezone } from '$lib/stores/timezone.store';
   import { displayClock } from '$lib/stores/clock.store';
   import { dateKeyInZone } from '$lib/utils/timezone';
+  import { getDateTimeFormatter } from '$lib/utils/date-format';
   import ChevronLeft from '@lucide/svelte/icons/chevron-left';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
@@ -43,13 +44,13 @@
   $: visibleEvents = filteredEvents.filter((event) => visibleDays.some((day) => day.dateKey === event.day));
   $: scrollRangeKey = `${contextKey}:${selectedDateKey}:${selectedView}:${selectedCategories.join(',')}`;
   $: if (calendarScrollElement) void scrollToFirstEvent(visibleEvents, scrollRangeKey);
-  $: monthModel = createTodayMonthViewModel({
+  $: monthModel = selectedView === 'month' ? createTodayMonthViewModel({
     annotations,
     date: selectedDate,
     events: filteredEvents
-  });
-  $: rangeLabel = selectedView === 'month' ? monthModel.label : selectedView === 'day'
-    ? new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate) : weekLabel;
+  }) : null;
+  $: rangeLabel = monthModel ? monthModel.label : selectedView === 'day'
+    ? getDateTimeFormatter('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(selectedDate) : weekLabel;
   $: previousLabel = selectedView === 'month' ? 'Предыдущий месяц' : selectedView === 'day' ? 'Предыдущий день' : 'Предыдущая неделя';
   $: nextLabel = selectedView === 'month' ? 'Следующий месяц' : selectedView === 'day' ? 'Следующий день' : 'Следующая неделя';
   $: previousDate = selectedView === 'month' ? addMonths(selectedDate, -1) : addDays(selectedDate, selectedView === 'week' ? -7 : -1);
@@ -138,7 +139,7 @@
     </fieldset>
   {/if}
 
-  {#if selectedView === 'month'}
+  {#if selectedView === 'month' && monthModel}
     {#key `${contextKey}:${monthModel.year}:${monthModel.month}`}
     <TodayMonthGrid model={monthModel} {selectedDateKey} />
     {/key}

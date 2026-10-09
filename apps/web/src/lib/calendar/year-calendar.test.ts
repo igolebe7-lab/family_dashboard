@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { DayAnnotation } from '$lib/types/domain';
-import { createYearCalendarViewModel } from './year-calendar';
+import { createMonthCalendarViewModel, createYearCalendarViewModel } from './year-calendar';
 
 const birthday: DayAnnotation = {
   id: 'birthday_vladimir',
@@ -75,5 +75,12 @@ describe('createYearCalendarViewModel', () => {
 
     expect(day?.visibleAnnotations).toHaveLength(2);
     expect(day?.hiddenAnnotationCount).toBe(2);
+  });
+});
+describe('single-month calendar projection', () => {
+  it('matches every yearly month, including leading/trailing weeks', () => {
+    const year = createYearCalendarViewModel(2026, [], { markerLimit: 2 });
+    for (const month of year.months) expect(createMonthCalendarViewModel(2026, month.month, [], { markerLimit: 2 })).toEqual(month);
+    expect(createMonthCalendarViewModel(2026, 0, [])).toBeUndefined();
   });
 });

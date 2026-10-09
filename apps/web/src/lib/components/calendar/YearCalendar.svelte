@@ -74,7 +74,8 @@
 
   $: recordMarkersByDate = recordMarkers.reduce((markersByDate, marker) => {
     const existing = markersByDate.get(marker.dateKey) ?? [];
-    markersByDate.set(marker.dateKey, [...existing, marker]);
+    existing.push(marker);
+    markersByDate.set(marker.dateKey, existing);
     return markersByDate;
   }, new Map<string, typeof recordMarkers>());
 
@@ -97,7 +98,7 @@
   }
 
   onMount(() => {
-    // Hidden mobile/desktop instances must wait until their layout is visible.
+    // Wait until the scroll container has its final layout before locating the month.
     const observer = new ResizeObserver(() => {
       if (calendarElement.clientHeight && scrolledYear !== model.year) void scrollCurrentMonthIntoView();
     });

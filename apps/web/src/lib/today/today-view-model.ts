@@ -1,4 +1,5 @@
 import type { ItemCategory } from '$lib/constants/categories';
+import { getDateTimeFormatter } from '$lib/utils/date-format';
 import type { AccentColor } from '$lib/constants/colors';
 import type { IconName } from '$lib/design/icon-registry';
 import type { ItemKind } from '$lib/types/domain';
@@ -346,12 +347,12 @@ function formatDayMonth(date: Date): string {
 }
 
 function formatTodayLabel(date: Date, todayPrefix: boolean): string {
-  const datePart = new Intl.DateTimeFormat('ru-RU', {
+  const datePart = getDateTimeFormatter('ru-RU', {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
   }).format(date);
-  const weekday = new Intl.DateTimeFormat('ru-RU', { weekday: 'long' }).format(date);
+  const weekday = getDateTimeFormatter('ru-RU', { weekday: 'long' }).format(date);
 
   return todayPrefix ? `Сегодня, ${datePart}, ${weekday}` : `${datePart}, ${weekday}`;
 }
@@ -390,7 +391,7 @@ function formatWeekLabel(weekDays: TodayWeekDay[]): string {
 
 function createWeekDays(date: Date): TodayWeekDay[] {
   const weekStart = getWeekStart(date);
-  const weekdayFormatter = new Intl.DateTimeFormat('ru-RU', { weekday: 'short' });
+  const weekdayFormatter = getDateTimeFormatter('ru-RU', { weekday: 'short' });
   const todayKey = formatDateKey(date);
 
   return Array.from({ length: 7 }, (_, index) => {

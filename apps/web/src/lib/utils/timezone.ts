@@ -1,15 +1,16 @@
 import { createDateTimeIso } from '$lib/composer/composer-form';
+import { getDateTimeFormatter } from './date-format';
 
 export const DEFAULT_TIMEZONE = 'Europe/Moscow';
 
 export function resolveTimezone(value?: string): string {
   if (!value) return DEFAULT_TIMEZONE;
-  try { new Intl.DateTimeFormat('ru', { timeZone: value }); return value; }
+  try { getDateTimeFormatter('ru', { timeZone: value }); return value; }
   catch { return DEFAULT_TIMEZONE; }
 }
 
 export function dateKeyInZone(date: Date, timezone: string): string {
-  const parts = new Intl.DateTimeFormat('en', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+  const parts = getDateTimeFormatter('en', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
   return ['year', 'month', 'day'].map(type => parts.find(part => part.type === type)!.value).join('-');
 }
 
@@ -39,6 +40,6 @@ export function calendarDayStartIso(dateKey: string, timezone: string): string {
 }
 
 export function getGreeting(now: Date, timezone: string): string {
-  const hour = Number(new Intl.DateTimeFormat('en', { timeZone: timezone, hour: '2-digit', hourCycle: 'h23' }).format(now));
+  const hour = Number(getDateTimeFormatter('en', { timeZone: timezone, hour: '2-digit', hourCycle: 'h23' }).format(now));
   return `${hour < 6 || hour >= 23 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер'}, семья`;
 }

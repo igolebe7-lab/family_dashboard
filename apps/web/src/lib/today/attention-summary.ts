@@ -3,9 +3,10 @@ import type { FamilyMember, ItemOccurrence } from '$lib/types/domain';
 import type { TodayAttentionItem } from './today-view-model';
 import type { AccentColor } from '$lib/constants/colors';
 import { calendarDayStartIso, dateKeyInZone } from '$lib/utils/timezone';
+import { getDateTimeFormatter } from '$lib/utils/date-format';
 
 export function nextAttentionDayBoundary(now: Date, timezone: string): number {
-  const key = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  const key = dateKeyInZone(now, timezone);
   const next = new Date(`${key}T12:00:00Z`); next.setUTCDate(next.getUTCDate() + 1);
   return Date.parse(calendarDayStartIso(next.toISOString().slice(0, 10), timezone));
 }
@@ -13,7 +14,7 @@ export function nextAttentionDayBoundary(now: Date, timezone: string): number {
 export type AttentionSummary = { attention: TodayAttentionItem[]; tomorrow: TodayAttentionItem[] };
 export function buildAttentionSummary(occurrences: ItemOccurrence[], members: FamilyMember[], memberId: string, now: Date, timezone: string): AttentionSummary {
   const horizon = now.getTime() + 7 * 86400000;
-  const dateKey = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+  const dateKey = (date: Date) => dateKeyInZone(date, timezone);
   const next = new Date(`${dateKey(now)}T12:00:00Z`); next.setUTCDate(next.getUTCDate() + 1);
   const tomorrowKey = next.toISOString().slice(0, 10);
   const actions = new Map(createAssignmentViewModels({ occurrences,
@@ -33,7 +34,7 @@ export function buildAttentionSummary(occurrences: ItemOccurrence[], members: Fa
     const important = ['urgent', 'high'].includes(item.priority) && due >= now.getTime() && due <= horizon;
     const person = members.find(member => member.id === (item.assignees[0] || item.participants[0] || item.owner || item.createdBy));
     const recordZone = occurrence.allDay ? item.timezone || timezone : timezone;
-    const time = Number.isFinite(due) ? new Intl.DateTimeFormat('ru', { timeZone: recordZone, day: 'numeric', month: 'short', ...(occurrence.allDay ? {} : { hour: '2-digit', minute: '2-digit' }) }).format(new Date(due)) : 'Без срока';
+    const time = Number.isFinite(due) ? getDateTimeFormatter('ru', { timeZone: recordZone, day: 'numeric', month: 'short', ...(occurrence.allDay ? {} : { hour: '2-digit', minute: '2-digit' }) }).format(new Date(due)) : 'Без срока';
     const prefix = approval ? 'На подтверждение' : overdue ? 'Просрочено' : item.priority === 'urgent' ? 'Срочно' : 'Важно';
     const row: TodayAttentionItem = {
       id: `${approval ? 'attention-approval' : 'focus'}-${occurrence.id}`, itemId: item.id, occurrenceId: occurrence.id,

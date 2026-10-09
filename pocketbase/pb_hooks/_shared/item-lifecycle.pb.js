@@ -204,6 +204,13 @@ function notifyMembers(app, item, memberIds, payload) {
 
 function afterUpdate(app, item, original) {
   const { getRecordArray } = require(`${__hooks}/_shared/auth.pb.js`);
+  const accessChanged = ['visibility', 'archived', 'owner'].some(field => item.getString(field) !== original.getString(field)) ||
+    ['participants', 'assignees'].some(field => JSON.stringify(getRecordArray(item, field)) !== JSON.stringify(getRecordArray(original, field)));
+  if (accessChanged) {
+    // Revoked readers cannot receive the item's SSE update. Touch only existing
+    // public-within-family metadata in the same transaction, without item contents.
+    app.save(app.findRecordById('families', item.getString('family')));
+  }
   let offset = 0;
   while (true) {
     const records = app.findRecordsByFilter('item_occurrences', 'item = {:item}', 'id', 200, offset, { item: item.id });

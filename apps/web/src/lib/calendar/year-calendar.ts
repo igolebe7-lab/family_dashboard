@@ -52,6 +52,13 @@ const MONTH_LABELS = [
 
 const DAYS_IN_WEEK = 7;
 
+export function createMonthCalendarViewModel(year: number, month: number,
+  annotations: readonly DayAnnotation[], options: YearCalendarOptions = {}): YearCalendarMonth | undefined {
+  const label = MONTH_LABELS[month - 1];
+  if (!label) return undefined;
+  return { month, label, weeks: createMonthWeeks(year, month, annotations, options.markerLimit ?? 3, new Map()) };
+}
+
 export function createYearCalendarViewModel(
   year: number,
   annotations: readonly DayAnnotation[],

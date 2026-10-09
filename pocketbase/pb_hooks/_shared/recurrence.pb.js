@@ -113,15 +113,31 @@ function datesInRange(item, from, to) {
 
 function materializeItem(app, item, from, to) {
   if (!item.getString('recurrence_rule') || item.get('archived')) return 0;
+  const dates = datesInRange(item, from, to);
+  if (!dates.length) return 0;
   const collection = app.findCollectionByNameOrId('item_occurrences');
+  const field = item.getString('start_at') ? 'start_at' : 'due_at';
+  const keys = dates.map(({ start }) => start.toISOString()).sort();
+  const lower = keys[0], upper = keys[keys.length - 1];
+  const existingKeys = new Set();
+  // Match original series keys, including moved/cancelled occurrences and legacy rows.
+  for (let offset = 0; ; offset += 200) {
+    const rows = app.findRecordsByFilter('item_occurrences',
+      `item = {:item} && ((recurrence_key >= {:lower} && recurrence_key <= {:upper}) || (recurrence_key = "" && ${field} >= {:dateLower} && ${field} <= {:dateUpper}))`,
+      'id', 200, offset, { item: item.id, lower, upper,
+        dateLower: new DateTime(lower).string(), dateUpper: new DateTime(upper).string() });
+    for (const row of rows) {
+      const key = row.getString('recurrence_key');
+      const legacyDate = key ? null : new Date(row.getString(field));
+      if (key) existingKeys.add(key);
+      else if (Number.isFinite(legacyDate.getTime())) existingKeys.add(legacyDate.toISOString());
+    }
+    if (rows.length < 200) break;
+  }
   let created = 0;
-  for (const { start, finish } of datesInRange(item, from, to)) {
+  for (const { start, finish } of dates) {
     const key = start.toISOString();
-    const field = item.getString('start_at') ? 'start_at' : 'due_at';
-    const existing = app.findRecordsByFilter('item_occurrences',
-      `item = {:item} && (recurrence_key = {:key} || (recurrence_key = "" && ${field} = {:date}))`, '', 1, 0,
-      { item: item.id, key, date: new DateTime(key).string() });
-    if (existing.length) continue;
+    if (existingKeys.has(key)) continue;
     const occurrence = new Record(collection);
     for (const field of ['family', 'visible_to', 'kind', 'all_day']) occurrence.set(field, item.get(field));
     occurrence.set('item', item.id);
@@ -132,6 +148,7 @@ function materializeItem(app, item, from, to) {
     if (finish) occurrence.set('end_at', finish.toISOString());
     occurrence.set('status', item.get('kind') === 'assignment' ? 'assigned' : 'todo');
     app.save(occurrence);
+    existingKeys.add(key);
     created++;
   }
   return created;

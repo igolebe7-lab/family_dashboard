@@ -1,4 +1,5 @@
 import type { CreateItemInput } from '$lib/api/items.api';
+import { getDateTimeFormatter } from '$lib/utils/date-format';
 import type { ItemCategory } from '$lib/constants/categories';
 import type { ItemKind, ItemPriority, ItemVisibility, WeekdayTimes } from '$lib/types/domain';
 
@@ -254,7 +255,7 @@ export function createDateTimeIso(date: string, time: string, timezone: string):
   let formatter: Intl.DateTimeFormat;
   try {
     if (!timezone) throw new Error();
-    formatter = new Intl.DateTimeFormat('en-GB', {
+    formatter = getDateTimeFormatter('en-GB', {
       timeZone: timezone, calendar: 'gregory', numberingSystem: 'latn', hourCycle: 'h23',
       year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
