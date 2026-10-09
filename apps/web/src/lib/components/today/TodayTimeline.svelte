@@ -5,7 +5,7 @@
   import { getIcon } from '$lib/design/icon-registry';
   import type { TodayAllDayItem, TodayTimelineItem } from '$lib/today/today-view-model';
   import TodayEmptyState from './TodayEmptyState.svelte';
-  import { itemDetailsStore } from '$lib/stores/item-details.store';
+  import { showItemDetails } from '$lib/stores/item-details.store';
 
   export let items: TodayTimelineItem[] = [];
   export let allDayItems: TodayAllDayItem[] = [];
@@ -26,7 +26,7 @@
 
   async function openItem(item: TodayTimelineItem | TodayAllDayItem): Promise<void> {
     if (/^[a-z0-9]{15}$/.test(item.itemId)) {
-      itemDetailsStore.set(item.itemId);
+      showItemDetails(item.itemId, item.id);
       return;
     }
     selectedItem = item;

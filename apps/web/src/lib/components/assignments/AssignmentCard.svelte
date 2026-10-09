@@ -1,6 +1,7 @@
 <script lang="ts">
   import Check from '@lucide/svelte/icons/check';
   import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
+  import { showItemDetails } from '$lib/stores/item-details.store';
   import type { AssignmentAction, AssignmentCardModel } from '$lib/assignments/assignments-view';
 
   export let card: AssignmentCardModel;
@@ -17,7 +18,7 @@
   <span class="assignment-card__avatar" style:background={`var(--color-${card.memberTone}-soft)`} style:color={`var(--color-${card.memberTone})`} aria-hidden="true">{card.assigneeInitial}</span>
   <div class="assignment-card__body">
     <div class="assignment-card__topline">
-      <strong>{card.title}</strong>
+      <button class="work-detail-link" type="button" aria-label={`Открыть дело: ${card.title}`} on:click={() => showItemDetails(card.itemId, card.id)}>{card.title}</button>
       <span>{card.statusLabel}</span>
     </div>
     <p>{card.assigneeName} · {card.categoryLabel} · {card.dueLabel}</p>
@@ -65,10 +66,12 @@
 </article>
 
 <style>
+  .work-detail-link { border: 0; padding: 4px 0; background: transparent; color: inherit; text-align: left; font: inherit; font-weight: 600; cursor: pointer; min-height: 44px; overflow-wrap: anywhere; }
+  .work-detail-link:focus-visible { outline: 2px solid var(--color-green); outline-offset: 3px; }
   .assignment-card { min-width: 0; }
   .assignment-card__body { min-width: 0; flex: 1; }
   .assignment-card__topline { flex-wrap: wrap; gap: 8px; }
-  .assignment-card__topline strong, p { overflow-wrap: anywhere; }
+  p { overflow-wrap: anywhere; }
   .assignment-card__actions, .return-form > div { display: flex; flex-wrap: wrap; gap: 8px; }
   .assignment-card__button { min-height: 44px; }
   .assignment-card__button:focus-visible, textarea:focus-visible { outline: 2px solid var(--color-green); outline-offset: 3px; }

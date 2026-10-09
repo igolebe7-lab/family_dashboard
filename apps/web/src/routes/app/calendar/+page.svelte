@@ -459,7 +459,7 @@
 
     <section class="calendar-legend" aria-labelledby="calendar-legend-title">
       <h2 id="calendar-legend-title">Слой дат</h2>
-      <p>Праздники, дни рождения и особые даты показываются как информация о дне, отдельно от дел и поручений.</p>
+      <p>Праздники, дни рождения и особые даты показываются как информация о дне, отдельно от дел.</p>
       <div class="calendar-legend__items">
         <span><i class="year-marker year-marker--birthday"></i> День рождения</span>
         <span><i class="year-marker year-marker--public_holiday"></i> Праздник</span>

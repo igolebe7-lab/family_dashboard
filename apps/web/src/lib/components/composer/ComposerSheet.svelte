@@ -148,7 +148,7 @@
     submitError = null;
     successMessage = null;
 
-    const result = createComposerItemInput(values, timezone);
+    const result = createComposerItemInput(values, timezone, members.filter(member => member.active && member.family === context?.familyId));
     if (!result.ok) {
       validationErrors = result.errors;
       return;
@@ -185,7 +185,7 @@
   }
 
   function getSuccessMessage(kind: ComposerKind): string {
-    if (kind === 'task') return 'Задача создана';
+    if (kind === 'task') return 'Дело создано';
     return 'Событие создано';
   }
 </script>

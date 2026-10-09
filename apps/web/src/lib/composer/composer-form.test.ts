@@ -5,10 +5,34 @@ import {
   createComposerFormValues,
   createComposerItemInput,
   setComposerKind,
-  validateComposerForm
+  validateComposerForm,
+  getWorkTargets,
+  canRewardWorkTarget
 } from './composer-form';
+import type { FamilyMember } from '$lib/types/domain';
 
 describe('composer form', () => {
+  const members: FamilyMember[] = [
+    { id: 'p', family: 'f', displayName: 'Родитель', role: 'parent', active: true, managedBy: [] },
+    { id: 'a', family: 'f', displayName: 'Взрослый', role: 'adult', active: true, managedBy: [] },
+    { id: 'c', family: 'f', displayName: 'Ребёнок', role: 'child', active: true, managedBy: ['p'] },
+    { id: 't', family: 'f', displayName: 'Подросток', role: 'teen', active: true, managedBy: ['p'] },
+    { id: 'other', family: 'other', displayName: 'Другая семья', role: 'child', active: true, managedBy: ['p'] },
+    { id: 'inactive', family: 'f', displayName: 'Неактивный', role: 'child', active: false, managedBy: ['p'] }
+  ];
+  it('shows only active same-family targets allowed for the active role', () => {
+    expect(getWorkTargets('p', members).map(member => member.id)).toEqual(['p', 'a', 'c', 't']);
+    expect(getWorkTargets('a', members).map(member => member.id)).toEqual(['p', 'a', 't']);
+    expect(getWorkTargets('c', members).map(member => member.id)).toEqual(['c']);
+    expect(getWorkTargets('', members)).toEqual([]);
+  });
+  it('allows rewards only for a managed child and enforces approval', () => {
+    expect(canRewardWorkTarget('p', 'c', members)).toBe(true);
+    for (const [actor, child] of [['p', 'a'], ['a', 'c'], ['c', 'c'], ['p', 'other'], ['p', 'inactive']]) expect(canRewardWorkTarget(actor, child, members)).toBe(false);
+    const values = { ...createComposerFormValues({ activeMemberId: 'p', kind: 'task' }), title: 'Дело', owner: 'c', points: '5', approvalRequired: false };
+    expect(createComposerItemInput(values, 'UTC', members)).toMatchObject({ ok: true, input: { points: 5, approvalRequired: true } });
+    expect(createComposerItemInput({ ...values, owner: 'a' }, 'UTC', members).ok).toBe(false);
+  });
   const scheduled = () => ({ ...createComposerFormValues({ activeMemberId: 'm' }), title: 'Занятие', date: '2026-06-11' });
 
   it('serializes repeat presets and selected weekdays with bounded intervals', () => {
@@ -74,7 +98,7 @@ describe('composer form', () => {
     values.title = 'Вынести мусор';
     values.owner = '';
 
-    expect(validateComposerForm(values)).toContain('Выберите, для кого задача');
+    expect(validateComposerForm(values)).toContain('Выберите исполнителя дела');
   });
 
   it('blocks events where end time is earlier than start time', () => {
@@ -136,6 +160,29 @@ describe('composer form', () => {
         points: 5
       }
     });
+  });
+
+  it('keeps checklist entries for another person and shared family work', () => {
+    for (const owner of ['member_child', FAMILY_TARGET]) {
+      const values = { ...createComposerFormValues({ activeMemberId: 'member_mom', kind: 'task' }),
+        title: 'Собрать вещи', owner, checklistText: 'Форма\nБутылка', familyMemberIds: ['member_mom', 'member_child'] };
+      expect(createComposerItemInput(values, 'UTC')).toMatchObject({ ok: true, input: {
+        checklist: [{ id: 'check-1', title: 'Форма', done: false }, { id: 'check-2', title: 'Бутылка', done: false }]
+      } });
+    }
+  });
+
+  it('rejects invalid point values before submission', () => {
+    for (const points of ['NaN', 'Infinity', '1.5', '-1', '101']) {
+      const values = { ...createComposerFormValues({ activeMemberId: 'm', kind: 'task' }), title: 'Дело', owner: 'c', points };
+      expect(createComposerItemInput(values, 'UTC').ok).toBe(false);
+    }
+  });
+  it('validates checklist limits before making a request', () => {
+    const values = { ...createComposerFormValues({ activeMemberId: 'm', kind: 'task' }), title: 'Дело' };
+    expect(createComposerItemInput({ ...values, checklistText: 'x\n'.repeat(101) }, 'UTC').ok).toBe(false);
+    expect(createComposerItemInput({ ...values, checklistText: 'x'.repeat(221) }, 'UTC').ok).toBe(false);
+    expect(createComposerItemInput({ ...values, checklistText: 'x\n'.repeat(100) }, 'UTC').ok).toBe(true);
   });
 
   it('turns a family task into an assignment for every family member', () => {

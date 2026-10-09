@@ -75,11 +75,12 @@ migrate((app) => {
   }
   if (!ready) throw new Error(`PocketBase did not start: ${output}`);
   console.log(`Isolated backend smoke: ${upgrade ? 'legacy repair' : 'fresh migrations'}, port ${port}, automigrate=false`);
-  for (const script of process.argv.slice(2).length ? process.argv.slice(2) : ['smoke-backend-security.mjs', 'smoke-pocketbase-stage4.mjs', 'smoke-recurrence.mjs', 'smoke-series.mjs', 'smoke-birthdays.mjs', 'smoke-timezones.mjs']) {
+  for (const script of process.argv.slice(2).length ? process.argv.slice(2) : ['smoke-backend-security.mjs', 'smoke-pocketbase-stage4.mjs', 'smoke-recurrence.mjs', 'smoke-series.mjs', 'smoke-birthdays.mjs', 'smoke-timezones.mjs', 'smoke-work-features.mjs']) {
     const child = spawn(process.execPath, [resolve(root, 'scripts', script)], {
       cwd: root, stdio: 'inherit', env: { ...process.env, PB_URL: url,
         PB_SUPERUSER_EMAIL: email, PB_SUPERUSER_PASSWORD: password,
-        SMOKE_KEEP_DATA: '0', SMOKE_CLEANUP_BEFORE: '0', SMOKE_CLEANUP_AFTER: '1', SMOKE_ISOLATED: '1' }
+        SMOKE_KEEP_DATA: '0', SMOKE_CLEANUP_BEFORE: '0', SMOKE_CLEANUP_AFTER: '1', SMOKE_ISOLATED: '1',
+        SMOKE_DATA_DIR: resolve(dir, 'data') }
     });
     const [code] = await once(child, 'exit');
     if (code !== 0) throw new Error(`${script} failed (${code})\n${output.slice(-14000)}`);

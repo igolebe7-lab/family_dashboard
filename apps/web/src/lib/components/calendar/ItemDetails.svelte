@@ -15,10 +15,12 @@
   import { describeRecurrence } from '$lib/composer/recurrence-summary';
   import { COMPOSER_WEEKDAYS } from '$lib/composer/composer-form';
   import EventSchedule from './EventSchedule.svelte';
+  import WorkExecution from '../assignments/WorkExecution.svelte';
   import Archive from '@lucide/svelte/icons/archive';
   import ArchiveRestore from '@lucide/svelte/icons/archive-restore';
   import { setItemArchived } from '$lib/api/schedule.api';
   export let itemId: string;
+  export let occurrenceId: string | undefined = undefined;
   let item: Item | null = null;
   let loading = true;
   let error = '';
@@ -39,7 +41,7 @@
     $familyStore.activeMember.role === 'owner'
   );
   const visibility = { private: 'Личное', family: 'Вся семья', adults: 'Только взрослые', assignees: 'Участники и ответственные' };
-  const kinds = { event: 'Событие', task: 'Дело', assignment: 'Поручение', routine: 'Рутина' };
+  const kinds = { event: 'Событие', task: 'Дело', assignment: 'Дело', routine: 'Рутина' };
   $: participantIds = item ? [...new Set([item.owner, ...item.assignees, ...item.participants].filter(Boolean))] : [];
   $: people = $familyStore.members.filter((member) => participantIds.includes(member.id));
   const weekdayLabels = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
@@ -133,14 +135,13 @@
         {#if item.locationText}<div><dt><MapPin size={19} aria-hidden="true" />Место</dt><dd>{item.locationText}</dd></div>{/if}
       </dl>
       {#if item.description}<section class="item-description"><h2>Описание</h2><p>{item.description}</p></section>{/if}
-      {#if item.checklist?.length}<section class="item-description"><h2>Чеклист</h2><ul>{#each item.checklist as step}<li>{step.title}</li>{/each}</ul></section>{/if}
+      {#if context && (item.kind === 'task' || item.kind === 'assignment')}<WorkExecution {item} {context} {occurrenceId} />{/if}
       {#if item.recurrenceRule}<p class="results-count">{describeRecurrence(item.recurrenceRule, item.recurrenceUntil, item.timezone)}</p>{/if}
       {#if weekdayTimes.length}<p class="results-count">Часовой пояс расписания: {item.timezone}</p>{/if}
       {#if item.archived}<p class="results-count">В архиве · новые повторы остановлены</p>{/if}
       {#if canEdit}<button type="button" class="button button--soft" disabled={archiving} on:click={toggleArchive}>{#if item.archived}<ArchiveRestore size={18} aria-hidden="true" />{:else}<Archive size={18} aria-hidden="true" />{/if}{archiving ? 'Сохраняем…' : item.archived ? 'Вернуть из архива' : 'В архив'}</button>{/if}
       {#if item.kind === 'event' && context}<details class="item-schedule-details"><summary>{item.recurrenceRule ? 'Расписание и перенос' : 'Дата и перенос события'}</summary><EventSchedule bind:item {context} canEdit={Boolean(canEdit) && !item.archived && !archiving} /></details>{/if}
-      {#if item.kind === 'assignment'}<a class="button button--primary" href="/app/assignments">Перейти к поручениям</a>{/if}
-      {#if item.kind === 'task'}<a class="button button--primary" href="/app/tasks">Перейти к делам</a>{/if}
+      {#if item.kind === 'assignment' || item.kind === 'task'}<a class="button button--primary" href="/app/tasks">Перейти к делам</a>{/if}
     {/if}
   {/if}
 </div>

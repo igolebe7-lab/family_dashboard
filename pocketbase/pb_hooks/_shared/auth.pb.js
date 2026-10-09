@@ -1,3 +1,7 @@
+function newApiError(status, message, data) {
+  return new ApiError(status, message, data);
+}
+
 function requireAuth(event) {
   const requestInfo = getRequestInfo(event);
   const auth = event.auth || event.Auth || requestInfo.auth || requestInfo.Auth;
@@ -38,5 +42,6 @@ module.exports = {
   getRequestInfo,
   getRecordValue,
   hasSuperuserAuth,
+  newApiError,
   requireAuth
 };

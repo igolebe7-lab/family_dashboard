@@ -1,7 +1,7 @@
 <script lang="ts">
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import { getIcon } from '$lib/design/icon-registry';
-  import { itemDetailsStore } from '$lib/stores/item-details.store';
+  import { showItemDetails } from '$lib/stores/item-details.store';
   import type { TodayTimelineItem } from '$lib/today/today-view-model';
 
   export let item: Pick<TodayTimelineItem, 'id' | 'itemId' | 'time' | 'title' | 'subtitle' | 'icon' | 'color'>;
@@ -9,7 +9,7 @@
   $: Icon = getIcon(item.icon);
   function open() {
     if (onopen) onopen();
-    else if (item.itemId) itemDetailsStore.set(item.itemId);
+    else if (item.itemId) showItemDetails(item.itemId, item.id);
   }
 </script>
 

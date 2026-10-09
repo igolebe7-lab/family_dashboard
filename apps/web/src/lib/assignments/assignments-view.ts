@@ -120,6 +120,11 @@ export function createTaskViewModels(input: AssignmentInput): AssignmentCardMode
     .sort(compareAssignments).map((occurrence) => mapAssignmentOccurrence(occurrence, input));
 }
 
+export function createWorkViewModels(input: AssignmentInput): AssignmentCardModel[] {
+  return input.occurrences.filter(occurrence => ['task', 'assignment'].includes(occurrence.kind))
+    .sort(compareAssignments).map(occurrence => mapAssignmentOccurrence(occurrence, input));
+}
+
 export function filterWorkCards(cards: AssignmentCardModel[], status: WorkStatusGroup | 'all', memberId = '', query = '', priority: ItemPriority | 'all' = 'all'): AssignmentCardModel[] {
   const search = query.trim().toLocaleLowerCase('ru');
   return cards.filter((card) => (status === 'all' || card.group === status)
@@ -191,7 +196,7 @@ export function mapNotificationInboxItem(record: NotificationRecord, timezone?: 
     body: record.body,
     createdLabel: formatDateTimeLabel(record.created, timezone),
     unread: !record.readAt,
-    actionLabel: record.occurrence ? 'Открыть поручение' : 'Открыть'
+    actionLabel: record.occurrence ? 'Открыть дело' : 'Открыть'
   };
 }
 
@@ -221,7 +226,7 @@ function mapAssignmentOccurrence(
   const assigneeIds = item ? item.kind === 'task' ? [item.owner || item.createdBy] : item.assignees : [];
   const assignees = members.filter((member) => assigneeIds.includes(member.id) && member.family === occurrence.family);
   const assigneeName = assignees.map((member) => member.displayName).join(', ') || 'Исполнитель недоступен';
-  const managesAssignee = Boolean(actor && assignees.some((member) => actor.role === 'owner' || (actor.role === 'parent' && member.managedBy.includes(actor.id))));
+  const managesAssignee = Boolean(actor && assignees.some((member) => member.active && ['child', 'teen'].includes(member.role) && (actor.role === 'owner' || (actor.role === 'parent' && member.managedBy.includes(actor.id)))));
   const hasAccess = Boolean(actor && item && canViewItem(actor, item, members));
   const waiting = occurrence.kind === 'assignment' && occurrence.status === 'done' && Boolean(item?.approvalRequired) && !occurrence.approvedAt;
   const reviewable = hasAccess && waiting && Boolean(actor && (item?.createdBy === actor.id || managesAssignee)) && !['child', 'teen'].includes(actor?.role ?? '');

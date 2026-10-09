@@ -18,7 +18,7 @@ describe('createShellViewModel', () => {
     expect(model.navigation.map((item) => item.label)).toEqual([
       'Сегодня',
       'Календарь',
-      'Поручения',
+      'Дела',
       'Семья',
       'Профиль'
     ]);

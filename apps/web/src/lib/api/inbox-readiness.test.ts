@@ -53,7 +53,8 @@ describe('inbox production readiness', () => {
       occurrence: { family: 'f', kind: 'event', start_at: '2026-09-11T12:00:00Z' }
     } })).toEqual({ href: '/app/today?date=2026-09-11&view=day', label: 'Открыть день события' });
     expect(notificationDestination({ family: 'f', expand: { item: { family: 'f', kind: 'task' } } })?.href).toBe('/app/tasks');
-    expect(notificationDestination({ family: 'f', type: 'assignment.created' })?.href).toBe('/app/assignments');
+    expect(notificationDestination({ family: 'f', type: 'assignment.created' })?.href).toBe('/app/tasks');
+    expect(notificationDestination({ family: 'f', item: 'i', occurrence: 'o', type: 'assignment.approved' })?.href).toBe('/app/items/i?occurrence=o');
     expect(notificationDestination({ family: 'f', expand: { item: { family: 'other', kind: 'task' } } })).toBeNull();
   });
 });

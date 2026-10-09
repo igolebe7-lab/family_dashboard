@@ -4,6 +4,7 @@ onRecordCreateRequest((event) => {
   const auth = authHelpers.requireAuth(event);
 
   lifecycle.validateBeforeSave(event.app, event.record, auth, event.hasSuperuserAuth());
+  require(`${__hooks}/_shared/work-features.pb.js`).validateItemRequest(event);
   event.next();
 }, 'items');
 
@@ -13,6 +14,7 @@ onRecordUpdateRequest((event) => {
   const auth = authHelpers.requireAuth(event);
 
   lifecycle.validateBeforeSave(event.app, event.record, auth, event.hasSuperuserAuth());
+  require(`${__hooks}/_shared/work-features.pb.js`).validateItemRequest(event);
   event.next();
 }, 'items');
 
@@ -37,6 +39,8 @@ onRecordUpdateExecute((event) => {
   try {
     originalApp.runInTransaction((txApp) => {
       event.app = txApp;
+      require(`${__hooks}/_shared/work-features.pb.js`).protectRewardHistory(txApp, event.record,
+        txApp.findRecordById('items', event.record.id));
       event.next();
       require(`${__hooks}/_shared/item-lifecycle.pb.js`).afterUpdate(txApp, event.record, original);
     });

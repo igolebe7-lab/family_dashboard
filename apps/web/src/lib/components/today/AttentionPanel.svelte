@@ -7,7 +7,7 @@
   export let labelledBy = 'attention-title';
   export let title = 'Нужно внимание';
   export let emptyTitle = 'Ничего срочного';
-  export let emptyBody = 'Когда появятся поручения на проверку или важные записи, они будут здесь.';
+  export let emptyBody = 'Когда появятся дела на проверку или важные записи, они будут здесь.';
   export let resetKey = '';
   let expanded = false;
   $: resetExpansion(resetKey);

@@ -36,6 +36,7 @@ paginated on the server; it does not download all family items to the browser.
 - `family_members` — family profile linked to `users` or managed child profile.
 - `items` — logical object: event, task, assignment, routine.
 - `item_occurrences` — materialized calendar/status instances.
+- `member_points_ledger` — закрытая неизменяемая история детских начислений.
 - `day_annotations` — all-day informational dates: birthdays, public holidays, special family dates, observances and memorial dates.
 - `item_comments` — comments and reactions.
 - `item_activity` — family feed records.
@@ -78,6 +79,33 @@ previous notifications. A member header cannot impersonate another adult account
 `due_at`. `reminder_enabled` distinguishes none from zero. A bounded minute cron
 creates `item.reminder` inbox records with database uniqueness per occurrence and
 recipient. See `reminders.md` for catch-up and migration semantics.
+
+## Work Checklists and Child Points
+
+Пользователь видит единый раздел «Дела»; внутренние `task` (для себя) и
+`assignment` (другому участнику/общее дело) сохраняются. `items.checklist_json`
+определяет пункты (до 100, уникальные ID до 80 символов, названия до 220).
+`item_occurrences.checklist_done_json` хранит массив отмеченных ID этой даты.
+Шаблонные `done` не считаются историческим выполнением. Прямой REST update
+прогресса запрещён: PATCH `/api/familytime/occurrences/{id}/checklist` меняет
+один пункт транзакционно, проверяя auth, активный профиль, видимость и права
+исполнителя/автора/управляющего родителя. Завершённые, архивные и ожидающие
+подтверждения записи менять нельзя.
+
+`member_points_ledger` имеет закрытые CRUD rules и snapshot-поля `family`,
+`member`, `occurrence`, `approved_by`, `points`, `created`. Это не cascade relations:
+архивирование/удаление дела не стирает заработанный баланс. Уникальный индекс
+`(member, occurrence)` предотвращает двойное начисление; индекс
+`(family, member, points)` поддерживает SUM. Баланс — вычисляемый, клиент не
+может его записать. Начисление и status approval выполняются в одной транзакции;
+две одновременные отметки не теряют галочки и не дублируют награду.
+
+Новая положительная награда — целое 1–100 одному управляемому child/teen,
+с adult creator и обязательным approval. После выполнения assignees, points и
+approval_required заблокированы. Не относящиеся к награде правки legacy items
+разрешены, исторического начисления при миграции нет. API
+`GET /api/familytime/points?family=ID` возвращает балансы только самого ребёнка
+либо детей, которыми активный родитель вправе управлять.
 
 ## Calendar invariant
 

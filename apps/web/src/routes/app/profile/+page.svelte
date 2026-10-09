@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChildPointsBalance from '$lib/components/family/ChildPointsBalance.svelte';
   import LogOut from '@lucide/svelte/icons/log-out';
   import Save from '@lucide/svelte/icons/save';
   import ShieldCheck from '@lucide/svelte/icons/shield-check';
@@ -173,6 +174,7 @@
       </div>
     </header>
 
+    {#if $familyStore.activeMember && ['child', 'teen'].includes($familyStore.activeMember.role)}<ChildPointsBalance memberId={$familyStore.activeMember.id} />{/if}
     <section class="profile-summary" aria-label="Текущий аккаунт">
       <span class="profile-summary__avatar" style:color={`var(--color-${profileTone})`} style:background={`var(--color-${profileTone}-soft)`} aria-hidden="true">
         {(currentUser?.name || currentUser?.email || 'А').charAt(0).toUpperCase()}
@@ -245,6 +247,7 @@
       </div>
     </header>
 
+    {#if $familyStore.activeMember && ['child', 'teen'].includes($familyStore.activeMember.role)}<ChildPointsBalance memberId={$familyStore.activeMember.id} />{/if}
     <section class="profile-summary" aria-label="Текущий аккаунт">
       <span class="profile-summary__avatar" style:color={`var(--color-${profileTone})`} style:background={`var(--color-${profileTone}-soft)`} aria-hidden="true">
         {(currentUser?.name || currentUser?.email || 'А').charAt(0).toUpperCase()}

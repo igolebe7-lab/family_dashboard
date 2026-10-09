@@ -1,7 +1,12 @@
+const { newApiError } = require(`${__hooks}/_shared/auth.pb.js`);
+
 function validateBeforeUpdate(app, event, auth, isSuperuser) {
   const existing = event.record.original();
+  const body = require(`${__hooks}/_shared/auth.pb.js`).getRequestInfo(event).body || {};
+  if (Object.keys(body).some(field => field.replace(/^[+]|[+-]$/g, '') === 'checklist_done_json')) {
+    throw new BadRequestError('Используйте действие чеклиста');
+  }
   if (!isSuperuser) {
-    const body = require(`${__hooks}/_shared/auth.pb.js`).getRequestInfo(event).body || {};
     for (const field of Object.keys(body)) {
       if (!['status', 'rejection_reason', 'skipped_reason'].includes(field)) {
         throw newApiError(400, 'Это поле экземпляра изменяет только сервер', { field });
@@ -19,6 +24,15 @@ function validateBeforeUpdate(app, event, auth, isSuperuser) {
 
   validateTransition(previousStatus, nextStatus);
 
+  if (previousStatus === nextStatus && ['approved', 'rejected'].includes(nextStatus)) {
+    const item = findItem(app, event.record.get('item'));
+    const actor = findRequestActor(app, event, auth, event.record.get('family'), isSuperuser);
+    ensureActorMatchesAuth(app, auth, actor, event.record.get('family'), isSuperuser);
+    if (!require(`${__hooks}/_shared/permissions.pb.js`).canViewItem(app, actor, item)) throw new ForbiddenError('Нет доступа к записи');
+    ensureAdultReviewer(actor);
+    ensureCanReview(app, actor, item);
+  }
+
   if (previousStatus !== nextStatus) {
     applyTransition(app, event, auth, isSuperuser, previousStatus, nextStatus);
   }
@@ -32,6 +46,7 @@ function afterUpdate(app, occurrence) {
   if (previousStatus === nextStatus || occurrence.get('kind') !== 'assignment') return;
 
   const item = findItem(app, occurrence.get('item'));
+  if (nextStatus === 'approved') require(`${__hooks}/_shared/work-features.pb.js`).awardApproved(app, occurrence, item);
   createTransitionActivity(app, occurrence, item, nextStatus);
   createTransitionNotifications(app, occurrence, item, nextStatus);
 }
@@ -103,6 +118,7 @@ function applyTransition(app, event, auth, isSuperuser, previousStatus, nextStat
 
   if (nextStatus === 'approved') {
     ensureApprovalRequired(item, nextStatus);
+    ensureAdultReviewer(actor);
     ensureCanReview(app, actor, item);
     occurrence.set('approved_by', actor.id);
     occurrence.set('approved_at', nowIso());
@@ -114,6 +130,7 @@ function applyTransition(app, event, auth, isSuperuser, previousStatus, nextStat
 
   if (nextStatus === 'rejected') {
     ensureApprovalRequired(item, nextStatus);
+    ensureAdultReviewer(actor);
     ensureCanReview(app, actor, item);
     occurrence.set('rejected_by', actor.id);
     occurrence.set('rejected_at', nowIso());
@@ -135,6 +152,12 @@ function ensureApprovalRequired(item, nextStatus) {
   throw newApiError(400, 'Это поручение не требует подтверждения', {
     status: nextStatus
   });
+}
+
+function ensureAdultReviewer(actor) {
+  if (!require(`${__hooks}/_shared/permissions.pb.js`).isAdultRole(actor.get('role'))) {
+    throw new ForbiddenError('Подтверждать поручение может только взрослый');
+  }
 }
 
 function ensureCanMarkDone(app, actor, item) {
@@ -384,5 +407,8 @@ function nowIso() {
 
 module.exports = {
   afterUpdate,
+  ensureActorMatchesAuth,
+  findRequestActor,
+  getHeader,
   validateBeforeUpdate
 };

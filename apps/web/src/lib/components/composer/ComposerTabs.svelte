@@ -8,7 +8,7 @@
 
   const tabs = [
     { kind: 'event' as const, label: 'Событие', icon: CalendarDays },
-    { kind: 'task' as const, label: 'Задача', icon: SquareCheckBig }
+    { kind: 'task' as const, label: 'Дело', icon: SquareCheckBig }
   ];
 </script>
 

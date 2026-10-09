@@ -2,4 +2,5 @@
   import WorkListPage from '$lib/components/assignments/WorkListPage.svelte';
 </script>
 
-<WorkListPage kind="assignment" />
+<!-- Legacy links remain usable without maintaining a second work section. -->
+<WorkListPage />

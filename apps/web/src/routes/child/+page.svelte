@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChildPointsBalance from '$lib/components/family/ChildPointsBalance.svelte';
   import { onMount } from 'svelte';
   import { displayTimezone } from '$lib/stores/timezone.store';
   import { goto } from '$app/navigation';
@@ -51,6 +52,7 @@
     <div><p class="section-kicker">Детский режим</p><h1 id="child-title">{model.greeting}</h1></div>
     <button type="button" class="refresh" title="Обновить" aria-label="Обновить" disabled={!$list.context || $list.loading || Boolean($list.busyId)} on:click={list.reload}><RefreshCw size={21} aria-hidden="true" /></button>
   </header>
+  {#if selectedChild}<ChildPointsBalance memberId={selectedChild.id} />{/if}
   {#if $list.message}<p class="message" role="status">{$list.message}</p>{/if}
   {#if $list.actionError}<p class="error" role="alert">{$list.actionError}</p>{/if}
   {#if $list.error}<div class="error" role="alert"><p>{$list.error}</p><button type="button" disabled={$list.loading} on:click={list.reload}>Попробовать ещё</button></div>{/if}

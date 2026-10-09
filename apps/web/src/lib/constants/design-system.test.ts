@@ -9,7 +9,7 @@ describe('design system constants', () => {
     expect(APP_ROUTES.primaryNavigation.map((item) => item.label)).toEqual([
       'Сегодня',
       'Календарь',
-      'Поручения',
+      'Дела',
       'Семья',
       'Профиль'
     ]);

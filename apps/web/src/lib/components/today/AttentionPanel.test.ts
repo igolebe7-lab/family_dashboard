@@ -13,7 +13,7 @@ describe('AttentionPanel', () => {
     });
 
     expect(body).toContain('Ничего срочного');
-    expect(body).toContain('Когда появятся поручения на проверку или важные записи, они будут здесь.');
+    expect(body).toContain('Когда появятся дела на проверку или важные записи, они будут здесь.');
     expect(body).not.toContain('today-attention-card--');
   });
   it('limits the initial list to five with an accessible expansion control', () => {
