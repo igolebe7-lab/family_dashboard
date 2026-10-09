@@ -19,8 +19,7 @@
   } from '$lib/api/day-annotations.api';
   import {
     listOccurrenceMarkersInRange,
-    listOccurrencesInRange,
-    type OccurrenceMarker
+    listOccurrencesInRange
   } from '$lib/api/occurrences.api';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
@@ -32,15 +31,21 @@
   import { createRealtimeStore } from '$lib/stores/realtime.store';
   import type { DayAnnotation } from '$lib/types/domain';
   import { createTodayViewModelFromOccurrences } from '$lib/today/today-data';
+  import { displayTimezone } from '$lib/stores/timezone.store';
+  import { calendarDateInZone, calendarDayStartIso } from '$lib/utils/timezone';
+  import { createRecordMarker, type CalendarRecordMarker } from '$lib/calendar/record-markers';
 
   async function loadDayEvents(dateKey: string) {
     const context = currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null;
     if (!context) throw new Error('Family context unavailable');
     const start = new Date(`${dateKey}T00:00:00`);
-    const end = new Date(`${dateKey}T23:59:59.999`);
-    const result = await listOccurrencesInRange(context, { from: start.toISOString(), to: end.toISOString() });
+    const next = new Date(start); next.setDate(next.getDate() + 1);
+    const zone = $displayTimezone;
+    const result = await listOccurrencesInRange(context, { from: calendarDayStartIso(dateKey, zone),
+      to: calendarDayStartIso(formatDateKey(next), zone) });
     return createTodayViewModelFromOccurrences({ date: start, occurrences: result.items,
-      members: currentFamilyState?.members ?? [], activeMemberId: context.memberId }).weekEvents;
+      timezone: zone, members: currentFamilyState?.members ?? [], activeMemberId: context.memberId }).weekEvents
+      .filter(event => event.day === dateKey);
   }
 
   const activeRoute = '/app/calendar';
@@ -59,7 +64,7 @@
   let formError: string | null = null;
   let formSaving = false;
   let publicHolidayAnnotations: DayAnnotation[] = [];
-  let calendarRecordMarkers: Array<{ dateKey: string; kind: 'event' | 'task' | 'assignment'; count: number }> = [];
+  let calendarRecordMarkers: CalendarRecordMarker[] = [];
   let composerOpen = false;
   let composerKind: ComposerKind = 'event';
 
@@ -78,11 +83,12 @@
     ? createDateFromDateKey(selectedDay.dateKey)
     : createDefaultCalendarDate(selectedYear);
   $: isFormOpen = formMode !== 'closed';
+  $: if (currentFamilyState) void loadAnnotationsFromFamilyState(currentFamilyState, $displayTimezone);
 
-  async function loadAnnotationsFromFamilyState(familyState: FamilyState | undefined) {
+  async function loadAnnotationsFromFamilyState(familyState: FamilyState | undefined, timezone = $displayTimezone) {
     const context = familyState?.status === 'ready' ? getActiveFamilyContext(familyState) : null;
     const year = get(dayAnnotationsStore).selectedYear;
-    const yearKey = context ? `${context.familyId}:${context.memberId}:${year}` : null;
+    const yearKey = context ? JSON.stringify([context.familyId, context.memberId, year, timezone, familyState?.members]) : null;
     if (yearKey && loadedYearKey === yearKey) return;
     loadedYearKey = yearKey;
     const epoch = ++generation;
@@ -95,7 +101,7 @@
     dayAnnotationsStore.reset();
     if (!context) return;
     const realtime = routeRealtimeStore;
-    const yearRange = createYearOccurrenceRange(year);
+    const yearRange = createYearOccurrenceRange(year, timezone);
     const errors: string[] = [];
     await Promise.all([
       dayAnnotationsStore.loadYear(context).catch(() => { errors.push('Не удалось загрузить особые даты.'); }),
@@ -110,7 +116,10 @@
       (async () => {
         try {
           const result = await listOccurrenceMarkersInRange(context, yearRange);
-          if (epoch === generation) calendarRecordMarkers = createCalendarRecordMarkers(result.items);
+          if (epoch === generation) calendarRecordMarkers = result.items.flatMap(record => {
+            const marker = createRecordMarker(record, familyState?.members ?? [], timezone);
+            return marker ? [marker] : [];
+          });
         } catch { errors.push('Не удалось загрузить отметки событий.'); }
       })(),
       (async () => {
@@ -247,54 +256,16 @@
   }
 
   function createDefaultCalendarDate(year: number): Date {
-    const today = new Date();
+    const today = calendarDateInZone(new Date(), $displayTimezone);
     if (today.getFullYear() === year) return today;
     return new Date(year, 0, 1);
   }
 
-  function createYearOccurrenceRange(year: number): { from: string; to: string } {
+  function createYearOccurrenceRange(year: number, timezone: string): { from: string; to: string } {
     return {
-      from: new Date(year, 0, 1).toISOString(),
-      to: new Date(year + 1, 0, 1).toISOString()
+      from: calendarDayStartIso(`${year}-01-01`, timezone),
+      to: calendarDayStartIso(`${year + 1}-01-01`, timezone)
     };
-  }
-
-  function createCalendarRecordMarkers(occurrences: OccurrenceMarker[]): Array<{
-    dateKey: string;
-    kind: 'event' | 'task' | 'assignment';
-    count: number;
-  }> {
-    const markerByDateKind = new Map<
-      string,
-      { dateKey: string; kind: 'event' | 'task' | 'assignment'; count: number }
-    >();
-
-    for (const occurrence of occurrences) {
-      if (!['event', 'task', 'assignment'].includes(occurrence.kind)) continue;
-      const value = occurrence.startAt ?? occurrence.dueAt;
-      if (!value) continue;
-
-      const dateKey = formatDateKey(new Date(value));
-      const kind = occurrence.kind as 'event' | 'task' | 'assignment';
-      const markerKey = `${dateKey}:${kind}`;
-      const existing = markerByDateKind.get(markerKey);
-      if (existing) {
-        existing.count += 1;
-        continue;
-      }
-
-      markerByDateKind.set(markerKey, {
-        dateKey,
-        kind,
-        count: 1
-      });
-    }
-
-    const kindOrder = { event: 0, task: 1, assignment: 2 };
-    return Array.from(markerByDateKind.values()).sort(
-      (left, right) =>
-        left.dateKey.localeCompare(right.dateKey) || kindOrder[left.kind] - kindOrder[right.kind]
-    );
   }
 
   function formatDateKey(date: Date): string {
@@ -305,6 +276,7 @@
   }
 
   onMount(() => {
+    dayAnnotationsStore.setYear(calendarDateInZone(new Date(), $displayTimezone).getFullYear());
     familyUnsubscribe = familyStore.subscribe((familyState) => {
       const previous = currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null;
       const next = familyState.status === 'ready' ? getActiveFamilyContext(familyState) : null;
@@ -462,7 +434,7 @@
     context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
     members={currentFamilyState?.members ?? []}
     selectedDate={selectedDateForForm}
-    timezone={currentFamilyState?.activeFamily?.timezone}
+    timezone={$displayTimezone}
     titleId="calendar-composer-title"
     onclose={() => (composerOpen = false)}
     oncreated={retryLoading}

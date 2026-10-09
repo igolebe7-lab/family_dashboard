@@ -34,9 +34,11 @@
   import { createTodayState } from '$lib/today/today-state';
   import { createTodayViewModel, formatDateKey, type TodayAttentionItem, type TodayAllDayItem, type TodayTimelineItem } from '$lib/today/today-view-model';
   import type { DayAnnotation, FamilyMember } from '$lib/types/domain';
+  import { displayTimezone } from '$lib/stores/timezone.store';
+  import { displayClock } from '$lib/stores/clock.store';
+  import { calendarDateInZone, dateKeyInZone, getGreeting } from '$lib/utils/timezone';
 
   const activeRoute = '/app/today';
-  const initialDate = new Date();
   const todayState = createTodayState();
   const dayAnnotationsStore = createDayAnnotationsStore();
   let routeRealtimeStore = createRealtimeStore();
@@ -56,7 +58,7 @@
   let summaryLoading = false;
   let summaryRequest = 0;
   let summaryTimer: ReturnType<typeof setTimeout>;
-  $: summaryContextKey = JSON.stringify([currentFamilyState.activeFamily?.id, currentFamilyState.activeFamily?.timezone, currentFamilyState.activeMember?.id, currentFamilyState.members]);
+  $: summaryContextKey = JSON.stringify([currentFamilyState.activeFamily?.id, $displayTimezone, currentFamilyState.activeMember?.id, currentFamilyState.members]);
   $: if (mounted) changeSummaryContext(summaryContextKey);
   function changeSummaryContext(_key: string) {
     summaryRequest++; summary = { attention: [], tomorrow: [] }; summaryError = '';
@@ -73,9 +75,9 @@
     try {
       const rows = await loadAttentionOccurrences(context, now);
       if (request !== summaryRequest) return;
-      summary = buildAttentionSummary(rows, state.members, context.memberId, now, state.activeFamily?.timezone || 'UTC');
+      summary = buildAttentionSummary(rows, state.members, context.memberId, now, $displayTimezone);
       // Refresh at the next included deadline or date boundary, not on a polling interval.
-      const midnight = nextAttentionDayBoundary(now, state.activeFamily?.timezone || 'UTC');
+      const midnight = nextAttentionDayBoundary(now, $displayTimezone);
       const next = Math.min(midnight, ...rows.map(row => Date.parse(row.dueAt || row.startAt || '') + 1000).filter(time => time > now.getTime()));
       summaryTimer = setTimeout(() => void refreshSummary(), Math.max(1000, next - Date.now()));
     } catch { if (request === summaryRequest) summaryError = 'Не удалось загрузить важное и записи на завтра.'; }
@@ -84,7 +86,8 @@
 
   $: fixtureMode = dev && $page.url.searchParams.get('fixture') === 'desktop-reference';
   $: navigationState = parseTodayCalendarSearch($page.url.searchParams);
-  $: selectedTodayDate = fixtureMode ? new Date(2024, 4, 24) : navigationState?.date ?? initialDate;
+  $: selectedTodayDate = fixtureMode ? new Date(2024, 4, 24) : navigationState?.date ?? calendarDateInZone($displayClock, $displayTimezone);
+  $: greeting = fixtureMode ? today.greeting : getGreeting($displayClock, $displayTimezone);
   $: selectedCalendarView = navigationState?.view ?? 'week';
   $: mobileCalendarView = navigationState?.view ?? 'day';
   $: selectedTodayDateKey = formatDateKey(selectedTodayDate);
@@ -94,12 +97,12 @@
   $: allDayInfo = createTodayAllDayInfoViewModel({ date: selectedTodayDate, annotations: todayAnnotations });
   $: canSwitchActiveProfile = getSelectableProfiles(currentFamilyState.members, $sessionStore.user?.id).length > 1;
   $: notificationCount = fixtureMode ? 0 : $todayState.notificationCount;
-  $: if (mounted) syncPage(currentFamilyState, selectedTodayDate, selectedCalendarView, fixtureMode);
+  $: if (mounted) syncPage(currentFamilyState, selectedTodayDate, selectedCalendarView, fixtureMode, $displayTimezone);
   $: loadErrors = [$todayState.error, $dayAnnotationsStore.error, holidayError, $todayState.notificationError, realtimeError].filter(Boolean);
 
-  function syncPage(familyState: FamilyState, date: Date, view: TodayNavigationView, fixture: boolean) {
+  function syncPage(familyState: FamilyState, date: Date, view: TodayNavigationView, fixture: boolean, timezone = $displayTimezone) {
     const context = familyState.status === 'ready' && !fixture ? getActiveFamilyContext(familyState) : null;
-    const key = JSON.stringify([context, formatDateKey(date), view, familyState.members]);
+    const key = JSON.stringify([context, formatDateKey(date), view, familyState.members, timezone]);
     if (key === loadedKey) return;
     loadedKey = key;
     const epoch = ++generation;
@@ -115,7 +118,7 @@
     busyOccurrenceId = null;
     composerOpen = false;
     if (!context) return;
-    void todayState.load({ context, date, view, members: familyState.members });
+    void todayState.load({ context, date, view, members: familyState.members, timezone });
     void loadAnnotations(epoch, context, date);
     void syncRealtime(epoch, context, date, view);
   }
@@ -141,7 +144,7 @@
     await Promise.all([
       realtime.syncNotifications(context, guarded(todayState.refreshNotifications)),
       realtime.syncActivity(context, guarded(async () => { await Promise.all([todayState.refreshActivity(), refreshSummary()]); })),
-      realtime.syncOccurrences(context, getTodayOccurrenceRange(date, view), guarded(todayState.refreshOccurrences))
+      realtime.syncOccurrences(context, getTodayOccurrenceRange(date, view, $displayTimezone), guarded(todayState.refreshOccurrences))
     ].map(async (subscription) => {
       try { await subscription; }
       catch { if (epoch === generation) realtimeError = 'Обновления в реальном времени недоступны.'; }
@@ -232,7 +235,7 @@
 <MobileShell {activeRoute} labelledBy="today-title-mobile">
   <TodayHeader
     titleId="today-title-mobile"
-    greeting={today.greeting}
+    {greeting}
     dateLabel={today.dateLabel}
     {notificationCount}
   />
@@ -260,7 +263,7 @@
     <TodayTimeline
       loading={!fixtureMode && $todayState.status === 'loading'}
       error={$todayState.error}
-      title={selectedTodayDateKey === formatDateKey(new Date()) ? 'Сегодня' : 'Расписание на день'}
+      title={selectedTodayDateKey === dateKeyInZone($displayClock, $displayTimezone) ? 'Сегодня' : 'Расписание на день'}
       allDayItems={today.allDayItems}
       items={today.timelineItems}
       labelledBy="today-timeline-title-mobile"
@@ -292,7 +295,7 @@
     <DesktopHeader
     oncreate={() => openComposer('event')}
     titleId="today-title-desktop"
-    greeting={today.greeting}
+    {greeting}
     dateLabel={today.dateLabel}
       {notificationCount}
   />
@@ -370,7 +373,7 @@
       context={currentFamilyState ? getActiveFamilyContext(currentFamilyState) : null}
       members={currentFamilyState?.members ?? []}
       selectedDate={selectedTodayDate}
-      timezone={currentFamilyState?.activeFamily?.timezone}
+      timezone={$displayTimezone}
       titleId="composer-title"
       onclose={() => (composerOpen = false)}
       oncreated={refreshTodayAfterCreate}

@@ -24,6 +24,15 @@ afterEach(() => {
 });
 
 describe('auth session lifecycle with the real PocketBase SDK', () => {
+  it('saves a timezone in the authenticated user and preserves it in the session', async () => {
+    setup();
+    const fetch = vi.fn().mockResolvedValue(reply({ ...user, timezone: 'Europe/Moscow' }));
+    vi.stubGlobal('fetch', fetch);
+    const result = await updateCurrentUserProfile({ name: user.name, email: user.email, timezone: 'Europe/Moscow' });
+    expect(JSON.parse(fetch.mock.calls[0][1].body).timezone).toBe('Europe/Moscow');
+    expect(result.timezone).toBe('Europe/Moscow');
+    expect(getCurrentSession()?.user.timezone).toBe('Europe/Moscow');
+  });
   it('uses same-origin on desktop and mobile while preserving explicit URLs', () => {
     expect(resolvePocketBaseUrl('', 'https://family.example.test')).toBe('https://family.example.test');
     expect(resolvePocketBaseUrl('https://pb.example.test/', 'https://family.example.test')).toBe('https://pb.example.test');

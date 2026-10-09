@@ -1,5 +1,6 @@
 <script lang="ts">
   import PriorityPicker from '../composer/PriorityPicker.svelte';
+  import { displayTimezone } from '$lib/stores/timezone.store';
   import type { ItemPriority } from '$lib/types/domain';
   import { onDestroy } from 'svelte';
   import Pencil from '@lucide/svelte/icons/pencil';
@@ -100,7 +101,7 @@
     return value ? new Intl.DateTimeFormat('ru', {
       day: 'numeric', month: 'long', year: 'numeric',
       ...(item?.allDay ? {} : { hour: '2-digit', minute: '2-digit' }),
-      timeZone: item?.timezone || undefined
+      timeZone: item?.allDay ? item.timezone : $displayTimezone
     }).format(new Date(value)) : 'Без срока';
   }
   onDestroy(() => { version += 1; });
@@ -134,6 +135,7 @@
       {#if item.description}<section class="item-description"><h2>Описание</h2><p>{item.description}</p></section>{/if}
       {#if item.checklist?.length}<section class="item-description"><h2>Чеклист</h2><ul>{#each item.checklist as step}<li>{step.title}</li>{/each}</ul></section>{/if}
       {#if item.recurrenceRule}<p class="results-count">{describeRecurrence(item.recurrenceRule, item.recurrenceUntil, item.timezone)}</p>{/if}
+      {#if weekdayTimes.length}<p class="results-count">Часовой пояс расписания: {item.timezone}</p>{/if}
       {#if item.archived}<p class="results-count">В архиве · новые повторы остановлены</p>{/if}
       {#if canEdit}<button type="button" class="button button--soft" disabled={archiving} on:click={toggleArchive}>{#if item.archived}<ArchiveRestore size={18} aria-hidden="true" />{:else}<Archive size={18} aria-hidden="true" />{/if}{archiving ? 'Сохраняем…' : item.archived ? 'Вернуть из архива' : 'В архив'}</button>{/if}
       {#if item.kind === 'event' && context}<details class="item-schedule-details"><summary>{item.recurrenceRule ? 'Расписание и перенос' : 'Дата и перенос события'}</summary><EventSchedule bind:item {context} canEdit={Boolean(canEdit) && !item.archived && !archiving} /></details>{/if}

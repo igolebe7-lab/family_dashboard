@@ -1,15 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { displayTimezone } from '$lib/stores/timezone.store';
+  import type { ActivityRecord } from '$lib/types/domain';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import { listActivity, subscribeActivity } from '$lib/api/activity.api';
-  import { mapActivityToFeedItem, type FeedViewItem } from '$lib/assignments/assignments-view';
+  import { mapActivityToFeedItem } from '$lib/assignments/assignments-view';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
 
   const activeRoute = '/app/feed';
   const pageSize = 30;
   let familyState: FamilyState;
-  let items: FeedViewItem[] = [];
+  let activityRecords: ActivityRecord[] = [];
+  $: items = activityRecords.map(record => mapActivityToFeedItem(record, familyState?.members, $displayTimezone));
   let loading = true;
   let error: string | null = null;
   let realtimeError = false;
@@ -27,15 +30,13 @@
     if (!context || !scopeKey) return;
     const ticket = ++request;
     const currentScope = scope;
-    const members = familyState.members;
     loading = true;
     error = null;
     failedPage = nextPage;
     try {
       const records = await listActivity(context, pageSize, nextPage);
       if (ticket !== request || currentScope !== scope) return;
-      const incoming = records.map((record) => mapActivityToFeedItem(record, members));
-      items = nextPage === 1 ? incoming : [...items, ...incoming.filter(item => !items.some(existing => existing.id === item.id))];
+      activityRecords = nextPage === 1 ? records : [...activityRecords, ...records.filter(record => !activityRecords.some(existing => existing.id === record.id))];
       page = nextPage;
       hasMore = records.length === pageSize;
     } catch {
@@ -75,7 +76,7 @@
       request += 1;
       stopRealtime?.();
       stopRealtime = undefined;
-      items = [];
+      activityRecords = [];
       page = 0;
       hasMore = false;
       error = state.status === 'error' ? 'Не удалось подключить семью. Откройте раздел «Семья» и повторите загрузку.' : null;

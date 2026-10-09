@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { displayTimezone } from '$lib/stores/timezone.store';
   import { page } from '$app/stores';
   import { onDestroy } from 'svelte';
   import Search from '@lucide/svelte/icons/search';
@@ -64,7 +65,7 @@
   function dateLabel(item: Item) {
     const value = item.startAt || item.dueAt;
     if (!value) return 'Без срока';
-    return new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'long' }).format(new Date(value));
+    return new Intl.DateTimeFormat('ru', { timeZone: item.allDay ? item.timezone : $displayTimezone, day: 'numeric', month: 'long' }).format(new Date(value));
   }
 
   onDestroy(() => { clearTimeout(timer); version += 1; });

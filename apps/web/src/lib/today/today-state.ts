@@ -7,7 +7,7 @@ import type { FamilyMember } from '$lib/types/domain';
 import { loadTodayViewModelFromOccurrences } from './today-data';
 import { createTodayViewModel, type TodayFeedItem, type TodayViewModel } from './today-view-model';
 
-type TodayInput = { context: ActiveFamilyContext; date: Date; view: TodayNavigationView; members: FamilyMember[] };
+type TodayInput = { context: ActiveFamilyContext; date: Date; view: TodayNavigationView; members: FamilyMember[]; timezone?: string };
 type TodayState = {
   model: TodayViewModel;
   status: 'idle' | 'loading' | 'ready' | 'error';
@@ -62,7 +62,7 @@ export function createTodayState(dependencies: {
         actor: captured.members.find((member) => member.id === record.actor)?.displayName ?? 'Семья',
         body: record.summary,
         timeLabel: Number.isFinite(Date.parse(record.created))
-          ? new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(new Date(record.created)) : '',
+          ? new Intl.DateTimeFormat('ru-RU', { timeZone: captured.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(record.created)) : '',
         icon: record.action === 'assignment.approved' ? 'badge-check' : record.action === 'assignment.rejected' ? 'rotate-ccw' : 'message-square-text',
         color: record.action === 'assignment.approved' ? 'green' : record.action === 'assignment.rejected' ? 'peach' : 'blue'
       }));

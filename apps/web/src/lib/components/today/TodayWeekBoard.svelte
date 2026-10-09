@@ -4,6 +4,9 @@
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
   import { ITEM_CATEGORIES, getCategoryMeta, type ItemCategory } from '$lib/constants/categories';
   import { formatDateKey } from '$lib/today/today-view-model';
+  import { displayTimezone } from '$lib/stores/timezone.store';
+  import { displayClock } from '$lib/stores/clock.store';
+  import { dateKeyInZone } from '$lib/utils/timezone';
   import ChevronLeft from '@lucide/svelte/icons/chevron-left';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
@@ -87,7 +90,7 @@
 <section class:today-week-board--mobile={mobile} class:today-week-board--day={selectedView === 'day'} class="today-week-board" aria-labelledby={labelledBy}>
   <div class="today-week-toolbar">
     <div class="today-week-toolbar__range">
-      <a class="button" href={buildTodayCalendarHref({ dateKey: formatDateKey(new Date()), view: selectedView })} data-sveltekit-noscroll>Сегодня</a>
+      <a class="button" href={buildTodayCalendarHref({ dateKey: dateKeyInZone($displayClock, $displayTimezone), view: selectedView })} data-sveltekit-noscroll>Сегодня</a>
       <div class="today-week-toolbar__arrows" aria-label="Переключить период">
         <a class="icon-button" href={buildTodayCalendarHref({ dateKey: formatDateKey(previousDate), view: selectedView })} aria-label={previousLabel} data-sveltekit-noscroll>
           <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />

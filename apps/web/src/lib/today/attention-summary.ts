@@ -2,12 +2,12 @@ import { createAssignmentViewModels } from '$lib/assignments/assignments-view';
 import type { FamilyMember, ItemOccurrence } from '$lib/types/domain';
 import type { TodayAttentionItem } from './today-view-model';
 import type { AccentColor } from '$lib/constants/colors';
-import { createDateTimeIso } from '$lib/composer/composer-form';
+import { calendarDayStartIso, dateKeyInZone } from '$lib/utils/timezone';
 
 export function nextAttentionDayBoundary(now: Date, timezone: string): number {
   const key = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
   const next = new Date(`${key}T12:00:00Z`); next.setUTCDate(next.getUTCDate() + 1);
-  return Date.parse(createDateTimeIso(next.toISOString().slice(0, 10), '00:00', timezone));
+  return Date.parse(calendarDayStartIso(next.toISOString().slice(0, 10), timezone));
 }
 
 export type AttentionSummary = { attention: TodayAttentionItem[]; tomorrow: TodayAttentionItem[] };
@@ -32,7 +32,8 @@ export function buildAttentionSummary(occurrences: ItemOccurrence[], members: Fa
     const overdue = occurrence.kind !== 'event' && Number.isFinite(due) && due < now.getTime();
     const important = ['urgent', 'high'].includes(item.priority) && due >= now.getTime() && due <= horizon;
     const person = members.find(member => member.id === (item.assignees[0] || item.participants[0] || item.owner || item.createdBy));
-    const time = Number.isFinite(due) ? new Intl.DateTimeFormat('ru', { timeZone: timezone, day: 'numeric', month: 'short', ...(occurrence.allDay ? {} : { hour: '2-digit', minute: '2-digit' }) }).format(new Date(due)) : 'Без срока';
+    const recordZone = occurrence.allDay ? item.timezone || timezone : timezone;
+    const time = Number.isFinite(due) ? new Intl.DateTimeFormat('ru', { timeZone: recordZone, day: 'numeric', month: 'short', ...(occurrence.allDay ? {} : { hour: '2-digit', minute: '2-digit' }) }).format(new Date(due)) : 'Без срока';
     const prefix = approval ? 'На подтверждение' : overdue ? 'Просрочено' : item.priority === 'urgent' ? 'Срочно' : 'Важно';
     const row: TodayAttentionItem = {
       id: `${approval ? 'attention-approval' : 'focus'}-${occurrence.id}`, itemId: item.id, occurrenceId: occurrence.id,
@@ -43,7 +44,7 @@ export function buildAttentionSummary(occurrences: ItemOccurrence[], members: Fa
     };
     if (approval || overdue || important) attention.push({ row, group: approval ? 0 : overdue ? 1 : 2,
       priority: { urgent: 0, high: 1, normal: 2, low: 3 }[item.priority] ?? 2, due: Number.isFinite(due) ? due : Infinity });
-    else if (Number.isFinite(due) && dateKey(new Date(due)) === tomorrowKey) tomorrow.push({ row: { ...row, body: `${item.title} · ${time}${person ? ` · ${person.displayName}` : ''}` }, due });
+    else if (Number.isFinite(due) && dateKeyInZone(new Date(due), recordZone) === tomorrowKey) tomorrow.push({ row: { ...row, body: `${item.title} · ${time}${person ? ` · ${person.displayName}` : ''}` }, due });
   }
   attention.sort((a, b) => a.group - b.group || a.priority - b.priority || a.due - b.due || a.row.id.localeCompare(b.row.id));
   tomorrow.sort((a, b) => a.due - b.due || a.row.id.localeCompare(b.row.id));

@@ -4,9 +4,14 @@
   import type { TodayMonthDay } from '$lib/today/today-month-calendar';
   import { onDestroy } from 'svelte';
   import MonthDayPreview from './MonthDayPreview.svelte';
+  import CalendarRecordDots from '../calendar/CalendarRecordDots.svelte';
+  import { displayClock } from '$lib/stores/clock.store';
+  import { displayTimezone } from '$lib/stores/timezone.store';
+  import { dateKeyInZone } from '$lib/utils/timezone';
 
   export let model: TodayMonthViewModel;
   export let selectedDateKey: string;
+  $: todayKey = dateKeyInZone($displayClock, $displayTimezone);
   let previewDate: string | null = null;
   let anchor: HTMLElement;
   let touch = false;
@@ -22,7 +27,7 @@
     keepPreview(); anchor = element; touch = mobile; previewDate = day.dateKey;
   }
   function hoverDay(event: PointerEvent, day: TodayMonthDay) {
-    if (event.pointerType !== 'mouse' || !day.events.length) return;
+    if (event.pointerType !== 'mouse' || (!day.events.length && !day.annotations.length)) return;
     if (pinned) return;
     openPreview(day, event.currentTarget as HTMLElement, false);
   }
@@ -52,10 +57,12 @@
             class:today-month-day--muted={!day.inCurrentMonth}
             class:today-month-day--weekend={day.isWeekend}
             class:today-month-day--selected={day.dateKey === selectedDateKey}
+            class:today-month-day--today={day.inCurrentMonth && day.dateKey === todayKey}
             class:today-month-day--annotated={day.annotations.length > 0}
             class="today-month-day"
             href={buildTodayCalendarHref({ dateKey: day.dateKey, view: 'day' })}
             aria-label={`${day.dateKey}: ${day.annotations.length} особых дат, ${day.eventCount} событий`}
+            aria-current={day.inCurrentMonth && day.dateKey === todayKey ? 'date' : undefined}
             aria-haspopup="dialog"
             aria-expanded={previewDate === day.dateKey}
             on:pointerenter={(event) => hoverDay(event, day)}
@@ -85,7 +92,7 @@
               {/if}
 
               {#if day.eventCount > 0}
-                <span class="today-month-day__event-count">{day.eventCount}</span>
+                <CalendarRecordDots markers={day.events.map(event => ({ id: event.id, dateKey: day.dateKey, colors: event.memberColors ?? [event.color] }))} />
               {/if}
             </span>
           </a>
@@ -100,3 +107,30 @@
     <MonthDayPreview day={previewDay} {anchor} {touch} focusOnOpen={pinned} onclose={closePreview} onenter={keepPreview} onleave={() => { if (!touch) leavePreview(); }} />
   {/key}
 {/if}
+
+<style>
+  .today-month-day--today .today-month-day__annotation { color: var(--primary-ink); }
+  @media (max-width: 1023px) {
+    :global(.today-mobile-surface) .today-month-grid {
+      padding: 0; border: 0; background: transparent; box-shadow: none;
+    }
+    :global(.today-mobile-surface) .today-month-grid__header,
+    :global(.today-mobile-surface) .today-month-grid__week {
+      grid-template-columns: 1.55rem repeat(7, minmax(0, 1fr)); gap: .18rem;
+    }
+    :global(.today-mobile-surface) .today-month-grid__header { font-size: .62rem; }
+    :global(.today-mobile-surface) .today-month-grid__week-number { font-size: .62rem; }
+    :global(.today-mobile-surface) .today-month-day {
+      position: relative; height: 2.75rem; min-height: 2.75rem;
+      grid-template-rows: auto auto; align-content: center; justify-items: center;
+      gap: .1rem; padding: .16rem; border: 0; border-radius: 10px;
+      background: transparent; color: var(--color-text); box-shadow: none;
+    }
+    :global(.today-mobile-surface) .today-month-day__number { font-size: .74rem; line-height: 1; }
+    :global(.today-mobile-surface) .today-month-day--weekend { background: var(--color-yellow-soft); }
+    :global(.today-mobile-surface) .today-month-day--muted { opacity: .42; }
+    :global(.today-mobile-surface) .today-month-day--selected { background: var(--color-green-soft); color: var(--color-green); }
+    :global(.today-mobile-surface) .today-month-day--today { background: var(--color-green); color: var(--primary-ink); }
+    :global(.today-mobile-surface) .today-month-day__footer { display: grid; justify-items: center; gap: 2px; }
+  }
+</style>

@@ -65,6 +65,7 @@
   <form class="auth-form series-form" on:submit|preventDefault={save}>
     <fieldset disabled={saving}>
       <legend>Будущее расписание</legend>
+      <p>Часовой пояс серии: {item.timezone}</p>
       <p>Прошедшие занятия, индивидуальные переносы и даты с комментариями сохранятся.</p>
       <label>Начало нового расписания<input type="date" required bind:value={values.startDate} /></label>
       {#if !values.allDay}<label>Время начала<input type="time" required bind:value={values.startTime} /></label>{/if}

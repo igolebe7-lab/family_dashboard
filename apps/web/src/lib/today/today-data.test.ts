@@ -2,12 +2,43 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 import type { FamilyMember, Item, ItemOccurrence } from '$lib/types/domain';
-import { createTodayViewModelFromOccurrences, loadTodayViewModelFromOccurrences } from './today-data';
+import { createTodayViewModelFromOccurrences, getTodayOccurrenceRange, loadTodayViewModelFromOccurrences } from './today-data';
 
 const context: ActiveFamilyContext = {
   familyId: 'family_1',
   memberId: 'member_misha'
 };
+
+it('uses the viewer timezone for times and calendar days, not the browser zone', () => {
+  const occurrence = { ...schoolOccurrence, startAt: '2026-06-10T22:30:00Z', endAt: '2026-06-10T23:30:00Z' };
+  const moscow = createTodayViewModelFromOccurrences({ date: new Date(2026, 5, 11), occurrences: [occurrence], timezone: 'Europe/Moscow' });
+  expect(moscow.timelineItems[0]?.time).toBe('01:30');
+  expect(moscow.weekEvents[0].day).toBe('2026-06-11');
+  const ny = createTodayViewModelFromOccurrences({ date: new Date(2026, 5, 10), occurrences: [occurrence], timezone: 'America/New_York' });
+  expect(ny.timelineItems[0]?.time).toBe('18:30');
+});
+
+it('keeps all-day civil dates unchanged between accounts and includes the first day of a week', () => {
+  const occurrence = { ...schoolOccurrence, allDay: true, startAt: '2026-06-07T21:00:00Z', endAt: '2026-06-08T20:59:59Z',
+    itemRecord: { ...itemFor(schoolOccurrence), timezone: 'Europe/Moscow' } };
+  for (const timezone of ['Europe/Moscow', 'America/New_York']) {
+    const model = createTodayViewModelFromOccurrences({ date: new Date(2026, 5, 8), timezone, occurrences: [occurrence] });
+    expect(model.allDayItems).toHaveLength(1);
+    expect(model.weekEvents[0].day).toBe('2026-06-08');
+  }
+});
+it('loads the viewer week across a DST change instead of using fixed UTC offsets', () => {
+  expect(getTodayOccurrenceRange(new Date(2026, 2, 25), 'week', 'Europe/Amsterdam')).toEqual({
+    from: '2026-03-22T23:00:00.000Z', to: '2026-03-29T22:00:00.000Z'
+  });
+});
+
+it('includes the last instant of the viewer week but not the next week midnight', () => {
+  const last = { ...schoolOccurrence, id: 'last', startAt: '2026-06-14T20:59:59.999Z' };
+  const next = { ...last, id: 'next', startAt: '2026-06-14T21:00:00Z' };
+  const model = createTodayViewModelFromOccurrences({ date: new Date(2026, 5, 10), timezone: 'Europe/Moscow', occurrences: [last, next] });
+  expect(model.weekEvents.map(event => event.id)).toEqual(['last']);
+});
 
 const members: FamilyMember[] = [
   {
