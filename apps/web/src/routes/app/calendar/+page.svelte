@@ -42,7 +42,7 @@
     const next = new Date(start); next.setDate(next.getDate() + 1);
     const zone = $displayTimezone;
     const result = await listOccurrencesInRange(context, { from: calendarDayStartIso(dateKey, zone),
-      to: new Date(Date.parse(calendarDayStartIso(formatDateKey(next), zone)) - 1).toISOString() });
+      to: calendarDayStartIso(formatDateKey(next), zone) });
     return createTodayViewModelFromOccurrences({ date: start, occurrences: result.items,
       timezone: zone, members: currentFamilyState?.members ?? [], activeMemberId: context.memberId }).weekEvents
       .filter(event => event.day === dateKey);

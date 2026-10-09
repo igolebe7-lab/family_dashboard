@@ -29,8 +29,15 @@ it('keeps all-day civil dates unchanged between accounts and includes the first 
 });
 it('loads the viewer week across a DST change instead of using fixed UTC offsets', () => {
   expect(getTodayOccurrenceRange(new Date(2026, 2, 25), 'week', 'Europe/Amsterdam')).toEqual({
-    from: '2026-03-22T23:00:00.000Z', to: '2026-03-29T21:59:59.999Z'
+    from: '2026-03-22T23:00:00.000Z', to: '2026-03-29T22:00:00.000Z'
   });
+});
+
+it('includes the last instant of the viewer week but not the next week midnight', () => {
+  const last = { ...schoolOccurrence, id: 'last', startAt: '2026-06-14T20:59:59.999Z' };
+  const next = { ...last, id: 'next', startAt: '2026-06-14T21:00:00Z' };
+  const model = createTodayViewModelFromOccurrences({ date: new Date(2026, 5, 10), timezone: 'Europe/Moscow', occurrences: [last, next] });
+  expect(model.weekEvents.map(event => event.id)).toEqual(['last']);
 });
 
 const members: FamilyMember[] = [

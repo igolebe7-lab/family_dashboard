@@ -11,7 +11,7 @@
 - [x] Общая геометрия мобильного месяца, подсветка текущего дня и доступные подсказки; desktop month сохраняет расширенный вид.
 - [x] Timezone аккаунта: Москва по умолчанию, серверная проверка и сохранение, независимость пользователей. UTC-загрузка диапазонов, группировка, формы, сводки и время записей согласованы.
 - [x] Приветствие 06–12/12–18/18–23/23–06, обновление по границе и после возврата во вкладку без API polling.
-- [x] Unit/backend/UI проверки: 291 unit tests, backend security/flows/series/birthdays/timezones и Go tests. Chrome/WebKit: 320/390/820/1440px, обе темы, сохранение timezone, UTC midnight, модалка и достижимость последнего ряда.
+- [x] Unit/backend/UI проверки: 292 unit tests, backend security/flows/series/birthdays/timezones и Go tests. Chrome/WebKit: 320/390/820/1440px, обе темы, сохранение timezone, UTC midnight, модалка и достижимость последнего ряда.
 
 ## Publication Procedure
 Защищённый PR с полной CI-проверкой, затем штатный versioned release: backup,

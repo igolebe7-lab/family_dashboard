@@ -75,11 +75,11 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
   const weekOccurrences = input.occurrences.filter((occurrence) => {
     if (occurrence.allDay && input.timezone) {
       const key = getOccurrenceDateKey(occurrence, input.timezone);
-      return Boolean(key && key >= dateKeyInZone(new Date(range.from), input.timezone) && key <= dateKeyInZone(new Date(range.to), input.timezone));
+      return Boolean(key && key >= dateKeyInZone(new Date(range.from), input.timezone) && key <= dateKeyInZone(new Date(Date.parse(range.to) - 1), input.timezone));
     }
     const value = occurrence.startAt ?? occurrence.dueAt;
     const time = value ? new Date(value).getTime() : NaN;
-    return time >= new Date(range.from).getTime() && time <= new Date(range.to).getTime();
+    return time >= new Date(range.from).getTime() && (input.timezone ? time < Date.parse(range.to) : time <= Date.parse(range.to));
   });
 
   const weekEvents = weekOccurrences
@@ -265,7 +265,7 @@ export function getTodayOccurrenceRange(date: Date, view: TodayNavigationView = 
     const next = new Date(dates.end);
     next.setDate(next.getDate() + 1);
     return { from: calendarDayStartIso(formatDateKey(dates.start), timezone),
-      to: new Date(Date.parse(calendarDayStartIso(formatDateKey(next), timezone)) - 1).toISOString() };
+      to: calendarDayStartIso(formatDateKey(next), timezone) };
   }
   const range = toIsoRange(dates);
   return { from: range.start, to: range.end };
