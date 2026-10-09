@@ -87,15 +87,15 @@
 
 <style>
   .repeat-editor { border: 0; padding: 0; margin: 0; gap: 0.65rem; }
-  .repeat-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.72rem; }
+  .repeat-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0.72rem; align-items: start; }
   .repeat-weekdays { border: 0; padding: 0; margin: 0; min-width: 0; }
   .weekday-options { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
   .weekday-option { display: flex !important; align-items: center; justify-content: center; gap: 0.3rem !important; min-height: 44px; min-width: 44px; padding: 0.3rem; }
   .weekday-option input { width: 16px; height: 16px; padding: 0; accent-color: var(--color-green); }
   .repeat-error { color: var(--color-text); font-size: 0.8rem; margin: 0; }
   .weekday-times { display: grid; gap: 16px; min-width: 0; }
-  .weekday-time-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; min-width: 0; border: 0; }
+  .weekday-time-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; margin: 0; padding: 0; min-width: 0; border: 0; align-items: start; }
   .weekday-time-row legend { margin-bottom: 8px; font-weight: 600; }
   .repeat-time-toggle { margin-block: 8px; }
-  @media (max-width: 420px) { .repeat-fields { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 600px) { .repeat-fields { grid-template-columns: minmax(0, 1fr); } }
 </style>
