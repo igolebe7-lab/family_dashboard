@@ -164,7 +164,7 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
   .search-field .button { padding: 0 12px; font-size: 13px; }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   dialog.composer-sheet[open] { height: calc(100dvh - 64px); max-height: calc(100dvh - 64px); }
   .mobile-tools { display: none; }
   .desktop-shell { height: auto; min-height: 100dvh; grid-template-columns: 208px minmax(0, 1fr) 264px; gap: 28px; overflow: visible; padding: 0 28px 0 0; background: var(--color-bg); }
@@ -223,13 +223,6 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
   .desktop-today-header { min-height: 80px; }
 }
 
-@media (min-width: 1024px) and (max-width: 1199px) {
-  .desktop-shell { grid-template-columns: 184px minmax(0, 1fr); gap: 24px; padding-right: 24px; }
-  .desktop-aside { grid-column: 2; position: static; margin: 0 0 32px; max-height: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .desktop-main { min-height: 0; }
-  .sidebar { grid-row: 1 / 3; }
-}
-
 .year-day--today {
   background: var(--color-green);
   color: var(--color-surface);
@@ -239,7 +232,7 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
 .year-day--today.year-day--selected { outline: 2px solid var(--color-text); outline-offset: 2px; }
 .year-calendar:focus-visible { outline: 2px solid var(--color-green); outline-offset: -2px; }
 
-@media (max-width: 1023px) {
+@media (max-width: 767px) {
   .today-week-board--mobile .today-week-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 12px; }
   .today-week-board--mobile .today-week-toolbar__range { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
   .today-week-board--mobile .today-week-toolbar__range h2 { flex-basis: 100%; font-size: 17px; margin: 0; }
@@ -271,7 +264,7 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
   .app-screen--calendar .year-calendar { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; align-content: start; padding-bottom: 16px; }
 }
 
-@media (max-width: 1023px), (pointer: coarse) {
+@media (max-width: 767px), (pointer: coarse) {
   /* Keep editable controls readable without iOS focus zoom; retain manual pinch zoom. */
   input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
   select,
@@ -279,7 +272,7 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
     font-size: max(16px, 1rem) !important;
   }
 }
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .desktop-shell--today { height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: minmax(0, 1fr); }
   .desktop-shell--today .desktop-main { height: 100%; min-height: 0; overflow: hidden; }
   .desktop-shell--today .desktop-main > :not(.today-week-board) { flex-shrink: 0; }
@@ -295,12 +288,6 @@ dialog.composer-sheet .composer-sheet__actions { position: sticky; bottom: 0; ma
   .desktop-shell--calendar .sidebar { grid-row: 1; overflow-y: auto; }
   .desktop-shell--calendar .desktop-aside { margin-top: 32px; max-height: calc(100dvh - 64px); overflow-y: auto; }
 }
-@media (min-width: 1024px) and (max-width: 1199px) {
-  .desktop-shell--calendar .desktop-aside { display: none; }
-  .desktop-shell--today { grid-template-columns: 184px minmax(0, 1fr) 220px; gap: 16px; padding-right: 16px; }
-  .desktop-shell--today .desktop-aside { grid-column: 3; grid-row: 1; display: flex; flex-direction: column; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

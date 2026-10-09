@@ -22,6 +22,7 @@
   let anchor: HTMLElement;
   let touch = false;
   let pinned = false;
+  let activationPointer = '';
   let previewLoading = false;
   let previewError = '';
   let request = 0;
@@ -47,12 +48,14 @@
   function openPreview(day: YearCalendarDay, element: HTMLElement, clicked: boolean) {
     if (!loadDayEvents) { if (clicked) onselectDay?.(day); return; }
     keepPreview();
+    const touchClick = clicked && (activationPointer === 'touch' || activationPointer === 'pen' || matchMedia('(any-pointer: coarse), (max-width: 767px)').matches);
+    activationPointer = '';
     if (preview?.dateKey === day.dateKey) {
-      if (clicked) { pinned = true; touch = matchMedia('(hover: none), (max-width: 1023px)').matches; }
+      if (clicked) { pinned = true; touch = touchClick; }
       return;
     }
     anchor = element; pinned = clicked;
-    touch = clicked && matchMedia('(hover: none), (max-width: 1023px)').matches;
+    touch = touchClick;
     preview = { ...day, eventCount: 0, events: [] };
     void loadPreview();
   }
@@ -153,6 +156,7 @@
                 aria-label={`${day.dateKey}, ${day.annotations.length} особых дат, ${recordMarkersByDate.get(day.dateKey)?.length ?? 0} записей`}
                 aria-haspopup="dialog"
                 aria-expanded={preview?.dateKey === day.dateKey}
+                on:pointerdown={(event) => activationPointer = event.pointerType}
                 on:pointerenter={(event) => hoverDay(event, day)}
                 on:pointerleave={leavePreview}
                 on:click={(event) => openPreview(day, event.currentTarget, true)}

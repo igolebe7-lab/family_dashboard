@@ -101,7 +101,7 @@
     --color-yellow: #795a1d;
     --color-danger: #b02f43;
   }
-@media (max-width: 1023px) {
+@media (max-width: 767px) {
   :root[data-theme] body { background: var(--color-bg); }
   :root[data-theme] :is(.app-screen--mobile, .workspace-page__content) { background: transparent; }
   :root[data-theme] .mobile-tools { border-bottom: 0; gap: 4px; padding-bottom: 4px; }

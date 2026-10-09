@@ -74,6 +74,7 @@
   let recoveryTimer: ReturnType<typeof setTimeout> | undefined;
   let composerOpen = false;
   let composerKind: ComposerKind = 'event';
+  let inspectorRequest = 0;
 
   $: selectedYear = $dayAnnotationsStore.selectedYear;
   $: loadedCalendarAnnotations = mergeDayAnnotations(
@@ -188,6 +189,7 @@
   }
 
   function selectDay(day: YearCalendarDay): void {
+    inspectorRequest++;
     selectedDateKey = day.dateKey;
   }
 
@@ -201,6 +203,7 @@
   }
 
   function openCreateSpecialDate(): void {
+    inspectorRequest++;
     editingAnnotation = undefined;
     formError = null;
     formMode = 'create';
@@ -214,6 +217,7 @@
   function openEditSpecialDate(annotationId: string): void {
     const annotation = calendarAnnotations.find((item) => item.id === annotationId);
     if (!annotation || annotation.readonly) return;
+    inspectorRequest++;
 
     editingAnnotation = annotation;
     formError = null;
@@ -400,7 +404,7 @@
 {#if !isFormOpen}<FloatingCreateButton onclick={() => openComposer('event')} />{/if}
 
 {:else}
-<DesktopShell {activeRoute} labelledBy="calendar-title-desktop">
+<DesktopShell {activeRoute} labelledBy="calendar-title-desktop" {inspectorRequest}>
   <div class="desktop-header">
     <div>
       <h1 id="calendar-title-desktop">Календарь</h1>

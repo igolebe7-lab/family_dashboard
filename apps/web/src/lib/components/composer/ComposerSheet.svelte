@@ -255,5 +255,5 @@
   .composer-kind-controls, .composer-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
   .composer-fields { display: grid; gap: 1rem; }
   .composer-sheet__actions { flex-wrap: wrap; }
-  @media (min-width: 1024px) { dialog.composer-sheet { top: 2rem; } }
+  @media (min-width: 768px) { dialog.composer-sheet { top: 2rem; } }
 </style>

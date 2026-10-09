@@ -16,6 +16,7 @@
   import '$lib/design/mobile-glass.css';
   import '$lib/design/glass-system.css';
   import '$lib/design/agenda.css';
+  import '$lib/design/tablet-workspace.css';
 
   let unsubscribeAuth: Unsubscriber | undefined;
   let mounted = false;
