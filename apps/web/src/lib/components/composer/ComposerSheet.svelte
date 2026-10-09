@@ -1,5 +1,7 @@
 <script lang="ts">
   import SheetHandle from '$lib/components/ui/SheetHandle.svelte';
+  import { displayTimezone } from '$lib/stores/timezone.store';
+  import { calendarDateInZone } from '$lib/utils/timezone';
   import X from '@lucide/svelte/icons/x';
   import { onDestroy, onMount } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
@@ -23,8 +25,8 @@
   export let activeKind: ComposerKind = 'event';
   export let context: ActiveFamilyContext | null = null;
   export let members: FamilyMember[] = [];
-  export let selectedDate: Date = new Date();
-  export let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  export let timezone = $displayTimezone;
+  export let selectedDate: Date = calendarDateInZone(new Date(), timezone);
   export let titleId = 'composer-title';
   export let onclose: (() => void) | undefined = undefined;
   export let oncreated: (() => void | Promise<void>) | undefined = undefined;

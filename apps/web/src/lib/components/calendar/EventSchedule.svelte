@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, tick } from 'svelte';
+  import { displayTimezone } from '$lib/stores/timezone.store';
   import SeriesEditor from './SeriesEditor.svelte';
   import CalendarClock from '@lucide/svelte/icons/calendar-clock';
   import type { ActiveFamilyContext } from '$lib/api/pocketbase';
@@ -23,6 +24,7 @@
   let generation = 0;
   let showPast = false;
   let now = Date.now();
+  $: timezone = item.allDay ? item.timezone : $displayTimezone;
   $: load(item.id, context.familyId, context.memberId);
   $: visibleOccurrences = occurrences.filter((occurrence) => showPast || Date.parse(occurrence.endAt || occurrence.startAt || '') >= now);
   $: if (!canEdit) { editingId = ''; values = null; }
@@ -45,7 +47,7 @@
     if (!canEdit || saving) return;
     saveError = ''; message = '';
     try {
-      values = createScheduleFormValues(occurrence, item.timezone);
+      values = createScheduleFormValues(occurrence, timezone);
       editingId = occurrence.id; trigger = button;
       await tick();
       editor?.querySelector('input')?.focus();
@@ -60,7 +62,7 @@
 
   async function save() {
     if (!canEdit || !values || !editingId || saving) return;
-    const result = createScheduleInput(values, item.timezone);
+    const result = createScheduleInput(values, timezone);
     if (!result.ok) { saveError = result.error; return; }
     const request = generation;
     const id = editingId;
@@ -82,7 +84,7 @@
   function format(value?: string, allDay = false) {
     if (!value) return 'Без даты';
     return new Intl.DateTimeFormat('ru', {
-      timeZone: item.timezone, day: 'numeric', month: 'long', year: 'numeric',
+      timeZone: allDay ? item.timezone : $displayTimezone, day: 'numeric', month: 'long', year: 'numeric',
       ...(allDay ? {} : { hour: '2-digit', minute: '2-digit' })
     }).format(new Date(value));
   }
@@ -91,7 +93,7 @@
 
 <section class="event-schedule" aria-label="Расписание события">
   {#if canEdit && item.recurrenceRule}<SeriesEditor {item} {context} onsaved={(updated) => { item = updated; void load(item.id, context.familyId, context.memberId); }} />{/if}
-  <header class="schedule-heading"><h2>Ближайшие события</h2><span class="results-count">{item.timezone}</span></header>
+  <header class="schedule-heading"><h2>Ближайшие события</h2><span class="results-count">{timezone}</span></header>
   <label class="schedule-past"><input type="checkbox" bind:checked={showPast} />Показать прошедшие за месяц</label>
   {#if loading}<p role="status">Загружаем расписание…</p>
   {:else if loadError}<div role="alert"><p>{loadError}</p><button type="button" class="button button--soft" on:click={() => load(item.id, context.familyId, context.memberId)}>Повторить</button></div>

@@ -8,6 +8,8 @@
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import ThemeSettings from '$lib/components/app/ThemeSettings.svelte';
+  import TimezonePicker from '$lib/components/app/TimezonePicker.svelte';
+  import { DEFAULT_TIMEZONE, resolveTimezone } from '$lib/utils/timezone';
   import {
     getAuthErrorMessage,
     logout,
@@ -24,6 +26,7 @@
   let sessionState: SessionState | undefined;
   let name = '';
   let email = '';
+  let timezone = DEFAULT_TIMEZONE;
   let oldPassword = '';
   let password = '';
   let passwordConfirm = '';
@@ -59,7 +62,8 @@
     try {
       await updateCurrentUserProfile({
         name: nextName,
-        email: nextEmail
+        email: nextEmail,
+        timezone
       });
       profileMessage = 'Данные профиля сохранены.';
     } catch (error) {
@@ -150,6 +154,7 @@
       if (state.user && state.user.id !== previousUserId) {
         name = state.user.name;
         email = state.user.email;
+        timezone = resolveTimezone(state.user.timezone);
       }
     });
   });
@@ -191,6 +196,7 @@
         <span>Email</span>
         <input bind:value={email} type="email" autocomplete="email" placeholder="you@example.com" />
       </label>
+      <TimezonePicker bind:value={timezone} />
       <button class="button button--primary" disabled={profileSaving} type="submit">
         <Save size={18} strokeWidth={2.35} aria-hidden="true" />
         {profileSaving ? 'Сохраняем' : 'Сохранить'}
@@ -261,6 +267,7 @@
         <span>Email</span>
         <input bind:value={email} type="email" autocomplete="email" placeholder="you@example.com" />
       </label>
+      <TimezonePicker bind:value={timezone} />
       <button class="button button--primary" disabled={profileSaving} type="submit">
         <Save size={18} strokeWidth={2.35} aria-hidden="true" />
         {profileSaving ? 'Сохраняем' : 'Сохранить'}

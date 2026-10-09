@@ -183,12 +183,12 @@ export function createChildModeViewModel(input: ChildInput): ChildModeViewModel 
   };
 }
 
-export function mapNotificationInboxItem(record: NotificationRecord): NotificationInboxItem {
+export function mapNotificationInboxItem(record: NotificationRecord, timezone?: string): NotificationInboxItem {
   return {
     id: record.id,
     title: record.title,
     body: record.body,
-    createdLabel: formatDateTimeLabel(record.created),
+    createdLabel: formatDateTimeLabel(record.created, timezone),
     unread: !record.readAt,
     actionLabel: record.occurrence ? 'Открыть поручение' : 'Открыть'
   };
@@ -196,7 +196,8 @@ export function mapNotificationInboxItem(record: NotificationRecord): Notificati
 
 export function mapActivityToFeedItem(
   record: ActivityRecord,
-  members: FamilyMember[] = []
+  members: FamilyMember[] = [],
+  timezone?: string
 ): FeedViewItem {
   const actor = members.find((member) => member.id === record.actor);
 
@@ -204,7 +205,7 @@ export function mapActivityToFeedItem(
     id: record.id,
     actorName: actor?.displayName ?? 'Семья',
     summary: record.summary,
-    timeLabel: formatDateTimeLabel(record.created),
+    timeLabel: formatDateTimeLabel(record.created, timezone),
     tone: getActivityTone(record.action)
   };
 }

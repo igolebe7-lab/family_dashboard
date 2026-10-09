@@ -14,6 +14,7 @@ export type AuthUser = {
   id: string;
   email: string;
   name: string;
+  timezone?: string;
 };
 
 export type AuthSession = {
@@ -34,6 +35,7 @@ export type RegisterAdultInput = LoginInput & {
 export type UpdateCurrentUserProfileInput = {
   email: string;
   name: string;
+  timezone?: string;
 };
 
 export type UpdateCurrentUserPasswordInput = {
@@ -161,7 +163,8 @@ export async function updateCurrentUserProfile(
   const update = requireCollectionMethod(users, 'update');
   const record = await update(session.user.id, {
     email: input.email.trim(),
-    name: input.name.trim()
+    name: input.name.trim(),
+    ...(input.timezone !== undefined ? { timezone: input.timezone } : {})
   });
 
   syncAuthRecord(record, session);
@@ -262,6 +265,7 @@ function mapAuthUser(value: unknown): AuthUser {
   return {
     id: asString(record.id),
     email: asString(record.email),
-    name: asString(record.name)
+    name: asString(record.name),
+    ...(asString(record.timezone) ? { timezone: asString(record.timezone) } : {})
   };
 }

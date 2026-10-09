@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { displayTimezone } from '$lib/stores/timezone.store';
   import { goto } from '$app/navigation';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import RefreshCw from '@lucide/svelte/icons/refresh-cw';
@@ -15,7 +16,7 @@
   $: access = getChildModeAccess($familyStore.members, $sessionStore.isAuthenticated ? $sessionStore.user?.id : undefined, $familyStore.activeFamily?.id, $familyStore.activeMember?.id);
   $: selectedChild = access.selectedChild;
   $: if (mounted) void list.setFamily({ ...$familyStore, activeMember: selectedChild ?? null });
-  $: model = createChildModeViewModel({ occurrences: $list.occurrences, items: $list.items, members: $list.family?.members ?? [], activeMemberId: $list.context?.memberId, timezone: $list.family?.activeFamily?.timezone });
+  $: model = createChildModeViewModel({ occurrences: $list.occurrences, items: $list.items, members: $list.family?.members ?? [], activeMemberId: $list.context?.memberId, timezone: $displayTimezone });
   $: cards = filterWorkCards(model.assignmentCards, status);
   const groups: { value: WorkStatusGroup; label: string }[] = [{ value: 'open', label: 'Надо сделать' }, { value: 'review', label: 'Ждёт проверки' }, { value: 'completed', label: 'Готово' }];
   function runAction(action: AssignmentAction, card: AssignmentCardModel) { return list.act(action, card.id); }

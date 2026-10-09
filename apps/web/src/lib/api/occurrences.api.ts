@@ -29,6 +29,10 @@ export type OccurrenceListResult = {
 
 export type OccurrenceMarker = {
   id: string;
+  family?: string;
+  memberIds?: string[];
+  allDay?: boolean;
+  timezone?: string;
   kind: Extract<ItemKind, 'event' | 'task' | 'assignment'>;
   startAt?: string;
   dueAt?: string;
@@ -94,11 +98,12 @@ export async function listOccurrenceMarkersInRange(
   while (page <= totalPages) {
     const result = asRecord(
       await getList(page, perPage, {
-        fields: 'id,kind,start_at,due_at',
+        fields: 'id,family,item,kind,start_at,due_at,all_day,expand.item.id,expand.item.family,expand.item.kind,expand.item.owner,expand.item.created_by,expand.item.assignees,expand.item.participants,expand.item.timezone',
+        expand: 'item',
         filter: buildOccurrenceRangeFilter(activeContext.familyId, range, {
           kinds: ['event', 'task', 'assignment']
         }),
-        sort: 'start_at,due_at',
+        sort: 'start_at,due_at,id',
         requestKey: null,
         ...memberRequestOptions(activeContext)
       })
@@ -117,7 +122,7 @@ export async function listOccurrenceMarkersInRange(
   }
 
   return {
-    items,
+    items: [...new Map(items.map(item => [item.id, item])).values()],
     totalItems
   };
 }
@@ -251,9 +256,17 @@ export function mapOccurrenceRecord(value: unknown): ItemOccurrence {
 
 export function mapOccurrenceMarkerRecord(value: unknown): OccurrenceMarker {
   const record = asRecord(value);
+  const item = asRecord(asRecord(record.expand).item);
+  const matches = item.id === record.item && item.family === record.family && Boolean(record.family);
+  const memberIds = !matches ? [] : item.kind === 'event' ? asStringArray(item.participants)
+    : item.kind === 'assignment' ? asStringArray(item.assignees) : [asString(item.owner) || asString(item.created_by)].filter(Boolean);
 
   return {
     id: asString(record.id),
+    family: asString(record.family),
+    memberIds,
+    allDay: asBoolean(record.all_day),
+    timezone: matches ? asString(item.timezone) || undefined : undefined,
     kind: asString(record.kind) as OccurrenceMarker['kind'],
     startAt: asString(record.start_at) || undefined,
     dueAt: asString(record.due_at) || undefined

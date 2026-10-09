@@ -701,12 +701,16 @@ describe('PocketBase API layer', () => {
           items: [
             {
               id: 'occ_event',
+              family: 'family_1', item: 'event_1', all_day: false,
+              expand: { item: { id: 'event_1', family: 'family_1', kind: 'event', participants: ['member_1', 'member_child'], timezone: 'Europe/Moscow' } },
               kind: 'event',
               start_at: '2026-06-10T08:00:00.000Z',
               due_at: ''
             },
             {
               id: 'occ_assignment',
+              family: 'family_1', item: 'assignment_1', all_day: false,
+              expand: { item: { id: 'assignment_1', family: 'family_1', kind: 'assignment', assignees: ['member_child'], timezone: 'UTC' } },
               kind: 'assignment',
               start_at: '',
               due_at: '2026-06-11T18:00:00.000Z'
@@ -721,6 +725,9 @@ describe('PocketBase API layer', () => {
           items: [
             {
               id: 'occ_task',
+              family: 'family_1', item: 'task_1', all_day: false,
+              visible_to: ['member_1', 'member_child'],
+              expand: { item: { id: 'task_1', family: 'family_1', kind: 'task', owner: 'member_1', timezone: 'UTC' } },
               kind: 'task',
               start_at: '',
               due_at: '2026-06-12T12:00:00.000Z'
@@ -749,11 +756,12 @@ describe('PocketBase API layer', () => {
       1,
       2,
       expect.objectContaining({
-        fields: 'id,kind,start_at,due_at',
+        fields: 'id,family,item,kind,start_at,due_at,all_day,expand.item.id,expand.item.family,expand.item.kind,expand.item.owner,expand.item.created_by,expand.item.assignees,expand.item.participants,expand.item.timezone',
+        expand: 'item',
         filter: expect.stringContaining(
           '(kind = "event" || kind = "task" || kind = "assignment")'
         ),
-        sort: 'start_at,due_at'
+        sort: 'start_at,due_at,id'
       })
     );
     expect(occurrences.getList.mock.calls[0][2].filter).toContain(
@@ -762,16 +770,19 @@ describe('PocketBase API layer', () => {
     expect(result.items).toEqual([
       {
         id: 'occ_event',
+        family: 'family_1', memberIds: ['member_1', 'member_child'], allDay: false, timezone: 'Europe/Moscow',
         kind: 'event',
         startAt: '2026-06-10T08:00:00.000Z'
       },
       {
         id: 'occ_assignment',
+        family: 'family_1', memberIds: ['member_child'], allDay: false, timezone: 'UTC',
         kind: 'assignment',
         dueAt: '2026-06-11T18:00:00.000Z'
       },
       {
         id: 'occ_task',
+        family: 'family_1', memberIds: ['member_1'], allDay: false, timezone: 'UTC',
         kind: 'task',
         dueAt: '2026-06-12T12:00:00.000Z'
       }

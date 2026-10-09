@@ -2,6 +2,20 @@
 
 Source of truth: `TECHNICAL_SPEC.md`.
 
+## Personal Timezone
+
+`users.timezone` is an optional IANA zone (max 80 characters), validated on user
+create/update. Empty legacy values resolve to Europe/Moscow without rewriting
+records. User collection rules permit changing only the authenticated account.
+Display timezone is derived from the auth session, not the active family profile.
+Timed records keep their UTC instant and original series timezone; local date
+ranges and presentation use the viewer's preference. All-day records retain the
+civil date in the original item zone; birthdays and anniversaries remain dates.
+
+Calendar overview projects only occurrence ID, kind, date, family and authorized
+item ownership/participant fields. One dot represents one record, with multiple
+participant colors in one segmented dot; `visible_to` is never ownership.
+
 ## Item Search
 
 `items.search_text` is server-derived from title, description and location_text.

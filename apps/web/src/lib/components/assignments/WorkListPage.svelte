@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { displayTimezone } from '$lib/stores/timezone.store';
   import type { ItemPriority } from '$lib/types/domain';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
@@ -20,7 +21,7 @@
   $: activeRoute = kind === 'task' ? '/app/tasks' : '/app/assignments';
   $: nextIdentity = `${$list.context?.familyId ?? ''}:${$list.context?.memberId ?? ''}`;
   $: if (identity !== nextIdentity) { identity = nextIdentity; composerOpen = false; memberId = ''; query = ''; status = 'open'; priority = 'all'; }
-  $: input = { occurrences: $list.occurrences, items: $list.items, members: $list.family?.members ?? [], activeMemberId: $list.context?.memberId, timezone: $list.family?.activeFamily?.timezone };
+  $: input = { occurrences: $list.occurrences, items: $list.items, members: $list.family?.members ?? [], activeMemberId: $list.context?.memberId, timezone: $displayTimezone };
   $: cards = kind === 'task' ? createTaskViewModels(input) : createAssignmentViewModels(input);
   function runAction(action: AssignmentAction, card: AssignmentCardModel, reason?: string) { return list.act(action, card.id, reason); }
   onMount(() => {
@@ -38,5 +39,5 @@
   <WorkListContent titleId={`${kind}-title-desktop`} {kind} {cards} state={$list} bind:status bind:memberId bind:query bind:priority oncreate={() => composerOpen = true} onreload={list.reload} onaction={runAction} />
 </DesktopShell>
 {#if composerOpen && $list.context}
-  <ComposerSheet activeKind="task" context={$list.context} members={input.members.filter((member) => member.active && member.family === $list.context?.familyId)} timezone={$list.family?.activeFamily?.timezone} onclose={() => composerOpen = false} oncreated={list.reload} />
+  <ComposerSheet activeKind="task" context={$list.context} members={input.members.filter((member) => member.active && member.family === $list.context?.familyId)} timezone={$displayTimezone} onclose={() => composerOpen = false} oncreated={list.reload} />
 {/if}

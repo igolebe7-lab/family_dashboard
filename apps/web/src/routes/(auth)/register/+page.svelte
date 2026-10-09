@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DEFAULT_TIMEZONE } from '$lib/utils/timezone';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { login, registerAdult } from '$lib/api/auth.api';
@@ -53,7 +54,7 @@
         familyName: familyName.trim(),
         ownerName: ownerName.trim(),
         ownerUserId: user.id,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Amsterdam'
+        timezone: DEFAULT_TIMEZONE
       });
       familyStore.setFamilies([family]);
       familyStore.setMembers([member]);

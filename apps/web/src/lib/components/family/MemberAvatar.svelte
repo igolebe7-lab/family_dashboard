@@ -14,6 +14,7 @@
   class:member-avatar-card--selected={selected}
   class={`member-avatar-card member-avatar-card--${color}`}
   href="/app/family"
+  title={name}
   aria-label={`${name}${roleLabel ? `, ${roleLabel}` : ''}${todayCount ? `, дел сегодня: ${todayCount}` : ''}`}
 >
   <span class={`member-avatar-card__halo portrait portrait--${portrait}`} aria-hidden="true">
@@ -24,3 +25,10 @@
     <span class="member-avatar-card__name">{name}</span>
   </span>
 </a>
+
+<style>
+  .member-avatar-card__name {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+    overflow: hidden; max-height: 2.8em;
+  }
+</style>

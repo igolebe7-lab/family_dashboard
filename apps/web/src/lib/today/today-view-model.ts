@@ -80,6 +80,7 @@ export type TodayWeekDay = {
 };
 
 export type TodayWeekEvent = {
+  memberColors?: AccentColor[];
   id: string;
   itemId?: string;
   category?: ItemCategory;

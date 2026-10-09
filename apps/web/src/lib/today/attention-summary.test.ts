@@ -14,6 +14,13 @@ function row(id: string, kind: ItemKind, due: string, priority: ItemPriority = '
       assignees: kind === 'assignment' ? ['child'] : [], participants: [], approval_required: true, visibility: 'family' } } });
 }
 describe('attention summary relative to now', () => {
+  it('keeps the date of an all-day event when the viewer changes zones', () => {
+    const record = row('all-day', 'event', '2026-09-11T21:00:00Z');
+    record.allDay = true; record.itemRecord!.timezone = 'Europe/Moscow';
+    const summary = buildAttentionSummary([record], members, 'parent', now, 'America/New_York');
+    expect(summary.tomorrow).toHaveLength(1);
+    expect(summary.tomorrow[0].body).toContain('12 сент.');
+  });
   it('refreshes at family midnight across DST transitions', () => {
     expect(new Date(nextAttentionDayBoundary(new Date('2026-03-29T00:30:00Z'), 'Europe/Amsterdam')).toISOString()).toBe('2026-03-29T22:00:00.000Z');
     expect(new Date(nextAttentionDayBoundary(new Date('2026-10-25T00:30:00Z'), 'Europe/Amsterdam')).toISOString()).toBe('2026-10-25T23:00:00.000Z');

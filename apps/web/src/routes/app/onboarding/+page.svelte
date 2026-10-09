@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DEFAULT_TIMEZONE } from '$lib/utils/timezone';
   import { goto } from '$app/navigation';
   import { getCurrentSession } from '$lib/api/auth.api';
   import { createFamilyWithOwner } from '$lib/api/families.api';
@@ -30,7 +31,7 @@
         familyName: familyName.trim(),
         ownerName: ownerName.trim(),
         ownerUserId: session.user.id,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Amsterdam'
+        timezone: DEFAULT_TIMEZONE
       });
       familyStore.setFamilies([family]);
       familyStore.setMembers([member]);

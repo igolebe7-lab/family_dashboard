@@ -1,6 +1,7 @@
 <script lang="ts">
   import Bell from '@lucide/svelte/icons/bell';
   import Sun from '@lucide/svelte/icons/sun';
+  import Moon from '@lucide/svelte/icons/moon';
 
   export let greeting: string;
   export let dateLabel: string;
@@ -12,7 +13,11 @@
   <div class="today-header__copy">
     <h1 id={titleId}>
       {greeting}
-      <Sun size={27} strokeWidth={2.3} aria-hidden="true" />
+      {#if greeting.startsWith('Доброй ночи') || greeting.startsWith('Добрый вечер')}
+        <Moon size={27} strokeWidth={2.3} aria-hidden="true" />
+      {:else}
+        <Sun size={27} strokeWidth={2.3} aria-hidden="true" />
+      {/if}
     </h1>
     <p class="today-header__date">{dateLabel}</p>
   </div>

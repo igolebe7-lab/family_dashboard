@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { displayTimezone } from '$lib/stores/timezone.store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import { listNotifications, markAllNotificationsRead, markNotificationRead, subscribeNotifications, type InboxNotification } from '$lib/api/notifications.api';
@@ -27,7 +28,7 @@
   let stopRealtime: (() => void) | undefined;
   let actionController: AbortController | undefined;
 
-  $: items = records.map(record => ({ ...mapNotificationInboxItem(record), destination: record.destination }));
+  $: items = records.map(record => ({ ...mapNotificationInboxItem(record, $displayTimezone), destination: record.destination }));
 
   async function loadNotifications(nextPage = 1): Promise<void> {
     const context = familyState?.status === 'ready' ? getActiveFamilyContext(familyState) : null;

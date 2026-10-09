@@ -1,5 +1,10 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
+  import CalendarRecordDots from './CalendarRecordDots.svelte';
+  import type { CalendarRecordMarker } from '$lib/calendar/record-markers';
+  import { displayClock } from '$lib/stores/clock.store';
+  import { displayTimezone } from '$lib/stores/timezone.store';
+  import { calendarDateInZone, dateKeyInZone } from '$lib/utils/timezone';
   import MonthDayPreview from '../today/MonthDayPreview.svelte';
   import type { TodayWeekEvent } from '$lib/today/today-view-model';
   import type { TodayMonthDay } from '$lib/today/today-month-calendar';
@@ -59,17 +64,13 @@
   export let selectedDateKey: string | undefined = undefined;
   export let onselectDay: ((day: YearCalendarDay) => void) | undefined = undefined;
   export let monthHref: ((month: YearCalendarMonth) => string) | undefined = undefined;
-  export let recordMarkers: Array<{
-    dateKey: string;
-    kind: 'event' | 'task' | 'assignment';
-    count: number;
-  }> = [];
+  export let recordMarkers: CalendarRecordMarker[] = [];
 
   const weekdayLabels = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
   let calendarElement: HTMLElement;
   let scrolledYear: number | null = null;
-  const now = new Date();
-  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  $: now = calendarDateInZone($displayClock, $displayTimezone);
+  $: todayKey = dateKeyInZone($displayClock, $displayTimezone);
 
   $: recordMarkersByDate = recordMarkers.reduce((markersByDate, marker) => {
     const existing = markersByDate.get(marker.dateKey) ?? [];
@@ -148,7 +149,7 @@
                 type="button"
                 aria-pressed={day.dateKey === selectedDateKey}
                 aria-current={day.inCurrentMonth && day.dateKey === todayKey ? 'date' : undefined}
-                aria-label={`${day.dateKey}, ${day.annotations.length} особых дат`}
+                aria-label={`${day.dateKey}, ${day.annotations.length} особых дат, ${recordMarkersByDate.get(day.dateKey)?.length ?? 0} записей`}
                 aria-haspopup="dialog"
                 aria-expanded={preview?.dateKey === day.dateKey}
                 on:pointerenter={(event) => hoverDay(event, day)}
@@ -170,12 +171,7 @@
                   {@const markers = recordMarkersByDate.get(day.dateKey)}
                   {#if markers}
                     <span class="year-day__record-markers" aria-hidden="true">
-                      {#each markers as marker (`${marker.kind}-${marker.count}`)}
-                        <i class={`year-record-marker year-record-marker--${marker.kind}`}></i>
-                        {#if marker.count > 1}
-                          <b>{marker.count}</b>
-                        {/if}
-                      {/each}
+                      <CalendarRecordDots {markers} />
                     </span>
                   {/if}
                 {/if}
@@ -196,3 +192,9 @@
       onclose={closePreview} onenter={keepPreview} onleave={() => { if (!touch) leavePreview(); }} />
   {/key}
 {/if}
+
+<style>
+  :global(.year-day) { height: 2.75rem; }
+  :global(.year-day__record-markers) { left: .15rem; right: .15rem; bottom: .2rem; justify-content: center; }
+  :global(.year-day:has(.year-day__record-markers)) { padding-bottom: .65rem; }
+</style>

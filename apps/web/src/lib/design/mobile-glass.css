@@ -154,6 +154,12 @@
   :root[data-theme] .app-screen--glass .year-month { box-shadow: inset 0 1px 0 var(--family-edge), 0 4px 14px var(--family-shadow); }
   :root[data-theme] .app-screen--glass .year-month__open-link { display: inline-flex; align-items: center; justify-content: center; }
   :root[data-theme] .app-screen--glass .year-day:not(.year-day--today):not(.year-day--weekend) { background: transparent; }
+  :root[data-theme] .app-screen--glass .year-day--weekend { background: var(--color-yellow-soft); }
+  :root[data-theme] .app-screen--glass .year-day--selected:not(.year-day--today) { background: var(--color-green-soft); color: var(--color-green); }
+  :root[data-theme] .app-screen--glass .today-month-day:not(.today-month-day--today):not(.today-month-day--weekend):not(.today-month-day--selected) { background: transparent; }
+  :root[data-theme] .app-screen--glass .today-month-day--weekend { background: var(--color-yellow-soft); }
+  :root[data-theme] .app-screen--glass .today-month-day--selected:not(.today-month-day--today) { background: var(--color-green-soft); color: var(--color-green); }
+  :root[data-theme] .app-screen--glass .today-month-day--today { background: var(--color-green); color: var(--primary-ink); }
   :root[data-theme] .app-screen--glass .today-attention-card { display: grid; grid-template-columns: 38px minmax(0, 1fr) 44px; align-items: center; gap: 12px; padding: 16px; }
   :root[data-theme] .app-screen--glass .today-attention-card__avatar { width: 38px; height: 38px; }
   :root[data-theme] .app-screen--glass .today-attention-card__icon-button { grid-column: 3; grid-row: 1; width: 44px; height: 44px; right: auto; bottom: auto; margin: 0; }

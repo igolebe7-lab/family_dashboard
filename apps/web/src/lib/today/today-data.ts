@@ -4,6 +4,8 @@ import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 import { listOccurrencesInRange } from '$lib/api/occurrences.api';
 import type { FamilyMember, ItemOccurrence } from '$lib/types/domain';
 import { getWeekRange, getMonthRange, toIsoRange } from '$lib/utils/date';
+import { calendarDayStartIso, dateKeyInZone } from '$lib/utils/timezone';
+import { createRecordMarker } from '$lib/calendar/record-markers';
 import type { TodayNavigationView } from '$lib/calendar/today-navigation';
 import type { IconName } from '$lib/design/icon-registry';
 import { createAssignmentViewModels, type AssignmentCardModel } from '$lib/assignments/assignments-view';
@@ -21,6 +23,7 @@ import {
 type ListOccurrencesInRange = typeof listOccurrencesInRange;
 
 export type TodayOccurrenceDataInput = {
+  timezone?: string;
   date?: Date;
   view?: TodayNavigationView;
   activeMemberId?: string;
@@ -29,6 +32,7 @@ export type TodayOccurrenceDataInput = {
 };
 
 export type LoadTodayViewModelOptions = {
+  timezone?: string;
   date?: Date;
   view?: TodayNavigationView;
   members?: FamilyMember[];
@@ -66,25 +70,29 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
     items: input.occurrences.flatMap((occurrence) => occurrence.itemRecord ? [occurrence.itemRecord] : []),
     members: input.members ?? [], activeMemberId: input.activeMemberId
   }).map((card) => [card.id, card]));
-  const range = getTodayOccurrenceRange(date, input.view);
+  const range = getTodayOccurrenceRange(date, input.view, input.timezone);
   const todayKey = formatDateKey(date);
   const weekOccurrences = input.occurrences.filter((occurrence) => {
+    if (occurrence.allDay && input.timezone) {
+      const key = getOccurrenceDateKey(occurrence, input.timezone);
+      return Boolean(key && key >= dateKeyInZone(new Date(range.from), input.timezone) && key <= dateKeyInZone(new Date(range.to), input.timezone));
+    }
     const value = occurrence.startAt ?? occurrence.dueAt;
     const time = value ? new Date(value).getTime() : NaN;
     return time >= new Date(range.from).getTime() && time <= new Date(range.to).getTime();
   });
 
   const weekEvents = weekOccurrences
-    .map((occurrence) => mapOccurrenceToWeekEvent(occurrence, memberById))
+    .map((occurrence) => mapOccurrenceToWeekEvent(occurrence, memberById, input.timezone))
     .sort(compareWeekEvents);
-  const todayOccurrences = weekOccurrences.filter((occurrence) => getOccurrenceDateKey(occurrence) === todayKey);
+  const todayOccurrences = weekOccurrences.filter((occurrence) => getOccurrenceDateKey(occurrence, input.timezone) === todayKey);
   const allDayItems = todayOccurrences
     .filter((occurrence) => occurrence.allDay)
-    .map((occurrence) => mapOccurrenceToAllDayItem(occurrence, memberById, input.members?.length ?? 0))
+    .map((occurrence) => mapOccurrenceToAllDayItem(occurrence, memberById, input.members?.length ?? 0, input.timezone))
     .sort((left, right) => left.title.localeCompare(right.title));
   const timelineItems = todayOccurrences
     .filter((occurrence) => !occurrence.allDay)
-    .map((occurrence) => ({ ...mapOccurrenceToTimelineItem(occurrence, memberById, input.members?.length ?? 0),
+    .map((occurrence) => ({ ...mapOccurrenceToTimelineItem(occurrence, memberById, input.members?.length ?? 0, input.timezone),
       ...getTimelineAction(assignmentActions.get(occurrence.id)) }))
     .sort((left, right) => left.time.localeCompare(right.time));
   const attentionItems = createAttentionItems(weekOccurrences, memberById, date, assignmentActions);
@@ -233,12 +241,13 @@ export async function loadTodayViewModelFromOccurrences(
   options: LoadTodayViewModelOptions = {}
 ): Promise<TodayViewModel> {
   const date = options.date ?? new Date();
-  const range = getTodayOccurrenceRange(date, options.view);
+  const range = getTodayOccurrenceRange(date, options.view, options.timezone);
   const loader = options.listOccurrencesInRange ?? listOccurrencesInRange;
   const result = await loader(context, range);
 
   return createTodayViewModelFromOccurrences({
     date,
+    timezone: options.timezone,
     view: options.view,
     activeMemberId: context.memberId,
     occurrences: result.items,
@@ -246,18 +255,26 @@ export async function loadTodayViewModelFromOccurrences(
   });
 }
 
-export function getTodayOccurrenceRange(date: Date, view: TodayNavigationView = 'week') {
+export function getTodayOccurrenceRange(date: Date, view: TodayNavigationView = 'week', timezone?: string) {
   // The month grid includes the leading/trailing days of its boundary weeks.
   const month = getMonthRange(date);
-  const range = toIsoRange(view === 'month'
+  const dates = view === 'month'
     ? { start: getWeekRange(month.start).start, end: getWeekRange(month.end).end }
-    : getWeekRange(date));
+    : getWeekRange(date);
+  if (timezone) {
+    const next = new Date(dates.end);
+    next.setDate(next.getDate() + 1);
+    return { from: calendarDayStartIso(formatDateKey(dates.start), timezone),
+      to: new Date(Date.parse(calendarDayStartIso(formatDateKey(next), timezone)) - 1).toISOString() };
+  }
+  const range = toIsoRange(dates);
   return { from: range.start, to: range.end };
 }
 
 function mapOccurrenceToWeekEvent(
   occurrence: ItemOccurrence,
-  memberById: Map<string, FamilyMember>
+  memberById: Map<string, FamilyMember>,
+  timezone?: string
 ): TodayWeekEvent {
   const member = getOccurrenceMember(occurrence, memberById, memberById.size);
   const category = getCategoryMeta(occurrence.categorySnapshot);
@@ -266,8 +283,10 @@ function mapOccurrenceToWeekEvent(
     id: occurrence.id,
     itemId: occurrence.item,
     category: occurrence.categorySnapshot,
-    day: getOccurrenceDateKey(occurrence) ?? '',
-    start: getOccurrenceTime(occurrence),
+    day: getOccurrenceDateKey(occurrence, timezone) ?? '',
+    start: getOccurrenceTime(occurrence, timezone),
+    memberColors: createRecordMarker({ ...occurrence, timezone: occurrence.itemRecord?.timezone, memberIds: getPreferredOccurrenceMemberIds(occurrence) },
+      [...memberById.values()], timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone)?.colors,
     durationMinutes: getOccurrenceDurationMinutes(occurrence),
     allDay: occurrence.allDay,
     title: occurrence.titleSnapshot,
@@ -282,7 +301,8 @@ function mapOccurrenceToWeekEvent(
 function mapOccurrenceToTimelineItem(
   occurrence: ItemOccurrence,
   memberById: Map<string, FamilyMember>,
-  familyMemberCount: number
+  familyMemberCount: number,
+  timezone?: string
 ): TodayTimelineItem {
   const member = getOccurrenceMember(occurrence, memberById, familyMemberCount);
   const category = getCategoryMeta(occurrence.categorySnapshot);
@@ -291,8 +311,8 @@ function mapOccurrenceToTimelineItem(
     id: occurrence.id,
     itemId: occurrence.item,
     kind: occurrence.kind,
-    time: getOccurrenceTime(occurrence),
-    dateLabel: formatOccurrenceDateLabel(occurrence),
+    time: getOccurrenceTime(occurrence, timezone),
+    dateLabel: formatOccurrenceDateLabel(occurrence, timezone),
     title: occurrence.titleSnapshot,
     subtitle: member.name,
     memberName: member.name,
@@ -308,7 +328,8 @@ function mapOccurrenceToTimelineItem(
 function mapOccurrenceToAllDayItem(
   occurrence: ItemOccurrence,
   memberById: Map<string, FamilyMember>,
-  familyMemberCount: number
+  familyMemberCount: number,
+  timezone?: string
 ): TodayAllDayItem {
   const member = getOccurrenceMember(occurrence, memberById, familyMemberCount);
   const category = getCategoryMeta(occurrence.categorySnapshot);
@@ -318,7 +339,7 @@ function mapOccurrenceToAllDayItem(
     itemId: occurrence.item,
     kind: occurrence.kind,
     label: 'Весь день',
-    dateLabel: formatOccurrenceDateLabel(occurrence),
+    dateLabel: formatOccurrenceDateLabel(occurrence, timezone),
     title: occurrence.titleSnapshot,
     subtitle: member.name,
     memberName: member.name,
@@ -410,25 +431,28 @@ function isAccentColor(value: unknown): value is AccentColor {
   );
 }
 
-function getOccurrenceDateKey(occurrence: ItemOccurrence): string | undefined {
+function getOccurrenceDateKey(occurrence: ItemOccurrence, timezone?: string): string | undefined {
   const value = occurrence.startAt ?? occurrence.dueAt;
   if (!value) return undefined;
-  return formatDateKey(new Date(value));
+  const zone = occurrence.allDay ? occurrence.itemRecord?.timezone ?? timezone : timezone;
+  return zone ? dateKeyInZone(new Date(value), zone) : formatDateKey(new Date(value));
 }
 
-function getOccurrenceTime(occurrence: ItemOccurrence): string {
+function getOccurrenceTime(occurrence: ItemOccurrence, timezone?: string): string {
   const value = occurrence.startAt ?? occurrence.dueAt;
   if (!value || occurrence.allDay) return '00:00';
 
   const date = new Date(value);
+  if (timezone) return new Intl.DateTimeFormat('ru-RU', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-function formatOccurrenceDateLabel(occurrence: ItemOccurrence): string {
+function formatOccurrenceDateLabel(occurrence: ItemOccurrence, timezone?: string): string {
   const value = occurrence.startAt ?? occurrence.dueAt;
   if (!value) return 'Без даты';
 
   return new Intl.DateTimeFormat('ru-RU', {
+    timeZone: occurrence.allDay ? occurrence.itemRecord?.timezone ?? timezone : timezone,
     day: 'numeric',
     month: 'long',
     year: 'numeric'
