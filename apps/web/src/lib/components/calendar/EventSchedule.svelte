@@ -141,9 +141,9 @@
   .schedule-edit { margin-top: 0.8rem; }
   fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   legend { margin-bottom: 0.6rem; font-size: 0.9rem; }
-  .schedule-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .schedule-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0.75rem; }
   .schedule-fields label { min-width: 0; }
   .schedule-fields input { min-width: 0; max-width: 100%; }
   .schedule-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
-  @media (max-width: 420px) { .schedule-fields { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 600px) { .schedule-fields { grid-template-columns: minmax(0, 1fr); } }
 </style>

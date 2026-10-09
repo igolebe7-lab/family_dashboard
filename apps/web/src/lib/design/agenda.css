@@ -68,6 +68,12 @@
 :root[data-theme] :is(.series-form, .schedule-edit, .detail-edit) label { display: grid; height: auto; min-width: 0; gap: 8px; line-height: 1.5; overflow-wrap: anywhere; }
 :root[data-theme] :is(.series-form, .schedule-edit) fieldset { min-width: 0; }
 :root[data-theme] :is(.series-form, .schedule-edit, .detail-edit) :is(input:not([type=checkbox]), select, textarea) { width: 100%; min-width: 0; max-width: 100%; font-size: 16px; }
+/* iOS date/time controls must not impose their native intrinsic width on a grid. */
+:root[data-theme] :is(.series-form, .schedule-edit, .composer-form) :is(input[type=date], input[type=time]) {
+  display: block; appearance: none; -webkit-appearance: none;
+  box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 44px;
+}
+:root[data-theme] :is(.series-form, .schedule-edit, .composer-form) input::-webkit-date-and-time-value { min-width: 0; text-align: left; }
 :root[data-theme] :is(.series-actions, .schedule-actions, .detail-actions) .button { height: auto; min-height: 44px; white-space: normal; line-height: 1.4; overflow-wrap: anywhere; }
 :root[data-theme] :is(.series-form, .schedule-edit) .repeat-editor { display: grid; gap: 12px; }
 :root[data-theme] .repeat-editor .composer-checkbox { display: flex; align-items: center; }
