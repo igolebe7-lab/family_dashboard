@@ -27,7 +27,7 @@
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { createRealtimeStore } from '$lib/stores/realtime.store';
   import { sessionStore } from '$lib/stores/session.store';
-  import { itemDetailsStore } from '$lib/stores/item-details.store';
+  import { itemDetailsStore, showItemDetails } from '$lib/stores/item-details.store';
   import { loadAttentionOccurrences } from '$lib/api/attention.api';
   import { buildAttentionSummary, nextAttentionDayBoundary, type AttentionSummary } from '$lib/today/attention-summary';
   import { createTodayAllDayInfoViewModel } from '$lib/today/today-all-day';
@@ -220,16 +220,16 @@
       actionMessage = successMessage;
       await refreshTodayAfterCreate();
     } catch {
-      if (epoch === generation) actionError = 'Не удалось обновить поручение. Проверьте подключение и права доступа.';
+      if (epoch === generation) actionError = 'Не удалось обновить дело. Проверьте подключение и права доступа.';
     } finally { if (epoch === generation) busyOccurrenceId = null; }
   }
   function completeAssignment(item: TodayTimelineItem) { return runOccurrenceAction(item.id, markOccurrenceDone, 'Отметили как готово.'); }
-  function approveAssignment(item: TodayAttentionItem) { return runOccurrenceAction(item.occurrenceId, approveOccurrence, 'Поручение подтверждено.'); }
-  function rejectAssignment(item: TodayAttentionItem) { return runOccurrenceAction(item.occurrenceId, rejectOccurrence, 'Поручение возвращено на доработку.'); }
+  function approveAssignment(item: TodayAttentionItem) { return runOccurrenceAction(item.occurrenceId, approveOccurrence, 'Дело подтверждено.'); }
+  function rejectAssignment(item: TodayAttentionItem) { return runOccurrenceAction(item.occurrenceId, rejectOccurrence, 'Дело возвращено на доработку.'); }
   function openAttention(item: TodayAttentionItem) {
-    if (item.itemId) itemDetailsStore.set(item.itemId);
+    if (item.itemId) showItemDetails(item.itemId, item.occurrenceId);
     else if (item.actionKind === 'add_task') openComposer('task');
-    else void goto('/app/assignments');
+    else void goto('/app/tasks');
   }
 
   async function loadTimelineDetails(item: TodayTimelineItem | TodayAllDayItem) {

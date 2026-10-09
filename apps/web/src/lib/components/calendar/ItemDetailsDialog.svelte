@@ -5,6 +5,7 @@
   import ItemDetails from './ItemDetails.svelte';
   import SheetHandle from '$lib/components/ui/SheetHandle.svelte';
   export let itemId: string;
+  export let occurrenceId: string | undefined = undefined;
   export let onclose: () => void;
   let dialog: HTMLDialogElement;
   onMount(() => openComposerDialog(dialog, onclose));
@@ -15,7 +16,7 @@
     <strong>Подробности</strong>
     <button type="button" class="icon-button sheet-desktop-close" aria-label="Закрыть подробности" on:click={onclose}><X size={22} aria-hidden="true" /></button>
   </header>
-  <div class="item-detail-dialog__body"><ItemDetails {itemId} /></div>
+  <div class="item-detail-dialog__body"><ItemDetails {itemId} {occurrenceId} /></div>
 </dialog>
 <style>
   .item-detail-dialog { width: min(680px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); overflow: hidden; }

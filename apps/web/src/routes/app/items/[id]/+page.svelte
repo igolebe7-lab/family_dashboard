@@ -6,5 +6,5 @@
 </script>
 <WorkspacePage title="Запись">
   <a class="back-link" href="/app/today"><ArrowLeft size={18} aria-hidden="true" />Сегодня</a>
-  <ItemDetails itemId={$page.params.id ?? ''} />
+  <ItemDetails itemId={$page.params.id ?? ''} occurrenceId={$page.url.searchParams.get('occurrence') ?? undefined} />
 </WorkspacePage>

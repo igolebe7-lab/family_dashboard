@@ -17,6 +17,7 @@ describe('family item search', () => {
     expect(filter).toContain('family = "family-a" && archived = false');
     expect(filter).toContain('search_text ~ "\\""');
     expect(filter).toContain('kind = "task"');
+    expect(filter).toContain('(kind = "task" || kind = "assignment")');
   });
 
   it('paginates with active member permissions and never searches without a family', async () => {

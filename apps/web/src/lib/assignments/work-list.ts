@@ -4,7 +4,7 @@ import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 import type { FamilyState } from '$lib/stores/family.store';
 import type { ItemOccurrence } from '$lib/types/domain';
 import { canViewItem } from '$lib/utils/permissions';
-import { createAssignmentViewModels, createChildModeViewModel, createTaskViewModels, type AssignmentAction } from './assignments-view';
+import { createAssignmentViewModels, createChildModeViewModel, createTaskViewModels, createWorkViewModels, type AssignmentAction } from './assignments-view';
 import { loadWorkRecords, type WorkMode, type WorkRecords } from './work-records';
 
 export type WorkListState = WorkRecords & {
@@ -33,10 +33,13 @@ export function createWorkList(mode: WorkMode, dependencies: Partial<Dependencie
   let request = 0;
   let controller: AbortController | undefined;
   let disposed = false;
+  let refreshPending = false;
   function publish(patch: Partial<WorkListState>) { state = { ...state, ...patch }; store.set(state); }
 
   async function reload(): Promise<void> {
-    if (!state.context || disposed || state.busyId) return;
+    if (!state.context || disposed) return;
+    if (state.busyId) { refreshPending = true; return; }
+    refreshPending = false;
     const context = state.context;
     const identity = generation;
     const ticket = ++request;
@@ -64,7 +67,7 @@ export function createWorkList(mode: WorkMode, dependencies: Partial<Dependencie
     const changed = context?.familyId !== state.context?.familyId || context?.memberId !== state.context?.memberId;
     if (changed || !context) {
       generation += 1; request += 1; controller?.abort();
-      state = empty(); publish({ family, context });
+      refreshPending = false; state = empty(); publish({ family, context });
     } else publish({ family });
     if (context && (changed || !state.loaded && !state.loading)) await reload();
   }
@@ -72,7 +75,7 @@ export function createWorkList(mode: WorkMode, dependencies: Partial<Dependencie
   async function act(action: AssignmentAction, id: string, reason?: string): Promise<void> {
     if (!state.context || state.busyId || state.loading || state.error || disposed) return;
     const input = { ...state, members: state.family?.members ?? [], activeMemberId: state.context.memberId, timezone: state.family?.activeFamily?.timezone };
-    const cards = mode === 'child' ? createChildModeViewModel(input).assignmentCards : mode === 'task' ? createTaskViewModels(input) : createAssignmentViewModels(input);
+    const cards = mode === 'child' ? createChildModeViewModel(input).assignmentCards : mode === 'work' ? createWorkViewModels(input) : mode === 'task' ? createTaskViewModels(input) : createAssignmentViewModels(input);
     const card = cards.find((entry) => entry.id === id);
     if (!card || (card.primaryAction !== action && card.secondaryAction !== action)) return;
     const context = state.context; const identity = generation;
@@ -83,13 +86,17 @@ export function createWorkList(mode: WorkMode, dependencies: Partial<Dependencie
       const updated = await mutate(action, id, context, reason);
       if (disposed || generation !== identity) return;
       if (updated.family !== context.familyId || updated.id !== id || updated.item !== card.itemId) throw new Error('Unexpected work record');
-      publish({ occurrences: state.occurrences.map((entry) => entry.id === id ? updated : entry), message: action === 'approve_assignment' ? 'Поручение подтверждено.' : action === 'reject_assignment' ? 'Поручение возвращено на доработку.' : state.items.find((item) => item.id === card.itemId)?.approvalRequired ? 'Готово. Ожидает проверки.' : 'Готово.' });
+      publish({ occurrences: state.occurrences.map((entry) => entry.id === id ? updated : entry), message: action === 'approve_assignment' ? 'Дело подтверждено.' : action === 'reject_assignment' ? 'Дело возвращено на доработку.' : state.items.find((item) => item.id === card.itemId)?.approvalRequired ? 'Готово. Ожидает проверки.' : 'Готово.' });
     } catch {
       if (!disposed && generation === identity) publish({ actionError: 'Не удалось сохранить изменение. Попробуйте ещё раз.' });
     } finally {
-      if (!disposed && generation === identity) publish({ busyId: null });
+      if (!disposed && generation === identity) { publish({ busyId: null }); if (refreshPending) await reload(); }
     }
   }
 
-  return { subscribe: store.subscribe, setFamily, reload, act, destroy() { disposed = true; generation += 1; controller?.abort(); } };
+  function invalidate() {
+    generation++; request++; controller?.abort(); refreshPending = false;
+    publish({ ...empty(), context: state.context, family: state.family });
+  }
+  return { subscribe: store.subscribe, setFamily, reload, act, invalidate, destroy() { disposed = true; generation += 1; controller?.abort(); } };
 }

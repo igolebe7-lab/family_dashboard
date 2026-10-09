@@ -116,6 +116,7 @@ export type ChecklistItem = {
 
 export type ItemOccurrence = {
   id: string;
+  updated?: string;
   family: string;
   item: string;
   itemRecord?: Item;
@@ -135,6 +136,7 @@ export type ItemOccurrence = {
   rejectedBy?: string;
   rejectedAt?: string;
   rejectionReason?: string;
+  checklistDoneIds?: string[];
 };
 
 export type DayAnnotation = {

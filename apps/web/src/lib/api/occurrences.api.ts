@@ -243,6 +243,7 @@ export function mapOccurrenceRecord(value: unknown): ItemOccurrence {
 
   return {
     id: asString(record.id),
+    updated: asString(record.updated) || undefined,
     family: asString(record.family),
     item: asString(record.item),
     itemRecord: expandedItem.id === record.item && expandedItem.family === record.family
@@ -262,7 +263,8 @@ export function mapOccurrenceRecord(value: unknown): ItemOccurrence {
     approvedAt: asString(record.approved_at) || undefined,
     rejectedBy: asString(record.rejected_by) || undefined,
     rejectedAt: asString(record.rejected_at) || undefined,
-    rejectionReason: asString(record.rejection_reason) || undefined
+    rejectionReason: asString(record.rejection_reason) || undefined,
+    checklistDoneIds: asStringArray(record.checklist_done_json)
   };
 }
 

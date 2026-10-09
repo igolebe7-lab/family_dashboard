@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { pointsStore } from '$lib/stores/points.store';
   import { getSelectableProfiles } from '$lib/utils/profile-access';
   import Plus from '@lucide/svelte/icons/plus';
   import { goto } from '$app/navigation';
@@ -214,7 +215,7 @@
       <h2 id="family-members-title-mobile">Члены семьи</h2>
       <div class="family-member-list">
         {#each familyState?.members ?? [] as member (member.id)}
-          <GlassMemberCard {member} roleLabel={getRoleLabel(member.role)}
+          <GlassMemberCard {member} balance={$pointsStore.balances[member.id]} roleLabel={getRoleLabel(member.role)}
             own={member.user === currentUserId} editable={canManage}
             invitable={canInviteMember(member)} busy={saving}
             childMode={selectableProfiles.some(profile => profile.id === member.id) && ['child', 'teen'].includes(member.role)}
@@ -281,7 +282,7 @@
       <h2>Члены семьи</h2>
       <div class="family-member-list">
         {#each familyState?.members ?? [] as member (member.id)}
-          <GlassMemberCard {member} roleLabel={getRoleLabel(member.role)} own={member.user === currentUserId}
+          <GlassMemberCard {member} balance={$pointsStore.balances[member.id]} roleLabel={getRoleLabel(member.role)} own={member.user === currentUserId}
             editable={canManage} invitable={canInviteMember(member)} busy={saving}
             childMode={selectableProfiles.some(profile => profile.id === member.id) && ['child', 'teen'].includes(member.role)}
             inviteLink={inviteLinks[member.id] ?? ''}

@@ -1,4 +1,4 @@
-const { getRecordArray, getRecordValue } = require(`${__hooks}/_shared/auth.pb.js`);
+const { getRecordArray, getRecordValue, newApiError } = require(`${__hooks}/_shared/auth.pb.js`);
 
 function validateItemRecord(record) {
   const kind = getRecordValue(record, 'kind');

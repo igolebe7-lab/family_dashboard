@@ -85,11 +85,12 @@ export function notificationDestination(value: unknown): InboxNotification['dest
   const related = occurrence.kind ? occurrence : item;
   if (related.family && related.family !== record.family) return null;
   const itemId = asString(record.item) || asString(occurrence.item) || asString(item.id);
-  if (itemId) return { href: `/app/items/${encodeURIComponent(itemId)}`, label: 'Открыть запись' };
+  const occurrenceId = asString(record.occurrence) || asString(occurrence.id);
+  if (itemId) return { href: `/app/items/${encodeURIComponent(itemId)}${occurrenceId ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`, label: 'Открыть запись' };
   const type = asString(record.type);
   const kind = asString(related.kind);
   if (kind === 'assignment' || type.startsWith('assignment.')) {
-    return { href: '/app/assignments', label: 'Открыть поручения' };
+    return { href: '/app/tasks', label: 'Открыть дела' };
   }
   if (kind === 'task') return { href: '/app/tasks', label: 'Открыть дела' };
   if (kind === 'event' || type.startsWith('event.')) {

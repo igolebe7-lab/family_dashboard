@@ -1,7 +1,7 @@
 import type { CreateItemInput } from '$lib/api/items.api';
 import { getDateTimeFormatter } from '$lib/utils/date-format';
 import type { ItemCategory } from '$lib/constants/categories';
-import type { ItemKind, ItemPriority, ItemVisibility, WeekdayTimes } from '$lib/types/domain';
+import type { FamilyMember, ItemKind, ItemPriority, ItemVisibility, WeekdayTimes } from '$lib/types/domain';
 
 export type ComposerKind = Extract<ItemKind, 'event' | 'task'>;
 export type ComposerReminder = 'none' | 'at_time' | 'before_15' | 'before_60' | 'before_day';
@@ -83,10 +83,19 @@ export function createComposerFormValues(input: {
   };
 }
 
-export function createComposerItemInput(values: ComposerFormValues, timezone: string): ComposerSubmitResult {
+export function createComposerItemInput(values: ComposerFormValues, timezone: string, members?: readonly FamilyMember[]): ComposerSubmitResult {
   const errors = validateComposerForm(values);
   if (errors.length > 0) return { ok: false, errors };
   const familyMemberIds = getFamilyMemberIds(values);
+  if (values.kind === 'task' && members) {
+    const targets = getWorkTargets(values.activeMemberId, members);
+    if (values.owner === FAMILY_TARGET ? targets.length !== members.filter(member => member.active).length || targets.length < 2 : !targets.some(member => member.id === values.owner)) {
+      return { ok: false, errors: ['Выберите доступного исполнителя дела'] };
+    }
+    if (Number(values.points) > 0 && !canRewardWorkTarget(values.activeMemberId, values.owner, members)) {
+      return { ok: false, errors: ['Баллы можно назначить только своему детскому профилю'] };
+    }
+  }
   let startAt: string | undefined;
   let endAt: string | undefined;
   let dueAt: string | undefined;
@@ -145,8 +154,9 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
         visibility: 'family',
         assignees: familyMemberIds,
         dueAt,
+        checklist: createChecklist(values.checklistText),
         approvalRequired: values.approvalRequired,
-        points: values.points ? Number(values.points) : undefined
+        points: undefined
       } as CreateItemInput
     };
   }
@@ -172,7 +182,8 @@ export function createComposerItemInput(values: ComposerFormValues, timezone: st
       visibility: 'assignees',
       assignees: [values.owner],
       dueAt,
-      approvalRequired: values.approvalRequired,
+      checklist: createChecklist(values.checklistText),
+      approvalRequired: values.approvalRequired || Number(values.points) > 0,
       points: values.points ? Number(values.points) : undefined
     } as CreateItemInput
   };
@@ -215,13 +226,31 @@ export function validateComposerForm(values: ComposerFormValues): string[] {
   }
 
   if (values.kind === 'task') {
-    if (!values.owner) errors.push('Выберите, для кого задача');
-    if (values.owner === FAMILY_TARGET && getFamilyMemberIds(values).length === 0) errors.push('Нет участников семьи для задачи');
-    if (!isValidTimeInput(values.dueTime)) errors.push('Проверьте время задачи');
-    if (values.points && Number(values.points) < 0) errors.push('Баллы не могут быть отрицательными');
+    if (!values.owner) errors.push('Выберите исполнителя дела');
+    if (values.owner === FAMILY_TARGET && getFamilyMemberIds(values).length === 0) errors.push('Нет участников семьи для дела');
+    if (!isValidTimeInput(values.dueTime)) errors.push('Проверьте время дела');
+    if (values.points && (!Number.isInteger(Number(values.points)) || Number(values.points) < 0 || Number(values.points) > 100)) errors.push('Баллы: целое число от 0 до 100');
+    const steps = createChecklist(values.checklistText) ?? [];
+    if (steps.length > 100) errors.push('В чек-листе может быть не больше 100 пунктов');
+    if (steps.some(step => step.title.length > 220)) errors.push('Название пункта чек-листа: не больше 220 символов');
   }
 
   return errors;
+}
+
+export function getWorkTargets(activeMemberId: string, members: readonly FamilyMember[]): FamilyMember[] {
+  const actor = members.find(member => member.id === activeMemberId && member.active);
+  if (!actor) return [];
+  return members.filter(member => member.active && member.family === actor.family && (
+    member.id === actor.id || ['owner', 'parent'].includes(actor.role) || actor.role === 'adult' && member.role !== 'child'
+  ));
+}
+
+export function canRewardWorkTarget(activeMemberId: string, targetId: string, members: readonly FamilyMember[]): boolean {
+  const actor = members.find(member => member.id === activeMemberId && member.active);
+  const child = members.find(member => member.id === targetId && member.active);
+  return Boolean(actor && child && child.family === actor.family && ['child', 'teen'].includes(child.role)
+    && (actor.role === 'owner' || actor.role === 'parent' && child.managedBy.includes(actor.id)));
 }
 
 export function getFamilyMemberIds(values: ComposerFormValues): string[] {

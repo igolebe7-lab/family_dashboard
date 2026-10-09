@@ -7,6 +7,7 @@
   import type { FamilyMember } from '$lib/types/domain';
 
   export let member: FamilyMember;
+  export let balance: number | undefined = undefined;
   export let roleLabel: string;
   export let own = false;
   export let editable = false;
@@ -25,6 +26,7 @@
   <div class="family-glass-member__identity">
     <h3>{member.displayName}</h3>
     <p>{roleLabel}{member.user ? ' · связан с аккаунтом' : ''}</p>
+    {#if ['child', 'teen'].includes(member.role) && balance !== undefined}<p class="child-balance">Баланс: {balance} баллов</p>{/if}
   </div>
   {#if editable}
     <button class="family-glass-control family-glass-member__edit" type="button" title="Изменить профиль" aria-label={`Изменить профиль ${member.displayName}`} on:click={onedit}><Pencil size={19} strokeWidth={1.8} aria-hidden="true" /></button>

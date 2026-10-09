@@ -9,7 +9,7 @@
   import type { WorkListState } from '$lib/assignments/work-list';
 
   export let titleId: string;
-  export let kind: 'assignment' | 'task';
+  export let kind: 'assignment' | 'task' | 'work';
   export let cards: AssignmentCardModel[];
   export let state: WorkListState;
   export let status: WorkStatusGroup | 'all' = 'open';
@@ -24,10 +24,10 @@
     { value: 'open', label: 'Нужно сделать' }, { value: 'review', label: 'На проверке' },
     { value: 'completed', label: 'Готово' }, { value: 'cancelled', label: 'Отменено' }, { value: 'all', label: 'Все' }
   ];
-  $: title = kind === 'task' ? 'Дела' : 'Поручения';
+  const title = 'Дела';
   $: scoped = filterWorkCards(cards, 'all', memberId, query, priority);
   $: filtered = filterWorkCards(scoped, status);
-  $: canCreate = Boolean(state.context && state.family?.activeMember && (kind === 'task' ? ['owner', 'parent', 'adult', 'teen'] : ['owner', 'parent', 'adult']).includes(state.family.activeMember.role));
+  $: canCreate = Boolean(state.context && state.family?.activeMember && ['owner', 'parent', 'adult', 'teen'].includes(state.family.activeMember.role));
   $: members = (state.family?.members ?? []).filter((member) => member.active && member.family === state.context?.familyId);
 </script>
 
@@ -56,7 +56,7 @@
   {#if state.loading}<p class="work-state" role="status">{state.loaded ? 'Обновляем список...' : 'Загружаем...'}</p>{/if}
   {#if !state.context}<p class="work-state">{state.family?.status === 'loading' || state.family?.status === 'idle' ? 'Подключаем профиль...' : 'Нет доступного профиля семьи.'}</p>
   {:else if state.loaded && !state.loading && !state.error && filtered.length === 0}
-    <div class="empty-state"><p>{cards.length === 0 ? kind === 'task' ? 'Дел пока нет.' : 'Поручений пока нет.' : 'По этим фильтрам ничего не найдено.'}</p>{#if cards.length > 0}<button type="button" on:click={() => { status = 'all'; memberId = ''; query = ''; priority = 'all'; }}>Сбросить фильтры</button>{/if}</div>
+    <div class="empty-state"><p>{cards.length === 0 ? 'Дел пока нет.' : 'По этим фильтрам ничего не найдено.'}</p>{#if cards.length > 0}<button type="button" on:click={() => { status = 'all'; memberId = ''; query = ''; priority = 'all'; }}>Сбросить фильтры</button>{/if}</div>
   {/if}
   <div class="work-cards" aria-busy={state.loading}>
     {#each filtered as card (card.id)}<AssignmentCard {card} busy={state.busyId === card.id} disabled={state.loading || Boolean(state.error) || Boolean(state.busyId && state.busyId !== card.id)} {onaction} />{/each}

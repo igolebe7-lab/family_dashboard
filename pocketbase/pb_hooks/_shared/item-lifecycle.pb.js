@@ -1,3 +1,5 @@
+const { newApiError } = require(`${__hooks}/_shared/auth.pb.js`);
+
 function validateBeforeSave(app, item, auth, isSuperuser) {
   const original = item.original();
   if (original.get('created_by')) {

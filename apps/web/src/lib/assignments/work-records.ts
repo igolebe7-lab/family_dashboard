@@ -5,7 +5,7 @@ import { asRecord, escapeFilterValue, getPocketBaseClient, memberRequestOptions,
 import { COLLECTIONS } from '$lib/constants/collections';
 import type { Item, ItemOccurrence } from '$lib/types/domain';
 
-export type WorkMode = 'assignment' | 'task' | 'child';
+export type WorkMode = 'assignment' | 'task' | 'work' | 'child';
 export type WorkRecords = { occurrences: ItemOccurrence[]; items: Item[] };
 
 export async function loadWorkRecords(context: ActiveFamilyContext, mode: WorkMode, signal?: AbortSignal): Promise<WorkRecords> {
@@ -16,7 +16,7 @@ export async function loadWorkRecords(context: ActiveFamilyContext, mode: WorkMo
   await ensureOccurrenceRange(active, { from: from.toISOString(), to: to.toISOString() });
   if (signal?.aborted) throw new Error('Request cancelled');
   const family = escapeFilterValue(active.familyId);
-  const kinds = mode === 'child' ? '(kind = "assignment" || kind = "task" || kind = "event")' : `kind = "${mode}"`;
+  const kinds = mode === 'child' ? '(kind = "assignment" || kind = "task" || kind = "event")' : mode === 'work' ? '(kind = "assignment" || kind = "task")' : `kind = "${mode}"`;
   const rangeFilter = buildOccurrenceRangeFilter(active.familyId, { from: from.toISOString(), to: to.toISOString() });
   // Include undated work and unresolved older work without loading completed history for all years.
   const backlog = `family = "${family}" && kind != "event" && ((start_at = "" && due_at = "") || (due_at < "${from.toISOString()}" && status != "approved" && status != "cancelled" && status != "skipped" && (status != "done" || item.approval_required = true)))`;

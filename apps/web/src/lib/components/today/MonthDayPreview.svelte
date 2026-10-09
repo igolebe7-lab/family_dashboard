@@ -7,7 +7,7 @@
   import { getIcon } from '$lib/design/icon-registry';
   import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
   import { openComposerDialog } from '$lib/composer/modal-focus';
-  import { itemDetailsStore } from '$lib/stores/item-details.store';
+  import { showItemDetails } from '$lib/stores/item-details.store';
   import type { TodayMonthDay } from '$lib/today/today-month-calendar';
   import { formatBirthdayMeta, formatAnniversaryMeta } from '$lib/day-annotations/day-annotations';
   export let day: TodayMonthDay;
@@ -23,10 +23,10 @@
   export let onleave: () => void;
   let dialog: HTMLDialogElement;
   $: label = new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'long', weekday: 'long' }).format(new Date(`${day.dateKey}T12:00:00`));
-  function openItem(id?: string) {
+  function openItem(id?: string, occurrenceId?: string) {
     if (!id) return;
     onclose();
-    itemDetailsStore.set(id);
+    showItemDetails(id, occurrenceId);
   }
   onMount(() => {
     const previous = document.activeElement;
@@ -67,7 +67,7 @@
     {/each}
     {#each day.events as event (event.id)}
       {@const Icon = getIcon(event.icon)}
-      <button class="day-preview__event" disabled={!event.itemId} on:click={() => openItem(event.itemId)}>
+      <button class="day-preview__event" disabled={!event.itemId} on:click={() => openItem(event.itemId, event.id)}>
         <time>{event.allDay ? 'Весь день' : event.start}</time><span class="day-preview__event-icon" style={`--event-tone: var(--color-${event.color})`} aria-hidden="true"><Icon size={18} /></span><span><strong>{event.title}</strong><small>{event.memberName}</small></span><ChevronRight size={16} aria-hidden="true" />
       </button>
     {:else}{#if !loading && !error}<p>Нет событий</p>{/if}{/each}

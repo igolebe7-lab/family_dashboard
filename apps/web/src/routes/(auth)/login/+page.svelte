@@ -71,7 +71,7 @@
     <div class="auth-panel__copy">
       <p class="eyebrow">FamilyTime</p>
       <h1 id="login-title">Вход в семейный день</h1>
-      <p>Откройте расписание, дела и поручения вашей семьи.</p>
+      <p>Откройте расписание и дела вашей семьи.</p>
     </div>
 
     {#if errorMessage}

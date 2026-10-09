@@ -1,3 +1,4 @@
+const { newApiError } = require(`${__hooks}/_shared/auth.pb.js`);
 const ADULT_ROLES = ['owner', 'parent', 'adult'];
 
 function isAdultRole(role) {

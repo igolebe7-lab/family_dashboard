@@ -14,6 +14,26 @@ function deferred<T>() { let resolve!: (value: T) => void; let reject!: (reason:
 afterEach(resetPocketBaseClient);
 
 describe('work list state', () => {
+  it('clears revoked data immediately and ignores an earlier refresh', async () => {
+    const pending = deferred<WorkRecords>();
+    const load = vi.fn().mockResolvedValueOnce(records).mockReturnValueOnce(pending.promise);
+    const list = createWorkList('work', { load });
+    await list.setFamily(family);
+    const refresh = list.reload(); list.invalidate();
+    expect(get(list).items).toEqual([]);
+    pending.resolve(records); await refresh;
+    expect(get(list).occurrences).toEqual([]);
+    expect(get(list).loaded).toBe(false);
+  });
+  it('queues realtime refresh while a mutation is in flight', async () => {
+    const pending = deferred<ItemOccurrence>();
+    const load = vi.fn().mockResolvedValue(records);
+    const list = createWorkList('work', { load, mutate: () => pending.promise });
+    await list.setFamily(family);
+    const action = list.act('mark_assignment_done', 'o'); await list.reload();
+    pending.resolve({ ...occurrence, status: 'done' }); await action;
+    expect(load).toHaveBeenCalledTimes(2);
+  });
   it('starts empty and discards a response after logout', async () => {
     const pending = deferred<WorkRecords>();
     const list = createWorkList('task', { load: () => pending.promise });

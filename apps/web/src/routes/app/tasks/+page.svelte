@@ -2,4 +2,4 @@
   import WorkListPage from '$lib/components/assignments/WorkListPage.svelte';
 </script>
 
-<WorkListPage kind="task" />
+<WorkListPage />

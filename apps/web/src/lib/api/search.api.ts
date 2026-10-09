@@ -15,7 +15,8 @@ export function buildItemSearchFilter(familyId: string, query: string, kind: Sea
   ];
   const words = [...new Set(query.trim().slice(0, 120).toLowerCase().replace(/ё/g, 'е').split(/\s+/).filter(Boolean))];
   for (const word of words) terms.push(`search_text ~ "${escapeFilterValue(word)}"`);
-  if (kind !== 'all') terms.push(`kind = "${escapeFilterValue(kind)}"`);
+  if (kind === 'task') terms.push('(kind = "task" || kind = "assignment")');
+  else if (kind !== 'all') terms.push(`kind = "${escapeFilterValue(kind)}"`);
   if (priority !== 'all') terms.push(`priority = "${escapeFilterValue(priority)}"`);
   return terms.join(' && ');
 }

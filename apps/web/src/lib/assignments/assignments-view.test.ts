@@ -69,6 +69,11 @@ const event: ItemOccurrence = {
 };
 
 describe('assignments view models', () => {
+  it('does not let an owner complete work assigned to another adult', () => {
+    const adults: FamilyMember[] = [{ ...members[0], role: 'owner' }, { ...members[1], role: 'adult', managedBy: [] }];
+    const [model] = createAssignmentViewModels({ occurrences: [{ ...assignment, status: 'assigned' }], items: [item], members: adults, activeMemberId: 'parent' });
+    expect(model.primaryAction).toBeUndefined();
+  });
   it('maps assignment occurrences to parent review actions', () => {
     const [model] = createAssignmentViewModels({
       occurrences: [assignment],
@@ -172,7 +177,7 @@ describe('assignments view models', () => {
       expect.objectContaining({
         id: 'note_1',
         unread: true,
-        actionLabel: 'Открыть поручение'
+        actionLabel: 'Открыть дело'
       })
     );
 

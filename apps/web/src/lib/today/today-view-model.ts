@@ -611,7 +611,7 @@ export function createTodayViewModel(input?: Date | TodayViewModelOptions): Toda
     attentionItems: isReferenceFixture ? attentionItems : [],
     attentionCount: isReferenceFixture ? attentionItems.length : 0,
     quickActions: [
-      { id: 'task', label: '+ Задача', icon: 'square-check-big', color: 'green' },
+      { id: 'task', label: '+ Дело', icon: 'square-check-big', color: 'green' },
       { id: 'event', label: '+ Событие', icon: 'calendar-days', color: 'peach' }
     ],
     feedItems: isReferenceFixture ? feedItems : [],

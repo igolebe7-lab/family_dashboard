@@ -25,9 +25,9 @@
   let timer: ReturnType<typeof setTimeout>;
   const kinds: { value: SearchKind; label: string }[] = [
     { value: 'all', label: 'Все' }, { value: 'event', label: 'События' },
-    { value: 'task', label: 'Дела' }, { value: 'assignment', label: 'Поручения' }
+    { value: 'task', label: 'Дела' }
   ];
-  const labels: Record<string, string> = { event: 'Событие', task: 'Дело', assignment: 'Поручение', routine: 'Рутина' };
+  const labels: Record<string, string> = { event: 'Событие', task: 'Дело', assignment: 'Дело', routine: 'Рутина' };
 
   $: context = getActiveFamilyContext($familyStore);
   $: scheduleSearch(query, kind, archived, priority, context?.familyId, context?.memberId);

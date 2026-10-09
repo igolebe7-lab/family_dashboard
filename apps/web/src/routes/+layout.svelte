@@ -9,7 +9,7 @@
   import { bootstrapClientApp, clearDevelopmentShell, isProtectedAppRoute, resolveAppRouteRedirect, watchClientSession } from '$lib/stores/app.bootstrap';
   import { familyStore, getActiveFamilyContext } from '$lib/stores/family.store';
   import { sessionStore } from '$lib/stores/session.store';
-  import { itemDetailsStore } from '$lib/stores/item-details.store';
+  import { itemDetailsStore, itemDetailsOccurrenceStore, showItemDetails } from '$lib/stores/item-details.store';
   import '../app.css';
   import '$lib/design/workspace.css';
   import '$lib/design/liquid-glass.css';
@@ -41,7 +41,7 @@
     if (!match || !canRender || !getActiveFamilyContext(get(familyStore))) return;
     event.preventDefault();
     event.stopPropagation();
-    itemDetailsStore.set(match[1]);
+    showItemDetails(match[1], url.searchParams.get('occurrence') || undefined);
   }
 
   beforeNavigate(() => {
@@ -146,7 +146,7 @@
   <title>FamilyTime</title>
   <meta
     name="description"
-    content="Семейный календарь, дела и поручения для спокойной координации дня."
+    content="Семейный календарь и дела для спокойной координации дня."
   />
 </svelte:head>
 
@@ -160,7 +160,7 @@
   <slot />
   {#if $itemDetailsStore}
     {#await import('$lib/components/calendar/ItemDetailsDialog.svelte') then module}
-      <svelte:component this={module.default} itemId={$itemDetailsStore} onclose={() => itemDetailsStore.set(null)} />
+      <svelte:component this={module.default} itemId={$itemDetailsStore} occurrenceId={$itemDetailsOccurrenceStore} onclose={() => itemDetailsStore.set(null)} />
     {/await}
   {/if}
 {:else}

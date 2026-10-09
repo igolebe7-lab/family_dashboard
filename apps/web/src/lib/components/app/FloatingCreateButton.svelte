@@ -1,7 +1,7 @@
 <script lang="ts">
   import Plus from '@lucide/svelte/icons/plus';
 
-  export let label = 'Создать событие, дело или поручение';
+  export let label = 'Создать событие или дело';
   export let onclick: (() => void) | undefined = undefined;
 </script>
 

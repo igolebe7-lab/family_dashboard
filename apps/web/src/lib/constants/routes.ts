@@ -19,16 +19,16 @@ export const APP_ROUTE_DEFINITIONS = {
     description: 'День, неделя и месяц'
   },
   assignments: {
-    label: 'Поручения',
+    label: 'Дела',
     href: '/app/assignments',
     icon: 'square-check-big',
-    description: 'Домашние поручения и подтверждения'
+    description: 'Личные и семейные дела, исполнители и подтверждения'
   },
   tasks: {
     label: 'Дела',
     href: '/app/tasks',
     icon: 'list-checks',
-    description: 'Семейные дела без подтверждения'
+    description: 'Личные и семейные дела, исполнители и подтверждения'
   },
   family: {
     label: 'Семья',
@@ -55,7 +55,7 @@ export const PRIMARY_APP_ROUTE = APP_ROUTE_DEFINITIONS.today.href;
 export const primaryNavigation = [
   APP_ROUTE_DEFINITIONS.today,
   APP_ROUTE_DEFINITIONS.calendar,
-  APP_ROUTE_DEFINITIONS.assignments,
+  APP_ROUTE_DEFINITIONS.tasks,
   APP_ROUTE_DEFINITIONS.family,
   APP_ROUTE_DEFINITIONS.profile
 ] as const;
@@ -63,7 +63,6 @@ export const primaryNavigation = [
 export const desktopNavigation = [
   APP_ROUTE_DEFINITIONS.today,
   APP_ROUTE_DEFINITIONS.calendar,
-  APP_ROUTE_DEFINITIONS.assignments,
   APP_ROUTE_DEFINITIONS.tasks,
   APP_ROUTE_DEFINITIONS.feed,
   APP_ROUTE_DEFINITIONS.family,
