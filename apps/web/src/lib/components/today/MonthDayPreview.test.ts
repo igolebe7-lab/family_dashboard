@@ -17,9 +17,10 @@ describe('Day preview', () => {
     const annotation = { id: 'anniversary', family: 'family', kind: 'family_date' as const, title: 'Годовщина', originDate: '2010-09-15',
       month: 9, day: 15, recurrence: 'yearly' as const, color: 'peach' as const, tone: 'positive' as const, visibility: 'family' as const, source: 'manual' as const, readonly: false };
     input.day.annotations = [annotation];
-    for (const touch of [false, true]) expect(render(MonthDayPreview, { props: { ...input, touch } }).body).toContain('Исполняется 16 лет');
+    for (const touch of [false, true]) expect(render(MonthDayPreview, { props: { ...input, touch } }).body).toContain('В этом году 16 лет');
     input.day.annotations = [{ ...annotation, recurrence: 'one_time', year: 2026 }];
     expect(render(MonthDayPreview, { props: input }).body).not.toContain('Исполняется');
+    expect(render(MonthDayPreview, { props: input }).body).not.toContain('В этом году');
   });
   it('shows birthday age in hover and touch previews', () => {
     const input = props();

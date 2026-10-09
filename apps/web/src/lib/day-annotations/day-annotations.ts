@@ -32,7 +32,7 @@ export function formatAnniversaryMeta(annotation: DayAnnotation, year: number): 
   if (!Number.isInteger(years) || years < 0) return '';
   if (years === 0) return 'Первая дата';
   const unit = new Intl.PluralRules('ru').select(years);
-  return `Исполняется ${years} ${unit === 'one' ? 'год' : unit === 'few' ? 'года' : 'лет'}`;
+  return `В этом году ${years} ${unit === 'one' ? 'год' : unit === 'few' ? 'года' : 'лет'}`;
 }
 
 export function getAnnotationsForYear(

@@ -55,7 +55,7 @@ const annotations: DayAnnotation[] = [
 describe('createTodayAllDayInfoViewModel', () => {
   it('shows annual anniversaries in the selected year and hides dates before origin', () => {
     const annual = { ...annotations[1], recurrence: 'yearly' as const, originDate: '2010-06-18' };
-    expect(createTodayAllDayInfoViewModel({ date: new Date(2026, 5, 18), annotations: [annual] }).items[0].meta).toBe('Исполняется 16 лет');
+    expect(createTodayAllDayInfoViewModel({ date: new Date(2026, 5, 18), annotations: [annual] }).items[0].meta).toBe('В этом году 16 лет');
     expect(createTodayAllDayInfoViewModel({ date: new Date(2009, 5, 18), annotations: [annual] }).items).toEqual([]);
   });
   it('shows birthday age in the selected day year, independent of real time', () => {
