@@ -27,6 +27,7 @@ export type DayAnnotationInput = {
   day: number;
   year?: number;
   birthDate?: string;
+  originDate?: string;
   recurrence: DayAnnotation['recurrence'];
   color: DayAnnotation['color'];
   tone: DayAnnotation['tone'];
@@ -130,6 +131,7 @@ export function mapDayAnnotationRecord(value: unknown): DayAnnotation {
     day: asNumber(record.day),
     year: asOptionalNumber(record.year),
     birthDate: asString(record.birth_date).slice(0, 10) || undefined,
+    originDate: asString(record.origin_date).slice(0, 10) || undefined,
     recurrence: asString(record.recurrence) as DayAnnotation['recurrence'],
     color: asString(record.color, 'gray') as AccentColor,
     tone: asString(record.tone, 'neutral') as DayAnnotation['tone'],
@@ -160,6 +162,7 @@ function mapDayAnnotationInput(input: DayAnnotationUpdateInput): Record<string, 
     day: input.day,
     year: input.year,
     birth_date: input.birthDate,
+    origin_date: input.originDate,
     recurrence: input.recurrence,
     color: input.color,
     tone: input.tone,

@@ -32,9 +32,11 @@ import {
   createDayAnnotation,
   deleteDayAnnotation,
   listDayAnnotationsForYear,
+  mapDayAnnotationRecord,
   updateDayAnnotation
 } from './day-annotations.api';
 import { createMember, updateMember } from './members.api';
+
 import {
   acceptInvitation,
   createInvitation,
@@ -88,6 +90,9 @@ function createFakeClient(
 }
 
 describe('PocketBase API layer', () => {
+  it('maps an annual special-date origin without treating it as an occurrence year', () => {
+    expect(mapDayAnnotationRecord({ kind: 'family_date', recurrence: 'yearly', origin_date: '1890-06-18 00:00:00.000Z', year: 0 })).toMatchObject({ originDate: '1890-06-18', recurrence: 'yearly' });
+  });
   it('normalizes configured PocketBase base URLs', () => {
     expect(resolvePocketBaseUrl('https://family.example.com/pb/')).toBe(
       'https://family.example.com/pb'
@@ -786,6 +791,7 @@ describe('PocketBase API layer', () => {
           {
             id: 'birthday_vladimir',
             birth_date: '1980-03-12 00:00:00.000Z',
+            origin_date: '',
             family: 'family_1',
             kind: 'birthday' satisfies DayAnnotationKind,
             title: 'День рождения Владимира',
@@ -847,6 +853,7 @@ describe('PocketBase API layer', () => {
     expect(result.items[0]).toMatchObject({
       id: 'birthday_vladimir',
       birthDate: '1980-03-12',
+      originDate: undefined,
       personName: 'Владимир',
       personRelation: 'коллега',
       personContact: '+7 999 000-00-00'
@@ -908,7 +915,8 @@ describe('PocketBase API layer', () => {
     const updated = await updateDayAnnotation(
       'birthday_vladimir',
       {
-        personContact: ''
+        personContact: '',
+        originDate: ''
       },
       context
     );
@@ -928,7 +936,7 @@ describe('PocketBase API layer', () => {
     );
     expect(dayAnnotations.update).toHaveBeenCalledWith(
       'birthday_vladimir',
-      { person_contact: '' },
+      { person_contact: '', origin_date: '' },
       { headers: { 'X-Family-Member-Id': 'member_1' } }
     );
     expect(dayAnnotations.delete).toHaveBeenCalledWith(

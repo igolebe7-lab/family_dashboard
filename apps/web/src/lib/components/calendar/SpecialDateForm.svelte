@@ -22,6 +22,17 @@
   let values = createSpecialDateFormValues({ annotation, selectedDate });
   let validationErrors: string[] = [];
   let draftReady = false;
+  let trackAnniversary = Boolean(values.originDate);
+
+  function setOccurrenceDate(date: string): void {
+    const [year, month, day] = date.split('-').map(Number);
+    values = { ...values, year, month, day };
+  }
+
+  function setOriginDate(date: string): void {
+    const [, month, day] = date.split('-').map(Number);
+    values = { ...values, originDate: date, ...(month && day ? { month, day } : {}) };
+  }
 
   const draftKey = 'familytime:special-date:draft';
 
@@ -50,6 +61,7 @@
       }
     }
     draftReady = true;
+    trackAnniversary = Boolean(values.originDate);
   });
 
   async function submitForm(): Promise<void> {
@@ -112,21 +124,6 @@
       <input type="date" bind:value={values.birthDate} min="1900-01-01" max={localToday()} required />
     </label>
   {:else}
-  <div class="special-date-form__date-grid">
-    <label>
-      <span>День</span>
-      <input bind:value={values.day} min="1" max="31" type="number" />
-    </label>
-    <label>
-      <span>Месяц</span>
-      <input bind:value={values.month} min="1" max="12" type="number" />
-    </label>
-    <label>
-      <span>Год</span>
-      <input bind:value={values.year} min="1900" max="2200" type="number" />
-    </label>
-  </div>
-
   <label>
     <span>Повтор</span>
     <select bind:value={values.recurrence}>
@@ -134,6 +131,28 @@
       <option value="one_time">Только один раз</option>
     </select>
   </label>
+  {#if values.recurrence === 'yearly'}
+    <label class="special-date-form__anniversary-toggle">
+      <input type="checkbox" bind:checked={trackAnniversary} on:change={(event) => setOriginDate(event.currentTarget.checked ? `${values.year}-${String(values.month).padStart(2, '0')}-${String(values.day).padStart(2, '0')}` : '')} />
+      <span>Считать годовщину</span>
+    </label>
+    {#if trackAnniversary}
+      <label>
+        <span>Дата начала</span>
+        <input type="date" value={values.originDate} min="1000-01-01" max="9999-12-31" required on:input={(event) => setOriginDate(event.currentTarget.value)} />
+      </label>
+    {:else}
+      <div class="special-date-form__date-grid">
+        <label><span>День</span><input bind:value={values.day} min="1" max="31" type="number" /></label>
+        <label><span>Месяц</span><input bind:value={values.month} min="1" max="12" type="number" /></label>
+      </div>
+    {/if}
+  {:else}
+    <label>
+      <span>Дата</span>
+      <input type="date" value={`${values.year}-${String(values.month).padStart(2, '0')}-${String(values.day).padStart(2, '0')}`} min="1900-01-01" max="2200-12-31" required on:input={(event) => setOccurrenceDate(event.currentTarget.value)} />
+    </label>
+  {/if}
   {/if}
 
   <div class="special-date-form__date-grid">
@@ -193,3 +212,8 @@
     <button class="button button--primary" disabled={saving} type="submit">{saving ? 'Сохраняем' : submitLabel}</button>
   </div>
 </form>
+
+<style>
+  .special-date-form__anniversary-toggle { display: flex; align-items: center; gap: 10px; }
+  .special-date-form__anniversary-toggle input { width: 20px; height: 20px; min-height: 20px; flex: 0 0 20px; accent-color: var(--color-green); }
+</style>

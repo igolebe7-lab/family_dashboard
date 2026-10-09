@@ -4,6 +4,7 @@ onRecordCreateRequest((event) => {
   const auth = authHelpers.requireAuth(event);
 
   require(`${__hooks}/_shared/member-birthdays.pb.js`).validateBirthDateRequest(event, 'birth_date');
+  validation.validateOriginDateRequest(event);
 
   validation.validateDayAnnotationRecord(
     event.app,
@@ -20,6 +21,7 @@ onRecordUpdateRequest((event) => {
   const auth = authHelpers.requireAuth(event);
 
   require(`${__hooks}/_shared/member-birthdays.pb.js`).validateBirthDateRequest(event, 'birth_date');
+  validation.validateOriginDateRequest(event);
 
   validation.validateDayAnnotationRecord(
     event.app,

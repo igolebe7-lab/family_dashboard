@@ -9,7 +9,7 @@
   import { openComposerDialog } from '$lib/composer/modal-focus';
   import { itemDetailsStore } from '$lib/stores/item-details.store';
   import type { TodayMonthDay } from '$lib/today/today-month-calendar';
-  import { formatBirthdayMeta } from '$lib/day-annotations/day-annotations';
+  import { formatBirthdayMeta, formatAnniversaryMeta } from '$lib/day-annotations/day-annotations';
   export let day: TodayMonthDay;
   export let anchor: HTMLElement;
   export let touch = false;
@@ -61,6 +61,7 @@
     {#each day.annotations as annotation (annotation.id)}
       <p class="day-preview__annotation"><strong>{annotation.title}</strong>
         {#if annotation.kind === 'birthday'}<small>{formatBirthdayMeta(annotation, Number(day.dateKey.slice(0, 4)))}</small>{/if}
+        {#if formatAnniversaryMeta(annotation, Number(day.dateKey.slice(0, 4)))}<small>{formatAnniversaryMeta(annotation, Number(day.dateKey.slice(0, 4)))}</small>{/if}
       </p>
     {/each}
     {#each day.events as event (event.id)}

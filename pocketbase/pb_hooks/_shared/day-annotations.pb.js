@@ -3,9 +3,40 @@ const { getRecordValue } = require(`${__hooks}/_shared/auth.pb.js`);
 function validateDayAnnotationRecord(app, record, auth, isSuperuser) {
   validateClientWriteMode(record, isSuperuser);
   normalizeBirthDate(record);
+  normalizeOriginDate(record);
   validateShape(record);
   validateActor(app, record, auth, isSuperuser);
   validateLinkedMember(app, record);
+}
+
+function validateOriginDate(value) {
+  if (value == null || String(value) === '') return;
+  const dateKey = String(value).slice(0, 10);
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || Number(dateKey.slice(0, 4)) < 1000 ||
+      !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== dateKey) {
+    throw new ApiError(400, 'Проверьте дату начала', { field: 'origin_date' });
+  }
+}
+
+function validateOriginDateRequest(event) {
+  const body = new DynamicModel({ origin_date: '' });
+  event.bindBody(body);
+  validateOriginDate(body.origin_date);
+}
+
+function normalizeOriginDate(record) {
+  if (record.getString('kind') === 'birthday' || record.getString('recurrence') !== 'yearly') {
+    record.set('origin_date', '');
+    return;
+  }
+  const originDate = record.getString('origin_date');
+  validateOriginDate(originDate);
+  if (!originDate) return;
+  const date = new Date(`${originDate.slice(0, 10)}T00:00:00Z`);
+  record.set('month', date.getUTCMonth() + 1);
+  record.set('day', date.getUTCDate());
+  record.set('year', 0);
 }
 
 function normalizeBirthDate(record) {
@@ -49,7 +80,7 @@ function validateShape(record) {
     throw new ApiError(400, 'День должен быть от 1 до 31', { field: 'day' });
   }
 
-  if (!isValidMonthDay(month, day, Number(year) || 2024)) {
+  if (!isValidMonthDay(month, day, recurrence === 'yearly' ? 2024 : Number(year))) {
     throw new ApiError(400, 'Такой даты не существует', { field: 'day' });
   }
 
@@ -147,5 +178,6 @@ function isValidMonthDay(month, day, year) {
 }
 
 module.exports = {
+  validateOriginDateRequest,
   validateDayAnnotationRecord
 };
