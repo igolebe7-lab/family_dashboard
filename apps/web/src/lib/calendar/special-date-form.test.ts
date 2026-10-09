@@ -27,6 +27,20 @@ const birthday: DayAnnotation = {
 };
 
 describe('special date form model', () => {
+  it('uses the selected year, not stored zero, when editing an annual date', () => {
+    const values = createSpecialDateFormValues({ annotation: { ...birthday, kind: 'family_date', year: 0, originDate: '2010-03-12' }, selectedDate: new Date(2028, 2, 12) });
+    expect(values.year).toBe(2028);
+    expect(createSpecialDateInput({ ...values, recurrence: 'one_time' })).toMatchObject({ year: 2028, originDate: '' });
+  });
+  it('uses an optional annual origin date without changing the viewed year', () => {
+    const values = { ...createSpecialDateFormValues(), title: 'Годовщина', originDate: '2010-02-28' };
+    expect(createSpecialDateInput(values)).toMatchObject({ originDate: '2010-02-28', month: 2, day: 28, year: undefined });
+    expect(validateSpecialDateForm({ ...values, originDate: '2019-02-29' })).toContain('Проверьте дату начала');
+    expect(validateSpecialDateForm({ ...values, originDate: '1890-06-18' })).toEqual([]);
+    expect(createSpecialDateInput({ ...values, recurrence: 'one_time', year: 2027, month: 5, day: 1 })).toMatchObject({ originDate: '', month: 5, day: 1, year: 2027 });
+    expect(createSpecialDateFormValues({ annotation: { ...birthday, kind: 'family_date', originDate: '1890-06-18' } }).originDate).toBe('1890-06-18');
+    expect(createSpecialDateFormValues({ annotation: { ...birthday, kind: 'family_date', year: 2000 } }).originDate).toBe('');
+  });
   it('creates defaults from the selected date', () => {
     const values = createSpecialDateFormValues({
       selectedDate: new Date(2026, 5, 18)

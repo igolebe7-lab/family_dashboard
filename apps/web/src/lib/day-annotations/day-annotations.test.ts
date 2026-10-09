@@ -4,6 +4,7 @@ import type { DayAnnotation } from '$lib/types/domain';
 import {
   getAnnotationDateForYear,
   formatBirthdayMeta,
+  formatAnniversaryMeta,
   getAnnotationsForDate,
   getAnnotationsForYear,
   sortDayAnnotations
@@ -65,6 +66,18 @@ const publicHoliday: DayAnnotation = {
 };
 
 describe('day annotations', () => {
+  it('counts annual anniversaries in the viewed year, never for one-time or unknown dates', () => {
+    const annual = { ...oneTimeDate, recurrence: 'yearly' as const, originDate: '1890-09-01' };
+    expect(getAnnotationDateForYear(annual, 1889)).toBeNull();
+    expect(getAnnotationDateForYear(annual, 2026)).toBe('2026-09-01');
+    expect(formatAnniversaryMeta(annual, 1890)).toBe('Первая дата');
+    for (const [year, label] of [[1891,'1 год'],[1892,'2 года'],[1901,'11 лет'],[1911,'21 год'],[2026,'136 лет']] as const) {
+      expect(formatAnniversaryMeta(annual, year)).toBe(`Исполняется ${label}`);
+    }
+    expect(formatAnniversaryMeta({ ...annual, recurrence: 'one_time' }, 2026)).toBe('');
+    expect(formatAnniversaryMeta(oneTimeDate, 2026)).toBe('');
+    expect(formatAnniversaryMeta({ ...annual, originDate: undefined }, 2026)).toBe('');
+  });
   it('keeps legacy age unknown, never projects before birth and preserves February 29', () => {
     expect(formatBirthdayMeta(birthday, 2026)).not.toContain('Исполняется');
     const leapBirthday = { ...birthday, birthDate: '2020-02-29', month: 2, day: 29 };

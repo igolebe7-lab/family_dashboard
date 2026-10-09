@@ -1,4 +1,4 @@
-import { getAnnotationsForDate, formatBirthdayMeta } from '$lib/day-annotations/day-annotations';
+import { getAnnotationsForDate, formatBirthdayMeta, formatAnniversaryMeta } from '$lib/day-annotations/day-annotations';
 import type { DayAnnotation } from '$lib/types/domain';
 import { formatDateKey } from './today-view-model';
 
@@ -63,7 +63,7 @@ function formatAnnotationMeta(annotation: DayAnnotation, year: number): string {
     return formatBirthdayMeta(annotation, year);
   }
 
-  return KIND_LABELS[annotation.kind];
+  return formatAnniversaryMeta(annotation, year) || KIND_LABELS[annotation.kind];
 }
 
 function formatSubtitle(count: number): string {

@@ -10,6 +10,7 @@ export type SpecialDateFormValues = {
   day: number;
   year: number;
   birthDate: string;
+  originDate: string;
   recurrence: DayAnnotationRecurrence;
   color: AccentColor;
   tone: DayAnnotationTone;
@@ -27,7 +28,7 @@ export type SpecialDateFormOptions = {
 export function createSpecialDateFormValues(
   options: SpecialDateFormOptions = {}
 ): SpecialDateFormValues {
-  if (options.annotation) return createValuesFromAnnotation(options.annotation);
+  if (options.annotation) return createValuesFromAnnotation(options.annotation, options.selectedDate);
 
   const selectedDate = options.selectedDate ?? new Date();
 
@@ -39,6 +40,7 @@ export function createSpecialDateFormValues(
     day: selectedDate.getDate(),
     year: selectedDate.getFullYear(),
     birthDate: '',
+    originDate: '',
     recurrence: 'yearly',
     color: 'green',
     tone: 'positive',
@@ -54,14 +56,17 @@ export function createSpecialDateInput(values: SpecialDateFormValues): DayAnnota
   const birthday = values.kind === 'birthday';
   const [birthYear, birthMonth, birthDay] = values.birthDate.split('-').map(Number);
   const recurrence = birthday ? 'yearly' : values.recurrence;
+  const originDate = !birthday && recurrence === 'yearly' ? values.originDate : '';
+  const [, originMonth, originDay] = originDate.split('-').map(Number);
 
   return {
     kind: values.kind,
     title,
     description: optionalString(values.description),
-    month: birthday && birthYear ? birthMonth : values.month,
-    day: birthday && birthYear ? birthDay : values.day,
+    month: birthday && birthYear ? birthMonth : originDate ? originMonth : values.month,
+    day: birthday && birthYear ? birthDay : originDate ? originDay : values.day,
     birthDate: birthday ? values.birthDate : '',
+    originDate,
     year: recurrence === 'one_time' ? values.year : undefined,
     recurrence,
     color: values.color,
@@ -88,7 +93,11 @@ export function validateSpecialDateForm(values: SpecialDateFormValues): string[]
     errors.push('Добавьте название');
   }
   if (values.kind !== 'birthday') {
-    if (!isValidMonthDay(values.month, values.day, values.recurrence === 'yearly' ? 2024 : values.year)) errors.push('Проверьте дату');
+    if (values.recurrence === 'yearly' && values.originDate) {
+      const [year, month, day] = values.originDate.split('-').map(Number);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(values.originDate) || year < 1000 ||
+          !isValidMonthDay(month, day, year)) errors.push('Проверьте дату начала');
+    } else if (!isValidMonthDay(values.month, values.day, values.recurrence === 'yearly' ? 2024 : values.year)) errors.push('Проверьте дату');
     if (values.recurrence === 'one_time' && !Number.isInteger(values.year)) errors.push('Проверьте год');
   }
 
@@ -100,15 +109,17 @@ function createBirthdayTitle(personName: string): string {
   return name ? `День рождения ${name}` : 'День рождения';
 }
 
-function createValuesFromAnnotation(annotation: DayAnnotation): SpecialDateFormValues {
+function createValuesFromAnnotation(annotation: DayAnnotation, selectedDate?: Date): SpecialDateFormValues {
   return {
     kind: annotation.kind,
     title: annotation.title,
     description: annotation.description ?? '',
     month: annotation.month,
     day: annotation.day,
-    year: annotation.year ?? new Date().getFullYear(),
+    year: annotation.recurrence === 'one_time' && annotation.year
+      ? annotation.year : (selectedDate ?? new Date()).getFullYear(),
     birthDate: annotation.birthDate?.slice(0, 10) ?? '',
+    originDate: annotation.originDate?.slice(0, 10) ?? '',
     recurrence: annotation.recurrence,
     color: annotation.color,
     tone: annotation.tone,

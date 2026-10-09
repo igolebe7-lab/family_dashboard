@@ -63,6 +63,23 @@ for (const birthday of ['2200-01-01','2018-02-29']) {
 await ok(`/api/collections/family_members/records/${profile.id}`,owner.token,{birthday:'2018-06-18'},'PATCH');
 assert.equal((await request(path, owner.token, {...input, source:'family_member', readonly:true, linked_member:profile.id})).status,403);
 assert.equal((await request(path,child.token,{...input,created_by:profile.id})).status,403);
+const annualInput = { ...input, kind:'family_date', title:'Годовщина', birth_date:'', origin_date:'1890-06-18', recurrence:'yearly' };
+assert.equal((await request(path,child.token,{...annualInput,created_by:profile.id})).status,403);
 assert.equal((await request(`/api/collections/family_members/records/${profile.id}`,owner.token,null,'DELETE')).status,204);
 assert.equal((await list()).length,1, 'Deleting a profile must delete only its derived birthday');
 console.log('PASS birthdays: automatic creation, same-record sync, deactivation, reactivation, removal, leap dates, manual DOB, child reads, family isolation and system write protection');
+const annual = await ok(path, owner.token, annualInput);
+assert.equal(annual.origin_date.slice(0,10),'1890-06-18');
+assert.equal(annual.month,6); assert.equal(annual.day,18); assert.equal(annual.year,0);
+for (const origin_date of ['2019-02-29','0999-01-01','not-a-date']) {
+  assert.equal((await request(`${path}/${annual.id}`,owner.token,{origin_date},'PATCH')).status,400);
+  assert.equal((await ok(`${path}/${annual.id}`,owner.token)).origin_date.slice(0,10),'1890-06-18');
+}
+const editedAnnual = await ok(`${path}/${annual.id}`,owner.token,{origin_date:'2040-02-29'},'PATCH');
+assert.equal(editedAnnual.day,29); assert.equal(editedAnnual.month,2);
+const once = await ok(`${path}/${annual.id}`,owner.token,{recurrence:'one_time',year:2027,month:5,day:1},'PATCH');
+assert.equal(once.origin_date,''); assert.equal(once.year,2027); assert.equal(once.month,5); assert.equal(once.day,1);
+const unknown = await ok(`${path}/${annual.id}`,owner.token,{recurrence:'yearly',origin_date:''},'PATCH');
+assert.equal(unknown.origin_date,'');
+assert.ok([400,403,404].includes((await request(`${path}/${annual.id}`,outsider.token,{origin_date:'2000-01-01'},'PATCH')).status));
+console.log('PASS special dates: origin date normalization, editing, leap/future/historical dates, invalid raw dates, one-time reset, unknown origin and family isolation');

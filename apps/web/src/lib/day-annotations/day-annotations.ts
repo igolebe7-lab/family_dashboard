@@ -10,6 +10,7 @@ const KIND_ORDER: Record<DayAnnotationKind, number> = {
 
 export function getAnnotationDateForYear(annotation: DayAnnotation, year: number): string | null {
   if (annotation.kind === 'birthday' && annotation.birthDate && year < Number(annotation.birthDate.slice(0, 4))) return null;
+  if (annotation.recurrence === 'yearly' && annotation.originDate && year < Number(annotation.originDate.slice(0, 4))) return null;
   if (annotation.recurrence === 'one_time' && annotation.year !== year) return null;
   if (!isValidMonthDay(annotation.month, annotation.day, year)) return null;
 
@@ -23,6 +24,15 @@ export function formatBirthdayMeta(annotation: DayAnnotation, year: number): str
   const ageLabel = birthYear > 0 && Number.isInteger(age) && age >= 0
     ? `Исполняется ${age} ${unit === 'one' ? 'год' : unit === 'few' ? 'года' : 'лет'}` : '';
   return [ageLabel, annotation.personRelation, annotation.personContact].filter(Boolean).join(' · ') || 'День рождения';
+}
+
+export function formatAnniversaryMeta(annotation: DayAnnotation, year: number): string {
+  if (annotation.kind === 'birthday' || annotation.recurrence !== 'yearly' || !annotation.originDate) return '';
+  const years = year - Number(annotation.originDate.slice(0, 4));
+  if (!Number.isInteger(years) || years < 0) return '';
+  if (years === 0) return 'Первая дата';
+  const unit = new Intl.PluralRules('ru').select(years);
+  return `Исполняется ${years} ${unit === 'one' ? 'год' : unit === 'few' ? 'года' : 'лет'}`;
 }
 
 export function getAnnotationsForYear(

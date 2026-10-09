@@ -101,6 +101,15 @@ retaining the first record's notes, and leaves unlinked legacy birthdays' age un
 Age is visible-year minus birth-year; dates before birth are omitted. February 29 appears
 only in leap years. No occurrences, completion status or additional polling are added.
 
+Non-birthday yearly annotations optionally store `origin_date`, the actual start
+date (calendar date, year 1000–9999, including future dates). It determines month/day;
+the visible year minus origin year supplies the anniversary label. The origin year
+is labelled as the first date; earlier years are omitted. Legacy origin dates remain
+unknown, never inferred from `year`. Switching to one-time or birthday clears
+`origin_date`; one-time `year` is strictly the occurrence year. February 29 keeps
+the same leap-year-only policy. Invalid raw origin dates are rejected before
+PocketBase normalization can silently clear an existing value.
+
 ## Assignment invariant
 
 Assignment must have at least one assignee. For a single assignee equal to creator, UI should suggest creating a personal task instead.

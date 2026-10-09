@@ -1,5 +1,5 @@
 import type { DayAnnotation } from '$lib/types/domain';
-import { formatBirthdayMeta } from '$lib/day-annotations/day-annotations';
+import { formatBirthdayMeta, formatAnniversaryMeta } from '$lib/day-annotations/day-annotations';
 import type { YearCalendarDay } from './year-calendar';
 
 export type DayDetailItem = {
@@ -77,5 +77,5 @@ function formatAnnotationMeta(annotation: DayAnnotation, year: number): string {
     return formatBirthdayMeta(annotation, year);
   }
 
-  return KIND_LABELS[annotation.kind];
+  return formatAnniversaryMeta(annotation, year) || KIND_LABELS[annotation.kind];
 }
