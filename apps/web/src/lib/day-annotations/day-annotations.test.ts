@@ -72,7 +72,9 @@ describe('day annotations', () => {
     expect(getAnnotationDateForYear(annual, 2026)).toBe('2026-09-01');
     expect(formatAnniversaryMeta(annual, 1890)).toBe('Первая дата');
     for (const [year, label] of [[1891,'1 год'],[1892,'2 года'],[1901,'11 лет'],[1911,'21 год'],[2026,'136 лет']] as const) {
-      expect(formatAnniversaryMeta(annual, year)).toBe(`Исполняется ${label}`);
+      for (const kind of ['family_date', 'memorial', 'observance'] as const) {
+        expect(formatAnniversaryMeta({ ...annual, kind }, year)).toBe(`В этом году ${label}`);
+      }
     }
     expect(formatAnniversaryMeta({ ...annual, recurrence: 'one_time' }, 2026)).toBe('');
     expect(formatAnniversaryMeta(oneTimeDate, 2026)).toBe('');

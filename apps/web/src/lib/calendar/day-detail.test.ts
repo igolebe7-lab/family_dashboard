@@ -50,7 +50,7 @@ const day: YearCalendarDay = {
 describe('createDayDetailViewModel', () => {
   it('uses the viewed year for annual special dates', () => {
     const annotations = [{ ...day.annotations[1], recurrence: 'yearly' as const, originDate: '2010-06-18' }];
-    expect(createDayDetailViewModel({ ...day, annotations }).items[0].meta).toBe('Исполняется 16 лет');
+    expect(createDayDetailViewModel({ ...day, annotations }).items[0].meta).toBe('В этом году 16 лет');
   });
   it('formats the selected day and annotation subtitles', () => {
     const model = createDayDetailViewModel(day);
