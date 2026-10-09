@@ -11,7 +11,7 @@ export function sheetSwipe(handle: HTMLElement, dismiss: () => void) {
     start = undefined;
   }
   function down(event: PointerEvent) {
-    if (!panel || !event.isPrimary || event.button !== 0 || !matchMedia('(max-width: 1023px)').matches) return;
+    if (!panel || !event.isPrimary || event.button !== 0 || !matchMedia('(max-width: 767px)').matches) return;
     suppressClick = false;
     start = { id: event.pointerId, x: event.clientX, y: event.clientY, time: event.timeStamp };
     handle.setPointerCapture(event.pointerId);

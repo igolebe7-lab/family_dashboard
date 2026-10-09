@@ -16,6 +16,7 @@
   let anchor: HTMLElement;
   let touch = false;
   let pinned = false;
+  let activationPointer = '';
   const plural = new Intl.PluralRules('ru');
   function countLabel(count: number) { return `${count} ${{ one: 'запись', few: 'записи', many: 'записей', other: 'записи' }[plural.select(count) as 'one' | 'few' | 'many' | 'other']}`; }
   let closeTimer: ReturnType<typeof setTimeout>;
@@ -35,7 +36,8 @@
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     pinned = true;
-    openPreview(day, event.currentTarget as HTMLElement, matchMedia('(hover: none), (max-width: 1023px)').matches);
+    openPreview(day, event.currentTarget as HTMLElement, activationPointer === 'touch' || activationPointer === 'pen' || matchMedia('(any-pointer: coarse), (max-width: 767px)').matches);
+    activationPointer = '';
   }
   onDestroy(() => clearTimeout(closeTimer));
 </script>
@@ -65,6 +67,7 @@
             aria-current={day.inCurrentMonth && day.dateKey === todayKey ? 'date' : undefined}
             aria-haspopup="dialog"
             aria-expanded={previewDate === day.dateKey}
+            on:pointerdown={(event) => activationPointer = event.pointerType}
             on:pointerenter={(event) => hoverDay(event, day)}
             on:pointerleave={leavePreview}
             on:click={(event) => clickDay(event, day)}
@@ -110,7 +113,7 @@
 
 <style>
   .today-month-day--today .today-month-day__annotation { color: var(--primary-ink); }
-  @media (max-width: 1023px) {
+  @media (max-width: 767px) {
     :global(.today-mobile-surface) .today-month-grid {
       padding: 0; border: 0; background: transparent; box-shadow: none;
     }

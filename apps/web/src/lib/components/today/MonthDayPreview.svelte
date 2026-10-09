@@ -29,11 +29,12 @@
     itemDetailsStore.set(id);
   }
   onMount(() => {
-    if (touch) return openComposerDialog(dialog, onclose);
     const previous = document.activeElement;
-    dialog.show();
+    const closeModal = touch ? openComposerDialog(dialog, onclose) : undefined;
+    if (!touch) dialog.show();
     if (!focusOnOpen && previous instanceof HTMLElement) previous.focus({ preventScroll: true });
     function position() {
+      if (touch && matchMedia('(max-width: 767px)').matches) return;
       const rect = anchor.getBoundingClientRect();
       const box = dialog.getBoundingClientRect();
       dialog.style.left = `${Math.max(12, Math.min(rect.left, innerWidth - box.width - 12))}px`;
@@ -45,7 +46,7 @@
     return () => {
       observer.disconnect();
       const restore = dialog.contains(document.activeElement);
-      dialog.close();
+      if (closeModal) closeModal(); else dialog.close();
       if ((focusOnOpen || restore) && anchor.isConnected) anchor.focus({ preventScroll: true });
     };
   });
@@ -81,7 +82,7 @@
   header > strong { font-size: 16px; }
   .day-preview__list { overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
   .day-preview__event { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 12px; width: 100%; padding: 12px 0; min-height: 48px; text-align: left; border: 0; border-bottom: 1px solid var(--color-border); background: transparent; color: inherit; cursor: pointer; }
-  @media (min-width: 1024px) { .day-preview__event { grid-template-columns: 46px minmax(0, 1fr); } .day-preview__event-icon, .day-preview__event :global(> svg) { display: none; } }
+  @media (min-width: 768px) { .day-preview__event { grid-template-columns: 46px minmax(0, 1fr); } .day-preview__event-icon, .day-preview__event :global(> svg) { display: none; } }
   @media (hover: hover) { .day-preview__event:hover { background: var(--color-green-soft); } }
   .day-preview__event:focus-visible { background: var(--color-green-soft); }
   .day-preview__event strong { font-size: 14px; overflow-wrap: anywhere; }
@@ -89,6 +90,6 @@
   time { font-size: 13px; }
   .day-preview__annotation { color: var(--color-text); font-size: 14px; padding: 8px 0 12px; margin: 0; border-bottom: 1px solid var(--color-border); overflow-wrap: anywhere; }
   .day-preview > a { flex-shrink: 0; }
-  .day-preview--touch { inset: auto 12px max(12px, env(safe-area-inset-bottom)); width: auto; max-height: 70dvh; }
+  @media (max-width: 767px) { .day-preview--touch { inset: auto 12px max(12px, env(safe-area-inset-bottom)); width: auto; max-height: 70dvh; } }
   .day-preview::backdrop { background: rgb(0 0 0 / 30%); }
 </style>
