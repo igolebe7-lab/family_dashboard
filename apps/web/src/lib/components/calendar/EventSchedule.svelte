@@ -47,7 +47,7 @@
     if (!canEdit || saving) return;
     saveError = ''; message = '';
     try {
-      values = createScheduleFormValues(occurrence, timezone);
+      values = createScheduleFormValues(occurrence, occurrence.allDay ? item.timezone : $displayTimezone);
       editingId = occurrence.id; trigger = button;
       await tick();
       editor?.querySelector('input')?.focus();
@@ -62,7 +62,7 @@
 
   async function save() {
     if (!canEdit || !values || !editingId || saving) return;
-    const result = createScheduleInput(values, timezone);
+    const result = createScheduleInput(values, values.allDay ? item.timezone : $displayTimezone);
     if (!result.ok) { saveError = result.error; return; }
     const request = generation;
     const id = editingId;

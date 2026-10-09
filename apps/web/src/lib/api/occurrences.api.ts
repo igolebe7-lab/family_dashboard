@@ -47,12 +47,21 @@ export type OccurrenceMarkerListOptions = {
   perPage?: number;
 };
 
+function allDayEnvelope(range: OccurrenceRange): OccurrenceRange {
+  const padding = 36 * 3600000;
+  // A civil all-day date may fall outside the viewer's UTC day. Keep this
+  // bounded envelope within the backend's 370-day materialization limit.
+  if (Date.parse(range.to) - Date.parse(range.from) > 367 * 86400000) return range;
+  return { from: new Date(Date.parse(range.from) - padding).toISOString(),
+    to: new Date(Date.parse(range.to) + padding).toISOString() };
+}
+
 export async function listOccurrencesInRange(
   context: Partial<ActiveFamilyContext>,
   range: OccurrenceRange
 ): Promise<OccurrenceListResult> {
   const activeContext = requireActiveContext(context);
-  await ensureOccurrenceRange(activeContext, range);
+  await ensureOccurrenceRange(activeContext, allDayEnvelope(range));
   const occurrences = getPocketBaseClient().collection(COLLECTIONS.itemOccurrences);
   const getList = requireCollectionMethod(occurrences, 'getList');
   const items: ItemOccurrence[] = [];
@@ -86,7 +95,7 @@ export async function listOccurrenceMarkersInRange(
   options: OccurrenceMarkerListOptions = {}
 ): Promise<OccurrenceMarkerListResult> {
   const activeContext = requireActiveContext(context);
-  await ensureOccurrenceRange(activeContext, range);
+  await ensureOccurrenceRange(activeContext, allDayEnvelope(range));
   const occurrences = getPocketBaseClient().collection(COLLECTIONS.itemOccurrences);
   const getList = requireCollectionMethod(occurrences, 'getList');
   const perPage = options.perPage ?? 200;
@@ -200,6 +209,7 @@ export function buildOccurrenceRangeFilter(
   const family = escapeFilterValue(familyId);
   const from = pocketBaseFilterDate(range.from);
   const to = pocketBaseFilterDate(range.to);
+  const envelope = allDayEnvelope(range);
   const conditions = [
     `family = "${family}"`,
     'item.archived = false',
@@ -212,6 +222,8 @@ export function buildOccurrenceRangeFilter(
       '(',
       `due_at != "" && due_at >= "${from}" && due_at < "${to}"`,
       ')',
+      '||',
+      `(all_day = true && start_at >= "${pocketBaseFilterDate(envelope.from)}" && start_at < "${pocketBaseFilterDate(envelope.to)}")`,
       ')'
     ].join(' ')
   ];

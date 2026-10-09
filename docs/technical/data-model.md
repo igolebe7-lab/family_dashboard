@@ -11,6 +11,10 @@ Display timezone is derived from the auth session, not the active family profile
 Timed records keep their UTC instant and original series timezone; local date
 ranges and presentation use the viewer's preference. All-day records retain the
 civil date in the original item zone; birthdays and anniversaries remain dates.
+Occurrence queries include a bounded 36-hour envelope only for all-day records,
+so distant viewer/source zones cannot hide the selected civil date. Timed query
+boundaries remain unchanged; the expanded materialization window stays within
+the existing 370-day backend limit.
 
 Calendar overview projects only occurrence ID, kind, date, family and authorized
 item ownership/participant fields. One dot represents one record, with multiple

@@ -5,6 +5,11 @@ import { resetPocketBaseClient, setPocketBaseClient } from './pocketbase';
 afterEach(resetPocketBaseClient);
 
 describe('occurrence range completeness', () => {
+  it('includes a bounded all-day envelope without widening timed records', () => {
+    const filter = buildOccurrenceRangeFilter('family', { from: '2026-10-09T10:00:00Z', to: '2026-10-10T10:00:00Z' });
+    expect(filter).toContain('start_at < "2026-10-10 10:00:00.000Z"');
+    expect(filter).toContain('(all_day = true && start_at >= "2026-10-07 22:00:00.000Z" && start_at < "2026-10-11 22:00:00.000Z")');
+  });
   it('normalizes offset and UTC boundaries to PocketBase stored datetime format', () => {
     const filter = buildOccurrenceRangeFilter('family', {
       from: '2026-09-14T00:00:00+02:00', to: '2026-09-15T00:00:00.000Z'
