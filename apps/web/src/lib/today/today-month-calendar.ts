@@ -1,4 +1,4 @@
-import { createYearCalendarViewModel, type YearCalendarDay } from '$lib/calendar/year-calendar';
+import { createMonthCalendarViewModel, type YearCalendarDay } from '$lib/calendar/year-calendar';
 import type { DayAnnotation } from '$lib/types/domain';
 import type { TodayWeekEvent } from './today-view-model';
 
@@ -30,9 +30,14 @@ export function createTodayMonthViewModel(input: {
 }): TodayMonthViewModel {
   const year = input.date.getFullYear();
   const month = input.date.getMonth() + 1;
-  const yearModel = createYearCalendarViewModel(year, input.annotations, { markerLimit: 3 });
-  const monthModel = yearModel.months.find((item) => item.month === month);
-  const eventCounts = createEventCounts(input.events ?? []);
+  const monthModel = createMonthCalendarViewModel(year, month, input.annotations, { markerLimit: 3 });
+  const eventsByDate = new Map<string, TodayWeekEvent[]>();
+  for (const event of input.events ?? []) {
+    const events = eventsByDate.get(event.day) ?? [];
+    events.push(event);
+    eventsByDate.set(event.day, events);
+  }
+  for (const events of eventsByDate.values()) events.sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title));
 
   if (!monthModel) {
     return {
@@ -53,20 +58,10 @@ export function createTodayMonthViewModel(input: {
       weekNumber: week.weekNumber,
       days: week.days.map((day) => ({
         ...day,
-        eventCount: eventCounts.get(day.dateKey) ?? 0,
-        events: (input.events ?? []).filter((event) => event.day === day.dateKey).slice().sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title)),
+        eventCount: eventsByDate.get(day.dateKey)?.length ?? 0,
+        events: eventsByDate.get(day.dateKey) ?? [],
         primaryAnnotationTitle: day.annotations[0]?.title
       }))
     }))
   };
-}
-
-function createEventCounts(events: readonly TodayWeekEvent[]): Map<string, number> {
-  const counts = new Map<string, number>();
-
-  for (const event of events) {
-    counts.set(event.day, (counts.get(event.day) ?? 0) + 1);
-  }
-
-  return counts;
 }

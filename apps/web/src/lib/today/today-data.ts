@@ -1,4 +1,5 @@
 import { getCategoryMeta } from '$lib/constants/categories';
+import { getDateTimeFormatter } from '$lib/utils/date-format';
 import type { AccentColor } from '$lib/constants/colors';
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 import { listOccurrencesInRange } from '$lib/api/occurrences.api';
@@ -72,14 +73,17 @@ export function createTodayViewModelFromOccurrences(input: TodayOccurrenceDataIn
   }).map((card) => [card.id, card]));
   const range = getTodayOccurrenceRange(date, input.view, input.timezone);
   const todayKey = formatDateKey(date);
+  const fromTime = Date.parse(range.from), toTime = Date.parse(range.to);
+  const fromKey = input.timezone ? dateKeyInZone(new Date(fromTime), input.timezone) : '';
+  const toKey = input.timezone ? dateKeyInZone(new Date(toTime - 1), input.timezone) : '';
   const weekOccurrences = input.occurrences.filter((occurrence) => {
     if (occurrence.allDay && input.timezone) {
       const key = getOccurrenceDateKey(occurrence, input.timezone);
-      return Boolean(key && key >= dateKeyInZone(new Date(range.from), input.timezone) && key <= dateKeyInZone(new Date(Date.parse(range.to) - 1), input.timezone));
+      return Boolean(key && key >= fromKey && key <= toKey);
     }
     const value = occurrence.startAt ?? occurrence.dueAt;
     const time = value ? new Date(value).getTime() : NaN;
-    return time >= new Date(range.from).getTime() && (input.timezone ? time < Date.parse(range.to) : time <= Date.parse(range.to));
+    return time >= fromTime && (input.timezone ? time < toTime : time <= toTime);
   });
 
   const weekEvents = weekOccurrences
@@ -443,7 +447,7 @@ function getOccurrenceTime(occurrence: ItemOccurrence, timezone?: string): strin
   if (!value || occurrence.allDay) return '00:00';
 
   const date = new Date(value);
-  if (timezone) return new Intl.DateTimeFormat('ru-RU', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
+  if (timezone) return getDateTimeFormatter('ru-RU', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
@@ -451,7 +455,7 @@ function formatOccurrenceDateLabel(occurrence: ItemOccurrence, timezone?: string
   const value = occurrence.startAt ?? occurrence.dueAt;
   if (!value) return 'Без даты';
 
-  return new Intl.DateTimeFormat('ru-RU', {
+  return getDateTimeFormatter('ru-RU', {
     timeZone: occurrence.allDay ? occurrence.itemRecord?.timezone ?? timezone : timezone,
     day: 'numeric',
     month: 'long',

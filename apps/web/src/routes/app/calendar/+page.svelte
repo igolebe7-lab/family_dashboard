@@ -3,6 +3,7 @@
   import ChevronLeft from '@lucide/svelte/icons/chevron-left';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import { onDestroy, onMount } from 'svelte';
+  import { desktopViewport } from '$lib/stores/viewport.store';
   import { get, type Unsubscriber } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import FloatingCreateButton from '$lib/components/app/FloatingCreateButton.svelte';
@@ -11,6 +12,7 @@
   import SpecialDateForm from '$lib/components/calendar/SpecialDateForm.svelte';
   import YearCalendar from '$lib/components/calendar/YearCalendar.svelte';
   import ComposerSheet from '$lib/components/composer/ComposerSheet.svelte';
+  import { getItem } from '$lib/api/items.api';
   import {
     createDayAnnotation,
     deleteDayAnnotation,
@@ -29,6 +31,7 @@
   import { createDayAnnotationsStore } from '$lib/stores/day-annotations.store';
   import { familyStore, getActiveFamilyContext, type FamilyState } from '$lib/stores/family.store';
   import { createRealtimeStore } from '$lib/stores/realtime.store';
+  import { itemDetailsStore } from '$lib/stores/item-details.store';
   import type { DayAnnotation } from '$lib/types/domain';
   import { createTodayViewModelFromOccurrences } from '$lib/today/today-data';
   import { displayTimezone } from '$lib/stores/timezone.store';
@@ -50,7 +53,7 @@
 
   const activeRoute = '/app/calendar';
   const dayAnnotationsStore = createDayAnnotationsStore();
-  let routeRealtimeStore = createRealtimeStore();
+  const routeRealtimeStore = createRealtimeStore();
   let generation = 0;
   let loading = false;
   let loadError: string | null = null;
@@ -58,6 +61,7 @@
   let familyUnsubscribe: Unsubscriber | undefined;
   let currentFamilyState: FamilyState | undefined;
   let loadedYearKey: string | null = null;
+  let loadedScope: string | null = null;
   let selectedDateKey: string | undefined;
   let formMode: SpecialDateFormMode = 'closed';
   let editingAnnotation: DayAnnotation | undefined;
@@ -65,6 +69,9 @@
   let formSaving = false;
   let publicHolidayAnnotations: DayAnnotation[] = [];
   let calendarRecordMarkers: CalendarRecordMarker[] = [];
+  let markerRequest = 0;
+  let previewRevision = 0;
+  let recoveryTimer: ReturnType<typeof setTimeout> | undefined;
   let composerOpen = false;
   let composerKind: ComposerKind = 'event';
 
@@ -85,6 +92,17 @@
   $: isFormOpen = formMode !== 'closed';
   $: if (currentFamilyState) void loadAnnotationsFromFamilyState(currentFamilyState, $displayTimezone);
 
+  async function refreshMarkers(epoch: number, context: NonNullable<ReturnType<typeof getActiveFamilyContext>>,
+    range: { from: string; to: string }, familyState: FamilyState, timezone: string) {
+    const request = ++markerRequest;
+    const result = await listOccurrenceMarkersInRange(context, range);
+    if (epoch !== generation || request !== markerRequest) return;
+    calendarRecordMarkers = result.items.flatMap(record => {
+      const marker = createRecordMarker(record, familyState.members, timezone);
+      return marker ? [marker] : [];
+    });
+  }
+
   async function loadAnnotationsFromFamilyState(familyState: FamilyState | undefined, timezone = $displayTimezone) {
     const context = familyState?.status === 'ready' ? getActiveFamilyContext(familyState) : null;
     const year = get(dayAnnotationsStore).selectedYear;
@@ -92,14 +110,18 @@
     if (yearKey && loadedYearKey === yearKey) return;
     loadedYearKey = yearKey;
     const epoch = ++generation;
-    routeRealtimeStore.stopAll();
-    routeRealtimeStore = createRealtimeStore();
+    const scope = JSON.stringify([context, timezone, familyState?.members]);
+    if (scope !== loadedScope) { loadedScope = scope; routeRealtimeStore.stopAll(); }
     publicHolidayAnnotations = [];
     calendarRecordMarkers = [];
     loadError = null;
     loading = Boolean(context);
     dayAnnotationsStore.reset();
-    if (!context) return;
+    if (!context || !familyState) return;
+    const openItemId = get(itemDetailsStore);
+    if (openItemId) void getItem(openItemId, context).catch(error => {
+      if (epoch === generation && get(itemDetailsStore) === openItemId && [401, 403, 404].includes(Number(error?.status))) itemDetailsStore.set(null);
+    });
     const realtime = routeRealtimeStore;
     const yearRange = createYearOccurrenceRange(year, timezone);
     const errors: string[] = [];
@@ -115,20 +137,26 @@
       })(),
       (async () => {
         try {
-          const result = await listOccurrenceMarkersInRange(context, yearRange);
-          if (epoch === generation) calendarRecordMarkers = result.items.flatMap(record => {
-            const marker = createRecordMarker(record, familyState?.members ?? [], timezone);
-            return marker ? [marker] : [];
-          });
+          await refreshMarkers(epoch, context, yearRange, familyState, timezone);
         } catch { errors.push('Не удалось загрузить отметки событий.'); }
       })(),
       (async () => {
         try {
-          await realtime.syncOccurrences(context, yearRange, () => {
-            if (epoch === generation) retryLoading();
-          });
+          const refresh = () => {
+            if (epoch === generation) void refreshMarkers(epoch, context, yearRange, familyState, timezone)
+              .catch(() => { if (epoch === generation) loadError = 'Не удалось обновить отметки событий.'; });
+          };
+          await Promise.all([
+            realtime.syncOccurrences(context, yearRange, refresh),
+            realtime.syncActivity(context, refresh),
+            realtime.syncFamilyChanges(context, () => {
+              if (epoch !== generation) return;
+              markerRequest++; previewRevision++; selectedDateKey = undefined; calendarRecordMarkers = [];
+              itemDetailsStore.set(null); scheduleRecovery();
+            }),
+            realtime.syncRecovery(context, scheduleRecovery)
+          ]);
         } catch { errors.push('Обновления в реальном времени недоступны.'); }
-        finally { if (epoch !== generation) realtime.stopAll(); }
       })()
     ]);
     if (epoch !== generation) return;
@@ -139,6 +167,12 @@
   function retryLoading(): void {
     loadedYearKey = null;
     void loadAnnotationsFromFamilyState(currentFamilyState);
+  }
+
+  function scheduleRecovery() {
+    if (!currentFamilyState || document.visibilityState !== 'visible' || recoveryTimer !== undefined) return;
+    markerRequest++; previewRevision++; selectedDateKey = undefined;
+    recoveryTimer = setTimeout(() => { recoveryTimer = undefined; retryLoading(); }, 120);
   }
 
   function goPreviousYear(): void {
@@ -292,6 +326,7 @@
   });
 
   onDestroy(() => {
+    clearTimeout(recoveryTimer);
     generation++;
     dayAnnotationsStore.reset();
     familyUnsubscribe?.();
@@ -299,8 +334,10 @@
   });
 </script>
 
-<svelte:window on:online={() => { loadedYearKey = null; if (currentFamilyState) void loadAnnotationsFromFamilyState(currentFamilyState); }} />
+<svelte:window on:online={scheduleRecovery} on:focus={scheduleRecovery} />
+<svelte:document on:visibilitychange={scheduleRecovery} />
 
+{#if !$desktopViewport}
 <MobileShell {activeRoute} labelledBy="calendar-title-mobile" calendar>
   <div class="calendar-mobile-sticky">
     <header class="top-row">
@@ -331,7 +368,7 @@
   {#if loading}<p role="status">Загружаем календарь…</p>{/if}
   {#if loadError}<div role="alert"><p>{loadError}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>{/if}
   <YearCalendar
-    {loadDayEvents} contextKey={loadedYearKey ?? ''}
+    {loadDayEvents} contextKey={`${loadedYearKey ?? ''}:${previewRevision}`}
     model={yearModel}
     compact
     {selectedDateKey}
@@ -362,6 +399,7 @@
 
 {#if !isFormOpen}<FloatingCreateButton onclick={() => openComposer('event')} />{/if}
 
+{:else}
 <DesktopShell {activeRoute} labelledBy="calendar-title-desktop">
   <div class="desktop-header">
     <div>
@@ -385,7 +423,7 @@
   {#if loading}<p role="status">Загружаем календарь…</p>{/if}
   {#if loadError}<div role="alert"><p>{loadError}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>{/if}
   <YearCalendar
-    {loadDayEvents} contextKey={loadedYearKey ?? ''}
+    {loadDayEvents} contextKey={`${loadedYearKey ?? ''}:${previewRevision}`}
     model={yearModel}
     {selectedDateKey}
     recordMarkers={calendarRecordMarkers}
@@ -427,6 +465,7 @@
     </section>
   </svelte:fragment>
 </DesktopShell>
+{/if}
 
 {#if composerOpen}
   <ComposerSheet

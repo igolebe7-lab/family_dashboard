@@ -9,6 +9,7 @@ import type {
 } from '$lib/types/domain';
 import { CATEGORY_META } from '$lib/constants/categories';
 import { canViewItem } from '$lib/utils/permissions';
+import { getDateTimeFormatter } from '$lib/utils/date-format';
 
 export type AssignmentAction =
   | 'mark_assignment_done'
@@ -304,18 +305,18 @@ function getOccurrenceTime(occurrence: ItemOccurrence, timezone?: string): strin
 
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return 'Без времени';
-  return new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: timezone }).format(date);
+  return getDateTimeFormatter('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: timezone }).format(date);
 }
 
 function formatDateKey(date: Date, timezone?: string): string {
   if (!Number.isFinite(date.getTime())) return '';
-  return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: timezone }).format(date);
+  return getDateTimeFormatter('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: timezone }).format(date);
 }
 
 function formatDateTimeLabel(value: string | undefined, timezone?: string): string {
   if (!value || !Number.isFinite(new Date(value).getTime())) return 'Без срока';
 
-  return new Intl.DateTimeFormat('ru-RU', {
+  return getDateTimeFormatter('ru-RU', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',

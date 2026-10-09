@@ -1,4 +1,6 @@
 import { subscribeActivity } from '$lib/api/activity.api';
+import { subscribeFamilyChanges } from '$lib/api/families.api';
+import { subscribeReconnect } from '$lib/api/realtime-recovery.api';
 import { subscribeNotifications } from '$lib/api/notifications.api';
 import {
   subscribeOccurrencesInRange,
@@ -7,7 +9,7 @@ import {
 import type { ActiveFamilyContext } from '$lib/api/pocketbase';
 
 type RealtimeUnsubscribe = () => void | Promise<void>;
-type RealtimeSubscribe = () => Promise<RealtimeUnsubscribe>;
+type RealtimeSubscribe = (notify: () => void) => Promise<RealtimeUnsubscribe>;
 
 function releaseSubscription(unsubscribe: RealtimeUnsubscribe | null): void {
   if (!unsubscribe) return;
@@ -20,6 +22,8 @@ function releaseSubscription(unsubscribe: RealtimeUnsubscribe | null): void {
 }
 
 export type RealtimeStoreDependencies = {
+  subscribeFamilyChanges?: typeof subscribeFamilyChanges;
+  subscribeReconnect?: typeof subscribeReconnect;
   subscribeNotifications?: (
     context: ActiveFamilyContext,
     onChange: () => void
@@ -42,89 +46,78 @@ export function createRealtimeStore(dependencies: RealtimeStoreDependencies = {}
   const subscribeOccurrencesDependency =
     dependencies.subscribeOccurrences ?? subscribeOccurrencesInRange;
 
-  let notificationKey: string | null = null;
-  let notificationUnsubscribe: RealtimeUnsubscribe | null = null;
-  let activityKey: string | null = null;
-  let activityUnsubscribe: RealtimeUnsubscribe | null = null;
-  let occurrencesKey: string | null = null;
-  let occurrencesUnsubscribe: RealtimeUnsubscribe | null = null;
-
-  async function sync(
-    nextKey: string,
-    currentKey: string | null,
-    unsubscribe: RealtimeUnsubscribe | null,
-    subscribe: RealtimeSubscribe,
-    setState: (key: string, unsubscribe: RealtimeUnsubscribe) => void
-  ): Promise<void> {
-    if (currentKey === nextKey) return;
-    releaseSubscription(unsubscribe);
-    const nextUnsubscribe = await subscribe();
-    setState(nextKey, nextUnsubscribe);
+  function channel() {
+    let key: string | null = null;
+    let generation = 0;
+    let unsubscribe: RealtimeUnsubscribe | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let callback: () => void = () => {};
+    let pending: Promise<void> | undefined;
+    function stop() {
+      generation++;
+      if (timer !== undefined) clearTimeout(timer);
+      timer = undefined;
+      releaseSubscription(unsubscribe);
+      unsubscribe = null;
+      key = null;
+      pending = undefined;
+    }
+    function sync(nextKey: string, subscribe: RealtimeSubscribe, onChange: () => void): Promise<void> {
+      callback = onChange;
+      if (key === nextKey) return pending ?? Promise.resolve();
+      stop();
+      key = nextKey;
+      const epoch = generation;
+      const notify = () => {
+        if (epoch !== generation || timer !== undefined) return;
+        // One refresh per burst, with bounded latency even during a long stream.
+        timer = setTimeout(() => {
+          timer = undefined;
+          if (epoch === generation) callback();
+        }, 120);
+      };
+      pending = subscribe(notify).then(next => {
+        if (epoch !== generation) releaseSubscription(next);
+        else { unsubscribe = next; pending = undefined; }
+      }).catch(error => {
+        if (epoch === generation) stop();
+        throw error;
+      });
+      return pending;
+    }
+    return { sync, stop };
   }
+  const notifications = channel(), activity = channel(), occurrences = channel(), family = channel(), recovery = channel();
 
   return {
+    syncFamilyChanges: (context: ActiveFamilyContext, onChange: () => void) => family.sync(
+      `${context.familyId}:${context.memberId}`, notify => (dependencies.subscribeFamilyChanges ?? subscribeFamilyChanges)(context, notify), onChange),
+    syncRecovery: (context: ActiveFamilyContext, onReconnect: () => void) => recovery.sync(
+      `${context.familyId}:${context.memberId}`, notify => (dependencies.subscribeReconnect ?? subscribeReconnect)(notify), onReconnect),
     syncNotifications: (context: ActiveFamilyContext, onChange: () => void) =>
-      sync(
+      notifications.sync(
         `${context.familyId}:${context.memberId}`,
-        notificationKey,
-        notificationUnsubscribe,
-        () => subscribeNotificationsDependency(context, onChange),
-        (key, unsubscribe) => {
-          notificationKey = key;
-          notificationUnsubscribe = unsubscribe;
-        }
+        notify => subscribeNotificationsDependency(context, notify), onChange
       ),
     syncActivity: (context: ActiveFamilyContext, onChange: () => void) =>
-      sync(
-        context.familyId,
-        activityKey,
-        activityUnsubscribe,
-        () => subscribeActivityDependency(context, onChange),
-        (key, unsubscribe) => {
-          activityKey = key;
-          activityUnsubscribe = unsubscribe;
-        }
+      activity.sync(
+        `${context.familyId}:${context.memberId}`,
+        notify => subscribeActivityDependency(context, notify), onChange
       ),
     syncOccurrences: (
       context: ActiveFamilyContext,
       range: OccurrenceRange,
       onChange: () => void
     ) =>
-      sync(
+      occurrences.sync(
         `${context.familyId}:${context.memberId}:${range.from}:${range.to}`,
-        occurrencesKey,
-        occurrencesUnsubscribe,
-        () => subscribeOccurrencesDependency(context, range, onChange),
-        (key, unsubscribe) => {
-          occurrencesKey = key;
-          occurrencesUnsubscribe = unsubscribe;
-        }
+        notify => subscribeOccurrencesDependency(context, range, notify), onChange
       ),
-    stopNotifications: () => {
-      releaseSubscription(notificationUnsubscribe);
-      notificationUnsubscribe = null;
-      notificationKey = null;
-    },
-    stopActivity: () => {
-      releaseSubscription(activityUnsubscribe);
-      activityUnsubscribe = null;
-      activityKey = null;
-    },
-    stopOccurrences: () => {
-      releaseSubscription(occurrencesUnsubscribe);
-      occurrencesUnsubscribe = null;
-      occurrencesKey = null;
-    },
+    stopNotifications: notifications.stop,
+    stopActivity: activity.stop,
+    stopOccurrences: occurrences.stop,
     stopAll: () => {
-      releaseSubscription(notificationUnsubscribe);
-      releaseSubscription(activityUnsubscribe);
-      releaseSubscription(occurrencesUnsubscribe);
-      notificationUnsubscribe = null;
-      activityUnsubscribe = null;
-      occurrencesUnsubscribe = null;
-      notificationKey = null;
-      activityKey = null;
-      occurrencesKey = null;
+      notifications.stop(); activity.stop(); occurrences.stop(); family.stop(); recovery.stop();
     }
   };
 }

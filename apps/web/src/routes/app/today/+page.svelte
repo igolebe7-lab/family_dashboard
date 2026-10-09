@@ -4,6 +4,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { onDestroy, onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import DesktopShell from '$lib/components/app/DesktopShell.svelte';
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import ComposerSheet from '$lib/components/composer/ComposerSheet.svelte';
@@ -36,6 +37,7 @@
   import type { DayAnnotation, FamilyMember } from '$lib/types/domain';
   import { displayTimezone } from '$lib/stores/timezone.store';
   import { displayClock } from '$lib/stores/clock.store';
+  import { desktopViewport } from '$lib/stores/viewport.store';
   import { calendarDateInZone, dateKeyInZone, getGreeting } from '$lib/utils/timezone';
 
   const activeRoute = '/app/today';
@@ -45,6 +47,9 @@
   let mounted = false;
   let generation = 0;
   let loadedKey: string | null = null;
+  let loadedScope: string | null = null;
+  let annotationYear: number | null = null;
+  let recoveryTimer: ReturnType<typeof setTimeout> | undefined;
   let publicHolidayAnnotations: DayAnnotation[] = [];
   let holidayError: string | null = null;
   let realtimeError: string | null = null;
@@ -105,21 +110,29 @@
     const key = JSON.stringify([context, formatDateKey(date), view, familyState.members, timezone]);
     if (key === loadedKey) return;
     loadedKey = key;
-    const epoch = ++generation;
-    routeRealtimeStore.stopAll();
-    routeRealtimeStore = createRealtimeStore();
-    dayAnnotationsStore.reset();
-    todayState.reset(date);
-    publicHolidayAnnotations = [];
-    holidayError = null;
-    realtimeError = null;
-    actionError = null;
-    actionMessage = null;
-    busyOccurrenceId = null;
-    composerOpen = false;
+    const scope = JSON.stringify([context, familyState.members, timezone]);
+    if (scope !== loadedScope) {
+      loadedScope = scope;
+      generation++;
+      routeRealtimeStore.stopAll();
+      dayAnnotationsStore.reset();
+      todayState.reset(date);
+      annotationYear = null;
+      publicHolidayAnnotations = [];
+      holidayError = null;
+      realtimeError = null;
+      actionError = null;
+      actionMessage = null;
+      busyOccurrenceId = null;
+      composerOpen = false;
+    }
+    const epoch = generation;
     if (!context) return;
     void todayState.load({ context, date, view, members: familyState.members, timezone });
-    void loadAnnotations(epoch, context, date);
+    if (annotationYear !== date.getFullYear()) {
+      annotationYear = date.getFullYear();
+      void loadAnnotations(epoch, context, date);
+    }
     void syncRealtime(epoch, context, date, view);
   }
 
@@ -131,9 +144,9 @@
         countryCode: 'RU', familyId: context.familyId, storage: localStorage,
         years: [date.getFullYear() - 1, date.getFullYear(), date.getFullYear() + 1]
       });
-      if (epoch === generation) { publicHolidayAnnotations = holidays; holidayError = null; }
+      if (epoch === generation && date.getFullYear() === selectedTodayDate.getFullYear()) { publicHolidayAnnotations = holidays; holidayError = null; }
     } catch {
-      if (epoch === generation) holidayError = 'Не удалось загрузить государственные праздники.';
+      if (epoch === generation && date.getFullYear() === selectedTodayDate.getFullYear()) holidayError = 'Не удалось загрузить государственные праздники.';
     }
     await annotations;
   }
@@ -143,18 +156,29 @@
     const guarded = (refresh: () => Promise<unknown>) => () => { if (epoch === generation) void refresh(); };
     await Promise.all([
       realtime.syncNotifications(context, guarded(todayState.refreshNotifications)),
-      realtime.syncActivity(context, guarded(async () => { await Promise.all([todayState.refreshActivity(), refreshSummary()]); })),
-      realtime.syncOccurrences(context, getTodayOccurrenceRange(date, view, $displayTimezone), guarded(todayState.refreshOccurrences))
+      realtime.syncActivity(context, guarded(async () => { await Promise.all([todayState.refreshActivity(), todayState.refreshOccurrences(), refreshSummary()]); })),
+      realtime.syncOccurrences(context, getTodayOccurrenceRange(date, view, $displayTimezone), guarded(todayState.refreshOccurrences)),
+      realtime.syncFamilyChanges(context, () => {
+        if (epoch !== generation) return;
+        todayState.invalidate();
+        summaryRequest++; summary = { attention: [], tomorrow: [] };
+        itemDetailsStore.set(null);
+        scheduleRecovery();
+      }),
+      realtime.syncRecovery(context, scheduleRecovery)
     ].map(async (subscription) => {
       try { await subscription; }
       catch { if (epoch === generation) realtimeError = 'Обновления в реальном времени недоступны.'; }
-      finally { if (epoch !== generation) realtime.stopAll(); }
     }));
   }
 
   function retryLoading() {
-    loadedKey = null;
-    syncPage(currentFamilyState, selectedTodayDate, selectedCalendarView, fixtureMode);
+    void recoverConnection();
+  }
+
+  function scheduleRecovery() {
+    if (!mounted || document.visibilityState !== 'visible' || recoveryTimer !== undefined) return;
+    recoveryTimer = setTimeout(() => { recoveryTimer = undefined; void recoverConnection(); }, 120);
   }
 
   async function recoverConnection() {
@@ -163,6 +187,10 @@
     const context = getActiveFamilyContext(currentFamilyState);
     if (context) {
       realtimeError = null;
+      const epoch = generation, openItemId = get(itemDetailsStore);
+      if (openItemId) void getItem(openItemId, context).catch(error => {
+        if (epoch === generation && get(itemDetailsStore) === openItemId && [401, 403, 404].includes(Number(error?.status))) itemDetailsStore.set(null);
+      });
       await Promise.all([loadAnnotations(generation, context, selectedTodayDate), syncRealtime(generation, context, selectedTodayDate, selectedCalendarView)]);
     }
   }
@@ -221,6 +249,7 @@
 
   onMount(() => { mounted = browser; });
   onDestroy(() => {
+    clearTimeout(recoveryTimer);
     summaryRequest++; clearTimeout(summaryTimer);
     mounted = false;
     generation++;
@@ -230,8 +259,10 @@
   });
 </script>
 
-<svelte:window on:focus={() => { if (mounted) void refreshSummary(); }} on:online={recoverConnection} />
+<svelte:window on:focus={scheduleRecovery} on:online={scheduleRecovery} />
+<svelte:document on:visibilitychange={scheduleRecovery} />
 
+{#if !$desktopViewport}
 <MobileShell {activeRoute} labelledBy="today-title-mobile">
   <TodayHeader
     titleId="today-title-mobile"
@@ -291,6 +322,7 @@
 
 </MobileShell>
 
+{:else}
 <DesktopShell {activeRoute} labelledBy="today-title-desktop">
     <DesktopHeader
     oncreate={() => openComposer('event')}
@@ -366,6 +398,7 @@
   </svelte:fragment>
 
 </DesktopShell>
+{/if}
 
 {#if composerOpen}
     <ComposerSheet

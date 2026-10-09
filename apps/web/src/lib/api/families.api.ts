@@ -4,6 +4,9 @@ import type { Family } from '$lib/types/domain';
 import {
   asRecord,
   asString,
+  type ActiveFamilyContext,
+  memberRequestOptions,
+  requireActiveContext,
   getPocketBaseClient,
   requireCollectionMethod
 } from './pocketbase';
@@ -72,6 +75,12 @@ export async function listFamilies(): Promise<Family[]> {
   const records = await getFullList({ sort: 'name' });
 
   return records.map(mapFamilyRecord);
+}
+
+export async function subscribeFamilyChanges(context: ActiveFamilyContext, onChange: () => void): Promise<() => void> {
+  const active = requireActiveContext(context);
+  const families = getPocketBaseClient().collection(COLLECTIONS.families);
+  return requireCollectionMethod(families, 'subscribe')(active.familyId, () => onChange(), memberRequestOptions(active));
 }
 
 export function mapFamilyRecord(value: unknown): Family {

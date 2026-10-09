@@ -49,6 +49,10 @@ export type PocketBaseCollectionLike = {
 
 export type PocketBaseClientLike = {
   baseURL?: string;
+  realtime?: {
+    isConnected: boolean;
+    subscribe: (topic: string, callback: (data: unknown) => void) => Promise<() => void | Promise<void>>;
+  };
   authStore: PocketBaseAuthStoreLike;
   collection: (name: string) => PocketBaseCollectionLike;
   send?: (path: string, options?: Record<string, unknown>) => Promise<unknown>;
