@@ -8,10 +8,9 @@
 <section class="member-avatar-row" aria-label="Члены семьи">
   {#each members as member (member.id)}
     <MemberAvatar
+      member={member.profile}
       name={member.name}
-      initial={member.initial}
       color={member.color}
-      portrait={member.portrait}
       roleLabel={member.roleLabel}
       todayCount={member.todayCount}
     />

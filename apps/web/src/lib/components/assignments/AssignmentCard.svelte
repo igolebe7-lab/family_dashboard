@@ -1,6 +1,7 @@
 <script lang="ts">
   import Check from '@lucide/svelte/icons/check';
   import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
+  import ProfileAvatar from '$lib/components/media/ProfileAvatar.svelte';
   import { showItemDetails } from '$lib/stores/item-details.store';
   import type { AssignmentAction, AssignmentCardModel } from '$lib/assignments/assignments-view';
 
@@ -15,7 +16,9 @@
 </script>
 
 <article class={`assignment-card assignment-card--${card.tone}`}>
-  <span class="assignment-card__avatar" style:background={`var(--color-${card.memberTone}-soft)`} style:color={`var(--color-${card.memberTone})`} aria-hidden="true">{card.assigneeInitial}</span>
+  <span class="assignment-card__avatar" style:background={card.member ? 'transparent' : `var(--color-${card.memberTone}-soft)`} style:color={`var(--color-${card.memberTone})`} style:box-shadow={card.member ? 'none' : undefined} aria-hidden="true">
+    {#if card.member}<ProfileAvatar member={card.member} size={48} />{:else}{card.assigneeInitial}{/if}
+  </span>
   <div class="assignment-card__body">
     <div class="assignment-card__topline">
       <button class="work-detail-link" type="button" aria-label={`Открыть дело: ${card.title}`} on:click={() => showItemDetails(card.itemId, card.id)}>{card.title}</button>

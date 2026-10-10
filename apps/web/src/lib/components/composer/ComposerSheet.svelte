@@ -21,6 +21,9 @@
   import ComposerTabs from './ComposerTabs.svelte';
   import EventForm from './EventForm.svelte';
   import TaskForm from './TaskForm.svelte';
+  import WorkMediaDraft from '$lib/components/media/WorkMediaDraft.svelte';
+  import type { WorkLink } from '$lib/api/work-media.api';
+  import { validateWorkLinks } from '$lib/media/work-links';
 
   export let activeKind: ComposerKind = 'event';
   export let context: ActiveFamilyContext | null = null;
@@ -47,9 +50,13 @@
   let scopeVersion = 0;
   let storageWarning: string | null = null;
   const drafts = createComposerDraftStorage();
+  // File objects and links stay in this instance, never in sessionStorage form values.
+  let mediaPhotos: File[] = [], mediaLinks: WorkLink[] = [];
+  let mediaPreparing = false, mediaReady = true;
+  let mediaDraftVersion = 0;
 
   beforeNavigate((navigation) => {
-    if (saving) navigation.cancel();
+    if (saving || mediaPreparing || !confirmAttachmentDiscard()) navigation.cancel();
   });
 
   onMount(() => {
@@ -66,6 +73,7 @@
 
   onDestroy(() => {
     if (draftReady && draftContext) drafts.save(draftContext, values);
+    mediaPhotos = []; mediaLinks = [];
   });
 
   $: currentScope = context ? composerDraftKey(context) : null;
@@ -73,6 +81,7 @@
 
   $: if (values.kind !== activeKind) {
     values = setComposerKind(values, activeKind);
+    mediaPhotos = []; mediaLinks = []; mediaPreparing = false; mediaReady = true;
   }
   $: if (draftReady && draftContext && currentScope === loadedScope) {
     persistDraft(values);
@@ -95,8 +104,12 @@
   }
 
   function changeKind(kind: ComposerKind): void {
-    if (saving) return;
+    if (saving || mediaPreparing) return;
+    if (kind === activeKind || !confirmAttachmentDiscard()) return;
     activeKind = kind;
+    mediaDraftVersion++;
+    mediaPhotos = []; mediaLinks = [];
+    mediaReady = true;
     validationErrors = [];
     submitError = null;
     successMessage = null;
@@ -110,6 +123,7 @@
   function restoreScope(nextContext: ActiveFamilyContext | null): void {
     if (draftReady && draftContext) drafts.save(draftContext, values);
     scopeVersion += 1;
+    mediaPhotos = []; mediaLinks = []; mediaPreparing = false; mediaReady = true;
     draftContext = nextContext ? { ...nextContext } : null;
     loadedScope = draftContext ? composerDraftKey(draftContext) : null;
     const defaults = createComposerFormValues({ activeMemberId: nextContext?.memberId, date: selectedDate, kind: activeKind });
@@ -122,19 +136,25 @@
   }
 
   function closeComposer(): void {
-    if (saving) return;
+    if (saving || mediaPreparing) return;
+    if (!confirmAttachmentDiscard()) return;
     if (draftReady && draftContext) persistDraft(values);
     onclose?.();
   }
 
   function discardDraft(): void {
-    if (saving) return;
+    if (saving || mediaPreparing) return;
+    if (!confirmAttachmentDiscard()) return;
     if (draftContext && !drafts.remove(draftContext)) {
       storageWarning = 'Не удалось удалить черновик из браузера. Попробуйте ещё раз.';
       return;
     }
     draftReady = false;
     onclose?.();
+  }
+
+  function confirmAttachmentDiscard(): boolean {
+    return !(mediaPhotos.length || mediaLinks.length || !mediaReady) || window.confirm('Фото и ссылки этого черновика не сохраняются после закрытия или смены типа. Продолжить без вложений?');
   }
 
   function backdropClick(event: MouseEvent): void {
@@ -144,7 +164,7 @@
   }
 
   async function submitForm(): Promise<void> {
-    if (saving) return;
+    if (saving || mediaPreparing || (values.kind === 'task' && !mediaReady)) return;
     submitError = null;
     successMessage = null;
 
@@ -166,7 +186,9 @@
     const submittedKind = values.kind;
 
     try {
-      await createItem(result.input, submittedContext);
+      const media = submittedKind === 'task' && (mediaPhotos.length || mediaLinks.length)
+        ? { photos: mediaPhotos, links: validateWorkLinks(mediaLinks) } : undefined;
+      await createItem({ ...result.input, ...(media ? { media } : {}) }, submittedContext);
     } catch (error) {
       if (submittedScope === scopeVersion) submitError = 'Не удалось сохранить. Проверьте поля или подключение к серверу.';
       console.warn('Failed to create item from composer.', error);
@@ -178,6 +200,7 @@
     drafts.remove(submittedContext);
     if (submittedScope !== scopeVersion) { saving = false; return; }
     draftReady = false;
+    mediaPhotos = []; mediaLinks = [];
     successMessage = getSuccessMessage(submittedKind);
     try { await oncreated?.(); } catch (error) { console.warn('Created item, but refresh failed.', error); }
     saving = false;
@@ -191,19 +214,19 @@
 </script>
 
 <dialog bind:this={dialog} class="composer-sheet" aria-labelledby={titleId} aria-modal="true" aria-busy={saving} on:click={backdropClick}>
-  <SheetHandle onclose={closeComposer} disabled={saving} />
+  <SheetHandle onclose={closeComposer} disabled={saving || mediaPreparing} />
   <header class="composer-sheet__header">
     <div>
       <p class="section-kicker">Создание</p>
       <h2 id={titleId}>Новая запись</h2>
     </div>
-    <button class="sheet-desktop-close" type="button" disabled={saving} aria-label="Закрыть форму" on:click={() => closeComposer()}>
+    <button class="sheet-desktop-close" type="button" disabled={saving || mediaPreparing} aria-label="Закрыть форму" on:click={() => closeComposer()}>
       <X size={19} strokeWidth={2.2} aria-hidden="true" />
     </button>
   </header>
 
   <div class="composer-sheet__content">
-  <fieldset class="composer-kind-controls" disabled={saving} aria-label="Тип записи">
+  <fieldset class="composer-kind-controls" disabled={saving || mediaPreparing} aria-label="Тип записи">
     <ComposerTabs value={values.kind} onchange={changeKind} />
   </fieldset>
 
@@ -231,14 +254,17 @@
       <EventForm bind:values {members} />
     {:else}
       <TaskForm bind:values {members} />
+      {#key `${loadedScope}:${mediaDraftVersion}`}
+        <section class="composer-media" aria-label="Вложения дела"><h3>Вложения</h3><WorkMediaDraft bind:photos={mediaPhotos} bind:links={mediaLinks} disabled={saving} bind:preparing={mediaPreparing} bind:ready={mediaReady} /></section>
+      {/key}
     {/if}
 
     <div class="composer-sheet__actions">
-      <button class="button button--ghost" disabled={saving} type="button" on:click={() => closeComposer()}>
+      <button class="button button--ghost" disabled={saving || mediaPreparing} type="button" on:click={() => closeComposer()}>
         Закрыть
       </button>
-      <button class="button button--ghost" disabled={saving} type="button" on:click={discardDraft}>Удалить черновик</button>
-      <button class="button button--primary" disabled={saving} type="submit">
+      <button class="button button--ghost" disabled={saving || mediaPreparing} type="button" on:click={discardDraft}>Удалить черновик</button>
+      <button class="button button--primary" disabled={saving || mediaPreparing || (values.kind === 'task' && !mediaReady)} type="submit">
         {saving ? 'Сохраняем' : 'Создать'}
       </button>
     </div>
@@ -255,5 +281,8 @@
   .composer-kind-controls, .composer-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
   .composer-fields { display: grid; gap: 1rem; }
   .composer-sheet__actions { flex-wrap: wrap; }
+  .composer-media { border-top: 1px solid var(--color-border); padding-top: 16px; min-width: 0; }
+  .composer-media > h3 { margin: 0 0 8px; font-size: 16px; }
+  .composer-sheet__actions .button { min-width: 0; }
   @media (min-width: 768px) { dialog.composer-sheet { top: 2rem; } }
 </style>

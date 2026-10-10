@@ -125,6 +125,34 @@ export async function updateMember(
   return mapFamilyMemberRecord(record);
 }
 
+export function canEditMemberAvatar(members: readonly FamilyMember[], userId: string | undefined, target: FamilyMember): boolean {
+  if (!userId || !target.active) return false;
+  return members.some(actor => actor.active && actor.user === userId && actor.family === target.family &&
+    (actor.id === target.id || (['child', 'teen'].includes(target.role) &&
+      (actor.role === 'owner' || (actor.role === 'parent' && target.managedBy.includes(actor.id))))));
+}
+
+export async function updateMemberAvatar(
+  id: string, file: File | null, context: Partial<ActiveFamilyContext>
+): Promise<FamilyMember> {
+  const activeContext = requireActiveContext(context);
+  const client = getPocketBaseClient();
+  const token = client.authStore.token;
+  if (!token || !client.authStore.isValid) throw new Error('Нужно войти в аккаунт.');
+  const update = requireCollectionMethod(client.collection(COLLECTIONS.familyMembers), 'update');
+  let stale = false;
+  const unsubscribe = client.authStore.onChange?.(nextToken => { if (nextToken !== token) stale = true; });
+  try {
+    const record = await update(id, { avatar: file ?? '' }, memberRequestOptions(activeContext));
+    if (stale || getPocketBaseClient() !== client || client.authStore.token !== token || !client.authStore.isValid) {
+      throw new Error('Аккаунт изменился.');
+    }
+    return mapFamilyMemberRecord(record);
+  } finally {
+    unsubscribe?.();
+  }
+}
+
 export function mapFamilyMemberRecord(value: unknown): FamilyMember {
   const record = asRecord(value);
 
@@ -133,6 +161,7 @@ export function mapFamilyMemberRecord(value: unknown): FamilyMember {
     family: asString(record.family),
     user: asString(record.user) || undefined,
     displayName: asString(record.display_name),
+    avatar: asString(record.avatar) || undefined,
     role: asString(record.role) as MemberRole,
     colorKey: asString(record.color_key) || undefined,
     colorHex: asString(record.color_hex) || undefined,

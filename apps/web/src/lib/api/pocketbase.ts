@@ -49,6 +49,10 @@ export type PocketBaseCollectionLike = {
 
 export type PocketBaseClientLike = {
   baseURL?: string;
+  files?: {
+    getToken: (options?: Record<string, unknown>) => Promise<string>;
+    getURL: (record: { id: string; collectionId?: string; collectionName?: string }, filename: string, options?: Record<string, unknown>) => string;
+  };
   realtime?: {
     isConnected: boolean;
     subscribe: (topic: string, callback: (data: unknown) => void) => Promise<() => void | Promise<void>>;

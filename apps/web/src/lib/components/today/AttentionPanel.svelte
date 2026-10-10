@@ -2,6 +2,7 @@
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import type { TodayAttentionItem } from '$lib/today/today-view-model';
   import TodayEmptyState from './TodayEmptyState.svelte';
+  import ProfileAvatar from '$lib/components/media/ProfileAvatar.svelte';
 
   export let items: TodayAttentionItem[] = [];
   export let labelledBy = 'attention-title';
@@ -33,8 +34,8 @@
     <div class="today-attention__list">
       {#each visibleItems as item (item.id)}
         <article class={`today-attention-card today-attention-card--${item.color}`}>
-          <span class={`today-attention-card__avatar portrait portrait--${item.memberPortrait}`} aria-hidden="true">
-            <span class="portrait__face">{item.memberInitial}</span>
+          <span class={`today-attention-card__avatar${item.member ? ' today-attention-card__avatar--profile' : ` portrait portrait--${item.memberPortrait}`}`} aria-hidden="true">
+            {#if item.member}<ProfileAvatar member={item.member} size={40} />{:else}<span class="portrait__face">{item.memberInitial}</span>{/if}
           </span>
           <div class="today-attention-card__copy">
             {#if item.itemId}<button class="attention-open" type="button" on:click={() => onopen?.(item)}>{item.body}</button>{:else}<p>{item.body}</p>{/if}
@@ -77,6 +78,7 @@
 
 <style>
   .today-attention-card { position: relative; }
+  .today-attention-card__avatar--profile { display: grid; place-items: center; border: 0; background: transparent; box-shadow: none; flex-shrink: 0; }
   .attention-open { border: 0; background: transparent; color: inherit; text-align: left; font: inherit; font-weight: 600; padding: 0; cursor: pointer; }
   .attention-open::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
   .attention-open:focus-visible::after { outline: 2px solid var(--color-green); outline-offset: 2px; }

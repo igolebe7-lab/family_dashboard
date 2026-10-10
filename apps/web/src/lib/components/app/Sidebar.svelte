@@ -1,5 +1,6 @@
 <script lang="ts">
   import CircleUserRound from '@lucide/svelte/icons/circle-user-round';
+  import ProfileAvatar from '$lib/components/media/ProfileAvatar.svelte';
   import LogOut from '@lucide/svelte/icons/log-out';
   import { goto } from '$app/navigation';
   import { onDestroy, onMount } from 'svelte';
@@ -22,6 +23,7 @@
   $: accountEmail = sessionState?.user?.email ?? '';
   $: familyMembers = (familyState?.members ?? []).filter((member) => member.active).slice(0, 5);
   $: familyName = familyState?.activeFamily?.name ?? 'Семья';
+  $: accountMember = sessionState?.user ? familyState?.members.find(member => member.active && member.user === sessionState?.user?.id) : undefined;
 
   async function handleLogout(): Promise<void> {
     await logout();
@@ -72,8 +74,8 @@
       <div class="sidebar-family__list">
         {#each familyMembers as member (member.id)}
           <span class={`sidebar-family__member sidebar-family__member--${member.colorKey ?? 'green'}`}>
-            <span class="sidebar-family__avatar" aria-hidden="true">
-              {member.displayName.charAt(0).toUpperCase()}
+            <span class="sidebar-family__avatar" style="border: 0; background: transparent; box-shadow: none" aria-hidden="true">
+              <ProfileAvatar {member} size={37.6} />
             </span>
             <span class="sidebar-family__name">{member.displayName}</span>
             <span class="sidebar-family__dot" aria-hidden="true"></span>
@@ -90,7 +92,7 @@
       href={APP_ROUTE_DEFINITIONS.profile.href}
       aria-current={activeRoute === APP_ROUTE_DEFINITIONS.profile.href ? 'page' : undefined}
     >
-      <CircleUserRound size={20} aria-hidden="true" />
+      {#if accountMember}<ProfileAvatar member={accountMember} size={20} />{:else}<CircleUserRound size={20} aria-hidden="true" />{/if}
       <span>
         <strong>{accountLabel}</strong>
         {#if accountEmail}<small>{accountEmail}</small>{/if}

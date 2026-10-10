@@ -41,6 +41,7 @@ export type LoadTodayViewModelOptions = {
 };
 
 type MemberDisplay = {
+  member?: FamilyMember;
   color: AccentColor;
   initial: string;
   name: string;
@@ -221,8 +222,9 @@ function mapPrepReminderAttention(
 
 function memberToAttentionMember(
   member: MemberDisplay
-): Pick<TodayAttentionItem, 'color' | 'memberInitial' | 'memberName' | 'memberPortrait'> {
+): Pick<TodayAttentionItem, 'member' | 'color' | 'memberInitial' | 'memberName' | 'memberPortrait'> {
   return {
+    member: member.member,
     color: member.color,
     memberInitial: member.initial,
     memberName: member.name,
@@ -284,6 +286,7 @@ function mapOccurrenceToWeekEvent(
   const category = getCategoryMeta(occurrence.categorySnapshot);
 
   return {
+    member: member.member,
     id: occurrence.id,
     itemId: occurrence.item,
     category: occurrence.categorySnapshot,
@@ -375,6 +378,7 @@ function mapFamilyMemberToTodayMember(member: FamilyMember, index: number): Toda
   const color = getMemberColor(member, index);
 
   return {
+    profile: member,
     id: member.id,
     name: member.displayName,
     roleLabel: member.role,
@@ -395,7 +399,7 @@ function getOccurrenceMember(
     return DEFAULT_MEMBER;
   }
 
-  const members = memberIds.map((id) => memberById.get(id)).filter((member): member is FamilyMember => Boolean(member));
+  const members = memberIds.map((id) => memberById.get(id)).filter((member): member is FamilyMember => Boolean(member?.active && member.family === occurrence.family));
   const member = members[0];
 
   if (!member) return { ...DEFAULT_MEMBER, name: 'Участник не указан', initial: '?' };
@@ -403,6 +407,7 @@ function getOccurrenceMember(
   const color = getMemberColor(member, 0);
 
   return {
+    member,
     color,
     initial: getInitial(member.displayName),
     name: members.map((member) => member.displayName).join(', '),

@@ -1,4 +1,5 @@
 import { COLLECTIONS } from '$lib/constants/collections';
+import type { WorkLink } from './work-media.api';
 import type { ItemCategory } from '$lib/constants/categories';
 import type {
   Item,
@@ -44,6 +45,7 @@ export type CreateItemInput = {
   points?: number;
   locationText?: string;
   colorOverride?: string;
+  media?: { photos: File[]; links: WorkLink[] };
 };
 
 export async function createItem(
@@ -81,6 +83,7 @@ export async function createItem(
       points: input.points,
       location_text: input.locationText,
       color_override: input.colorOverride,
+      ...(input.media ? { attachments: input.media.photos, work_links_json: input.media.links } : {}),
       archived: false
     },
     memberRequestOptions(activeContext)

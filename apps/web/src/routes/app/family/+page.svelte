@@ -11,7 +11,7 @@
   import MobileShell from '$lib/components/app/MobileShell.svelte';
   import ActiveProfileSwitcher from '$lib/components/family/ActiveProfileSwitcher.svelte';
   import { createInvitation } from '$lib/api/invitations.api';
-  import { createMember, updateMember, listMembers } from '$lib/api/members.api';
+  import { canEditMemberAvatar, createMember, updateMember, listMembers } from '$lib/api/members.api';
   import { familyStore, type FamilyState } from '$lib/stores/family.store';
   import { sessionStore, type SessionState } from '$lib/stores/session.store';
   import type { FamilyMember } from '$lib/types/domain';
@@ -46,7 +46,7 @@
   $: context = accountMember && familyState?.activeFamily
     ? { familyId: familyState.activeFamily.id, memberId: accountMember.id } : null;
   $: currentUserId = sessionState?.user?.id;
-  $: accountMember = familyState?.members.find((member) => member.user === currentUserId);
+  $: accountMember = currentUserId ? familyState?.members.find((member) => member.user === currentUserId) : undefined;
   $: canManage = Boolean(accountMember && ['owner', 'parent'].includes(accountMember.role));
   $: adultMembers = (familyState?.members ?? []).filter((member) =>
     ['owner', 'parent', 'adult'].includes(member.role)
@@ -216,7 +216,9 @@
       <div class="family-member-list">
         {#each familyState?.members ?? [] as member (member.id)}
           <GlassMemberCard {member} balance={$pointsStore.balances[member.id]} roleLabel={getRoleLabel(member.role)}
-            own={member.user === currentUserId} editable={canManage}
+            avatarContext={context && canEditMemberAvatar(familyState?.members ?? [], currentUserId, member) ? context : undefined}
+            avatarEditorId={`family-mobile-${member.id}`}
+            own={Boolean(currentUserId) && member.user === currentUserId} editable={canManage}
             invitable={canInviteMember(member)} busy={saving}
             childMode={selectableProfiles.some(profile => profile.id === member.id) && ['child', 'teen'].includes(member.role)}
             inviteLink={inviteLinks[member.id] ?? ''}
@@ -282,7 +284,9 @@
       <h2>Члены семьи</h2>
       <div class="family-member-list">
         {#each familyState?.members ?? [] as member (member.id)}
-          <GlassMemberCard {member} balance={$pointsStore.balances[member.id]} roleLabel={getRoleLabel(member.role)} own={member.user === currentUserId}
+          <GlassMemberCard {member} balance={$pointsStore.balances[member.id]} roleLabel={getRoleLabel(member.role)} own={Boolean(currentUserId) && member.user === currentUserId}
+            avatarContext={context && canEditMemberAvatar(familyState?.members ?? [], currentUserId, member) ? context : undefined}
+            avatarEditorId={`family-desktop-${member.id}`}
             editable={canManage} invitable={canInviteMember(member)} busy={saving}
             childMode={selectableProfiles.some(profile => profile.id === member.id) && ['child', 'teen'].includes(member.role)}
             inviteLink={inviteLinks[member.id] ?? ''}

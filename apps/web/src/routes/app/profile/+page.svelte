@@ -1,5 +1,7 @@
 <script lang="ts">
   import ChildPointsBalance from '$lib/components/family/ChildPointsBalance.svelte';
+  import ProfileAvatar from '$lib/components/media/ProfileAvatar.svelte';
+  import AvatarEditor from '$lib/components/media/AvatarEditor.svelte';
   import LogOut from '@lucide/svelte/icons/log-out';
   import Save from '@lucide/svelte/icons/save';
   import ShieldCheck from '@lucide/svelte/icons/shield-check';
@@ -40,7 +42,10 @@
   let passwordError: string | null = null;
 
   $: currentUser = sessionState?.user ?? null;
-  $: profileTone = $familyStore.members.find(member => member.user === currentUser?.id)?.colorKey || 'blue';
+  $: accountMember = currentUser ? $familyStore.members.find(member => member.user === currentUser.id) : undefined;
+  $: avatarContext = accountMember && $familyStore.activeFamily
+    ? { familyId: $familyStore.activeFamily.id, memberId: accountMember.id } : null;
+  $: profileTone = accountMember?.colorKey || 'blue';
 
   async function submitProfile(): Promise<void> {
     if (!currentUser || !sessionState?.token) {
@@ -176,12 +181,15 @@
 
     {#if $familyStore.activeMember && ['child', 'teen'].includes($familyStore.activeMember.role)}<ChildPointsBalance memberId={$familyStore.activeMember.id} />{/if}
     <section class="profile-summary" aria-label="Текущий аккаунт">
+      {#if accountMember}<ProfileAvatar member={accountMember} size={64} />{:else}
       <span class="profile-summary__avatar" style:color={`var(--color-${profileTone})`} style:background={`var(--color-${profileTone}-soft)`} aria-hidden="true">
         {(currentUser?.name || currentUser?.email || 'А').charAt(0).toUpperCase()}
       </span>
+      {/if}
       <div>
         <strong>{currentUser?.name || 'Ваш аккаунт'}</strong>
         <p>{currentUser?.email || 'Email не загружен'}</p>
+        {#if accountMember && avatarContext}<AvatarEditor member={accountMember} context={avatarContext} idPrefix="profile-avatar-mobile" />{/if}
       </div>
     </section>
 
@@ -249,12 +257,15 @@
 
     {#if $familyStore.activeMember && ['child', 'teen'].includes($familyStore.activeMember.role)}<ChildPointsBalance memberId={$familyStore.activeMember.id} />{/if}
     <section class="profile-summary" aria-label="Текущий аккаунт">
+      {#if accountMember}<ProfileAvatar member={accountMember} size={64} />{:else}
       <span class="profile-summary__avatar" style:color={`var(--color-${profileTone})`} style:background={`var(--color-${profileTone}-soft)`} aria-hidden="true">
         {(currentUser?.name || currentUser?.email || 'А').charAt(0).toUpperCase()}
       </span>
+      {/if}
       <div>
         <strong>{currentUser?.name || 'Ваш аккаунт'}</strong>
         <p>{currentUser?.email || 'Email не загружен'}</p>
+        {#if accountMember && avatarContext}<AvatarEditor member={accountMember} context={avatarContext} idPrefix="profile-avatar-desktop" />{/if}
       </div>
     </section>
 
