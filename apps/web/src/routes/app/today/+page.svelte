@@ -15,6 +15,9 @@
   import QuickActions from '$lib/components/today/QuickActions.svelte';
   import TodayHeader from '$lib/components/today/TodayHeader.svelte';
   import TodayAllDayStrip from '$lib/components/today/TodayAllDayStrip.svelte';
+  import UpcomingBirthdays from '$lib/components/today/UpcomingBirthdays.svelte';
+  import { listUpcomingBirthdayAnnotations } from '$lib/api/day-annotations.api';
+  import { getUpcomingBirthdays } from '$lib/day-annotations/day-annotations';
   import TodayTimeline from '$lib/components/today/TodayTimeline.svelte';
   import TodayWeekBoard from '$lib/components/today/TodayWeekBoard.svelte';
   import { loadPublicHolidaysForYears, mergeDayAnnotations } from '$lib/calendar/holiday-sync';
@@ -63,6 +66,26 @@
   let summaryLoading = false;
   let summaryRequest = 0;
   let summaryTimer: ReturnType<typeof setTimeout>;
+  let birthdayAnnotations: DayAnnotation[] = [];
+  let birthdayError = '';
+  let birthdayRequest = 0;
+  $: actualDateKey = dateKeyInZone($displayClock, $displayTimezone);
+  $: birthdayContextKey = JSON.stringify([summaryContextKey, actualDateKey]);
+  $: if (mounted) changeBirthdayContext(birthdayContextKey);
+  $: upcomingBirthdays = getUpcomingBirthdays(birthdayAnnotations, actualDateKey);
+  function changeBirthdayContext(_key: string) {
+    birthdayRequest++; birthdayAnnotations = []; birthdayError = '';
+    void refreshBirthdays();
+  }
+  async function refreshBirthdays() {
+    const context = getActiveFamilyContext(currentFamilyState);
+    const request = ++birthdayRequest;
+    if (!context || fixtureMode) return;
+    try {
+      const rows = await listUpcomingBirthdayAnnotations(context, actualDateKey);
+      if (request === birthdayRequest) { birthdayAnnotations = rows; birthdayError = ''; }
+    } catch { if (request === birthdayRequest) birthdayError = 'Не удалось загрузить ближайшие дни рождения.'; }
+  }
   $: summaryContextKey = JSON.stringify([currentFamilyState.activeFamily?.id, $displayTimezone, currentFamilyState.activeMember?.id, currentFamilyState.members]);
   $: if (mounted) changeSummaryContext(summaryContextKey);
   function changeSummaryContext(_key: string) {
@@ -156,12 +179,14 @@
     const guarded = (refresh: () => Promise<unknown>) => () => { if (epoch === generation) void refresh(); };
     await Promise.all([
       realtime.syncNotifications(context, guarded(todayState.refreshNotifications)),
+      realtime.syncDayAnnotations(context, guarded(async () => { await Promise.all([dayAnnotationsStore.loadYear(context), refreshBirthdays()]); })),
       realtime.syncActivity(context, guarded(async () => { await Promise.all([todayState.refreshActivity(), todayState.refreshOccurrences(), refreshSummary()]); })),
       realtime.syncOccurrences(context, getTodayOccurrenceRange(date, view, $displayTimezone), guarded(todayState.refreshOccurrences)),
       realtime.syncFamilyChanges(context, () => {
         if (epoch !== generation) return;
         todayState.invalidate();
         summaryRequest++; summary = { attention: [], tomorrow: [] };
+        birthdayRequest++; birthdayAnnotations = []; birthdayError = '';
         itemDetailsStore.set(null);
         scheduleRecovery();
       }),
@@ -183,7 +208,7 @@
 
   async function recoverConnection() {
     if (!mounted) return;
-    await refreshTodayAfterCreate();
+    await Promise.all([refreshTodayAfterCreate(), refreshBirthdays()]);
     const context = getActiveFamilyContext(currentFamilyState);
     if (context) {
       realtimeError = null;
@@ -251,6 +276,7 @@
   onDestroy(() => {
     clearTimeout(recoveryTimer);
     summaryRequest++; clearTimeout(summaryTimer);
+    birthdayRequest++;
     mounted = false;
     generation++;
     todayState.reset();
@@ -284,6 +310,7 @@
     {#if loadErrors.length > 0}
       <div role="alert"><p>{loadErrors.join(' ')}</p><button class="button" type="button" on:click={retryLoading}>Повторить загрузку</button></div>
     {/if}
+    <UpcomingBirthdays items={upcomingBirthdays} error={birthdayError} onretry={refreshBirthdays} labelledBy="birthdays-title-mobile" />
     <TodayAllDayStrip model={allDayInfo} labelledBy="today-all-day-title-mobile" />
     <TodayWeekBoard mobile
         contextKey={`${currentFamilyState.activeFamily?.id ?? ''}:${currentFamilyState.activeMember?.id ?? ''}`}
@@ -352,6 +379,7 @@
   />
 
   <svelte:fragment slot="aside">
+    <UpcomingBirthdays items={upcomingBirthdays} error={birthdayError} onretry={refreshBirthdays} labelledBy="birthdays-title-desktop" />
     {#if actionError}<p class="today-action-message today-action-message--error">{actionError}</p>{/if}
     {#if actionMessage}<p class="today-action-message">{actionMessage}</p>{/if}
     <AttentionPanel

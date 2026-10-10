@@ -3,6 +3,7 @@ package push
 import (
 	"context"
 	"encoding/json"
+	"familytime/backend/internal/birthdays"
 	"fmt"
 	webpush "github.com/SherClockHolmes/webpush-go"
 	"github.com/pocketbase/dbx"
@@ -88,6 +89,9 @@ func (s *Service) allowed(sub, notice *core.Record) bool {
 	if !ok || err != nil {
 		return false
 	}
+	if notice.GetString("type") == "birthday.reminder" && !birthdays.CanDeliver(s.app, notice, time.Now()) {
+		return false
+	}
 	if occurrence := notice.GetString("occurrence"); occurrence != "" && (strings.Contains(notice.GetString("type"), "reminder") || strings.Contains(notice.GetString("type"), "due_soon")) {
 		record, err := s.app.FindRecordById("item_occurrences", occurrence)
 		if err != nil {
@@ -119,8 +123,21 @@ func (s *Service) deliver(record *core.Record) error {
 	}
 	path := "/app/notifications"
 	body := "Откройте приложение, чтобы посмотреть обновление."
+	ttl := 3600
 	if notice != nil && notice.GetString("item") != "" {
 		path = "/app/items/" + notice.GetString("item")
+	}
+	if notice != nil && notice.GetString("type") == "birthday.reminder" {
+		user, err := s.app.FindRecordById("users", notice.GetString("recipient_user"))
+		if err != nil {
+			return finish("skipped")
+		}
+		ttl = birthdays.WindowTTL(notice.GetString("annotation_date"), user.GetString("timezone"), time.Now())
+		if ttl <= 0 {
+			return finish("skipped")
+		}
+		path = "/app/today?date=" + notice.GetString("annotation_date") + "&view=day"
+		body = "Через три дня день рождения. Откройте приложение, чтобы посмотреть дату."
 	}
 	if notice == nil {
 		body = "Уведомления на этом устройстве работают."
@@ -133,7 +150,7 @@ func (s *Service) deliver(record *core.Record) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 	// webpush-go v1.4 adds mailto itself; Config keeps the standard URI form.
-	response, sendErr := webpush.SendNotificationWithContext(ctx, payload, &subscription, &webpush.Options{HTTPClient: s.client, Subscriber: strings.TrimPrefix(s.config.Subject, "mailto:"), VAPIDPublicKey: s.config.PublicKey, VAPIDPrivateKey: s.config.PrivateKey, TTL: 3600, Topic: record.Id, Urgency: webpush.UrgencyNormal})
+	response, sendErr := webpush.SendNotificationWithContext(ctx, payload, &subscription, &webpush.Options{HTTPClient: s.client, Subscriber: strings.TrimPrefix(s.config.Subject, "mailto:"), VAPIDPublicKey: s.config.PublicKey, VAPIDPrivateKey: s.config.PrivateKey, TTL: ttl, Topic: record.Id, Urgency: webpush.UrgencyNormal})
 	status := 0
 	if response != nil {
 		status = response.StatusCode

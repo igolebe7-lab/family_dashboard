@@ -2,6 +2,7 @@ import { subscribeActivity } from '$lib/api/activity.api';
 import { subscribeFamilyChanges } from '$lib/api/families.api';
 import { subscribeReconnect } from '$lib/api/realtime-recovery.api';
 import { subscribeNotifications } from '$lib/api/notifications.api';
+import { subscribeDayAnnotations } from '$lib/api/day-annotations.api';
 import {
   subscribeOccurrencesInRange,
   type OccurrenceRange
@@ -22,6 +23,7 @@ function releaseSubscription(unsubscribe: RealtimeUnsubscribe | null): void {
 }
 
 export type RealtimeStoreDependencies = {
+  subscribeDayAnnotations?: typeof subscribeDayAnnotations;
   subscribeFamilyChanges?: typeof subscribeFamilyChanges;
   subscribeReconnect?: typeof subscribeReconnect;
   subscribeNotifications?: (
@@ -87,9 +89,11 @@ export function createRealtimeStore(dependencies: RealtimeStoreDependencies = {}
     }
     return { sync, stop };
   }
-  const notifications = channel(), activity = channel(), occurrences = channel(), family = channel(), recovery = channel();
+  const notifications = channel(), activity = channel(), occurrences = channel(), family = channel(), recovery = channel(), annotations = channel();
 
   return {
+    syncDayAnnotations: (context: ActiveFamilyContext, onChange: () => void) => annotations.sync(
+      `${context.familyId}:${context.memberId}`, notify => (dependencies.subscribeDayAnnotations ?? subscribeDayAnnotations)(context, notify), onChange),
     syncFamilyChanges: (context: ActiveFamilyContext, onChange: () => void) => family.sync(
       `${context.familyId}:${context.memberId}`, notify => (dependencies.subscribeFamilyChanges ?? subscribeFamilyChanges)(context, notify), onChange),
     syncRecovery: (context: ActiveFamilyContext, onReconnect: () => void) => recovery.sync(
@@ -117,7 +121,7 @@ export function createRealtimeStore(dependencies: RealtimeStoreDependencies = {}
     stopActivity: activity.stop,
     stopOccurrences: occurrences.stop,
     stopAll: () => {
-      notifications.stop(); activity.stop(); occurrences.stop(); family.stop(); recovery.stop();
+      notifications.stop(); activity.stop(); occurrences.stop(); family.stop(); recovery.stop(); annotations.stop();
     }
   };
 }

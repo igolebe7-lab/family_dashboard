@@ -239,6 +239,54 @@ func TestPushIntegration(t *testing.T) {
 			t.Fatal("completed reminder sent")
 		}
 	})
+	t.Run("birthday reminders use the existing encrypted device queue and recheck their date", func(t *testing.T) {
+		now := time.Now().UTC()
+		offset := now.Hour() - 10
+		if offset > 12 {
+			offset = 12
+		}
+		zone := fmt.Sprintf("Etc/GMT%+d", offset)
+		loc, err := time.LoadLocation(zone)
+		if err != nil {
+			t.Fatal(err)
+		}
+		originalZone := user.GetString("timezone")
+		user.Set("timezone", zone)
+		if err := app.Save(user); err != nil {
+			t.Fatal(err)
+		}
+		defer func() { user.Set("timezone", originalZone); app.Save(user) }()
+		local := now.In(loc)
+		civil, _ := time.Parse("2006-01-02", local.Format("2006-01-02"))
+		date := civil.AddDate(0, 0, 3)
+		birthday := save("day_annotations", map[string]any{"family": family.Id, "created_by": member.Id, "kind": "birthday", "title": "Sensitive birthday", "person_name": "Person", "month": int(date.Month()), "day": date.Day(), "recurrence": "yearly", "color": "blue", "tone": "positive", "visibility": "family", "source": "manual"})
+		n := save("notifications", map[string]any{"family": family.Id, "recipient_member": member.Id, "recipient_user": user.Id, "type": "birthday.reminder", "title": "Birthday", "body": "Sensitive birthday", "annotation": birthday.Id, "annotation_date": date.Format("2006-01-02")})
+		d := delivery(n)
+		before := client.calls
+		if err := service.deliver(d); err != nil {
+			t.Fatal(err)
+		}
+		if d.GetString("state") != "sent" || client.calls != before+1 || client.encoding != "aes128gcm" {
+			t.Fatal("birthday not delivered encrypted")
+		}
+		d.Set("state", "pending")
+		app.Save(d)
+		newDay := 1
+		if date.Day() == 1 {
+			newDay = 2
+		}
+		birthday.Set("day", newDay)
+		if err := app.Save(birthday); err != nil {
+			t.Fatal(err)
+		}
+		before = client.calls
+		if err := service.deliver(d); err != nil {
+			t.Fatal(err)
+		}
+		if d.GetString("state") != "skipped" || client.calls != before {
+			t.Fatal("rescheduled birthday pushed")
+		}
+	})
 	t.Run("provider gone deletes device and deliveries", func(t *testing.T) {
 		second := input
 		second.Endpoint = "https://web.push.apple.com/Q/gone"

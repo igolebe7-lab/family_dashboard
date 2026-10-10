@@ -7,6 +7,7 @@ import {
   formatAnniversaryMeta,
   getAnnotationsForDate,
   getAnnotationsForYear,
+  getUpcomingBirthdays,
   sortDayAnnotations
 } from './day-annotations';
 
@@ -66,6 +67,22 @@ const publicHoliday: DayAnnotation = {
 };
 
 describe('day annotations', () => {
+  it('shows only birthdays from today through three civil days ahead, including New Year', () => {
+    const next = { ...birthday, month: 1, day: 1, birthDate: '2000-01-01' };
+    expect(getUpcomingBirthdays([next, oneTimeDate], '2026-12-29')).toEqual([
+      expect.objectContaining({ annotation: next, dateKey: '2027-01-01', daysLeft: 3 })
+    ]);
+    expect(getUpcomingBirthdays([next], '2026-12-28')).toEqual([]);
+    expect(getUpcomingBirthdays([next], '2027-01-01')[0].daysLeft).toBe(0);
+    expect(getUpcomingBirthdays([next], '2027-01-02')).toEqual([]);
+  });
+  it('keeps leap-day policy and sorts upcoming birthdays by date', () => {
+    const leap = { ...birthday, id: 'leap', month: 2, day: 29, birthDate: '2020-02-29' };
+    const earlier = { ...birthday, month: 2, day: 28 };
+    expect(getUpcomingBirthdays([leap, earlier], '2028-02-26').map(row => [row.annotation.id, row.daysLeft]))
+      .toEqual([[earlier.id, 2], ['leap', 3]]);
+    expect(getUpcomingBirthdays([leap], '2027-02-26')).toEqual([]);
+  });
   it('counts annual anniversaries in the viewed year, never for one-time or unknown dates', () => {
     const annual = { ...oneTimeDate, recurrence: 'yearly' as const, originDate: '1890-09-01' };
     expect(getAnnotationDateForYear(annual, 1889)).toBeNull();

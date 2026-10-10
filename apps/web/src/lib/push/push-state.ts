@@ -10,6 +10,11 @@ export function pushAvailability(env: PushEnvironment): 'ready' | 'install' | 'i
 }
 
 export function safePushPath(value: unknown): string {
+  if (typeof value === 'string' && /^\/app\/today\?date=\d{4}-\d{2}-\d{2}&view=day$/.test(value)) {
+    const date = value.slice('/app/today?date='.length, '/app/today?date='.length + 10);
+    const parsed = new Date(`${date}T00:00:00Z`);
+    if (Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date) return value;
+  }
   return typeof value === 'string' && /^\/app\/items\/[a-zA-Z0-9]{15}$/.test(value)
     ? value : '/app/notifications';
 }

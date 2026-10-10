@@ -1,6 +1,7 @@
 import { COLLECTIONS } from '$lib/constants/collections';
 import type { AccentColor } from '$lib/constants/colors';
 import type { DayAnnotation } from '$lib/types/domain';
+import { birthdayWindowDates } from '$lib/day-annotations/day-annotations';
 
 import {
   type ActiveFamilyContext,
@@ -39,6 +40,37 @@ export type DayAnnotationInput = {
 };
 
 export type DayAnnotationUpdateInput = Partial<DayAnnotationInput>;
+
+export async function listUpcomingBirthdayAnnotations(
+  context: Partial<ActiveFamilyContext>, todayKey: string
+): Promise<DayAnnotation[]> {
+  const active = requireActiveContext(context);
+  const dates = birthdayWindowDates(todayKey);
+  if (!dates.length) throw new Error('Invalid birthday reminder date');
+  const clauses = dates.map(date => {
+    const [year, month, day] = date.split('-').map(Number);
+    return `(month = ${month} && day = ${day} && (recurrence = "yearly" || year = ${year}))`;
+  });
+  const getList = requireCollectionMethod(getPocketBaseClient().collection(COLLECTIONS.dayAnnotations), 'getList');
+  const items: DayAnnotation[] = [];
+  for (let page = 1; ; page++) {
+    const result = asRecord(await getList(page, 100, {
+      filter: `family = "${escapeFilterValue(active.familyId)}" && kind = "birthday" && (${clauses.join(' || ')})`,
+      sort: 'id', requestKey: null, ...memberRequestOptions(active)
+    }));
+    const rows = Array.isArray(result.items) ? result.items : [];
+    items.push(...rows.map(mapDayAnnotationRecord));
+    if (rows.length < 100 || (typeof result.totalPages === 'number' && page >= result.totalPages)) return items;
+  }
+}
+
+export async function subscribeDayAnnotations(context: ActiveFamilyContext, onChange: () => void): Promise<() => void> {
+  const active = requireActiveContext(context);
+  const collection = getPocketBaseClient().collection(COLLECTIONS.dayAnnotations);
+  return requireCollectionMethod(collection, 'subscribe')('*', () => onChange(), {
+    filter: `family = "${escapeFilterValue(active.familyId)}"`, ...memberRequestOptions(active)
+  });
+}
 
 export async function listDayAnnotationsForYear(
   context: Partial<ActiveFamilyContext>,

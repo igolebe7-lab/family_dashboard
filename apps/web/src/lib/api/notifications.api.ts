@@ -1,6 +1,6 @@
 import { COLLECTIONS } from '$lib/constants/collections';
 import type { NotificationRecord } from '$lib/types/domain';
-import { buildTodayCalendarHref } from '$lib/calendar/today-navigation';
+import { buildTodayCalendarHref, parseTodayDateKey } from '$lib/calendar/today-navigation';
 
 import {
   type ActiveFamilyContext,
@@ -88,6 +88,10 @@ export function notificationDestination(value: unknown): InboxNotification['dest
   const occurrenceId = asString(record.occurrence) || asString(occurrence.id);
   if (itemId) return { href: `/app/items/${encodeURIComponent(itemId)}${occurrenceId ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`, label: 'Открыть запись' };
   const type = asString(record.type);
+  if (type === 'birthday.reminder') {
+    const dateKey = asString(record.annotation_date);
+    return parseTodayDateKey(dateKey) ? { href: buildTodayCalendarHref({ dateKey }), label: 'Открыть день рождения' } : null;
+  }
   const kind = asString(related.kind);
   if (kind === 'assignment' || type.startsWith('assignment.')) {
     return { href: '/app/tasks', label: 'Открыть дела' };
@@ -150,6 +154,8 @@ export function mapNotificationRecord(value: unknown): NotificationRecord {
     body: asString(record.body),
     item: asString(record.item) || undefined,
     occurrence: asString(record.occurrence) || undefined,
+    annotation: asString(record.annotation) || undefined,
+    annotationDate: asString(record.annotation_date) || undefined,
     readAt: asString(record.read_at) || undefined,
     deliveredAt: asString(record.delivered_at) || undefined,
     created: asString(record.created)

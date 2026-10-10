@@ -1,6 +1,7 @@
 package main
 
 import (
+	"familytime/backend/internal/birthdays"
 	"familytime/backend/internal/push"
 	"fmt"
 	webpush "github.com/SherClockHolmes/webpush-go"
@@ -34,6 +35,7 @@ func main() {
 	if err := push.Register(app, push.ConfigFromEnv()); err != nil {
 		log.Fatal(err)
 	}
+	birthdays.Register(app)
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
 	}
