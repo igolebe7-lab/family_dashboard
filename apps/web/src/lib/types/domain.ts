@@ -41,6 +41,7 @@ export type ActivityAction =
   | 'member.updated';
 
 export type NotificationType =
+  | 'birthday.reminder'
   | 'item.reminder'
   | 'assignment.created'
   | 'assignment.due_soon'
@@ -191,6 +192,8 @@ export type NotificationRecord = {
   body: string;
   item?: string;
   occurrence?: string;
+  annotation?: string;
+  annotationDate?: string;
   readAt?: string;
   deliveredAt?: string;
   created: string;

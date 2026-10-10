@@ -8,6 +8,26 @@ const KIND_ORDER: Record<DayAnnotationKind, number> = {
   observance: 4
 };
 
+export type UpcomingBirthday = { annotation: DayAnnotation; dateKey: string; daysLeft: number };
+
+export function birthdayWindowDates(todayKey: string): string[] {
+  const today = new Date(`${todayKey}T00:00:00Z`);
+  if (!Number.isFinite(today.getTime()) || today.toISOString().slice(0, 10) !== todayKey) return [];
+  return Array.from({ length: 4 }, (_, offset) => {
+    const day = new Date(today);
+    day.setUTCDate(day.getUTCDate() + offset);
+    return day.toISOString().slice(0, 10);
+  });
+}
+
+export function getUpcomingBirthdays(annotations: readonly DayAnnotation[], todayKey: string): UpcomingBirthday[] {
+  return birthdayWindowDates(todayKey).flatMap((dateKey, daysLeft) =>
+    getAnnotationsForDate(annotations, dateKey)
+      .filter(annotation => annotation.kind === 'birthday')
+      .map(annotation => ({ annotation, dateKey, daysLeft }))
+  );
+}
+
 export function getAnnotationDateForYear(annotation: DayAnnotation, year: number): string | null {
   if (annotation.kind === 'birthday' && annotation.birthDate && year < Number(annotation.birthDate.slice(0, 4))) return null;
   if (annotation.recurrence === 'yearly' && annotation.originDate && year < Number(annotation.originDate.slice(0, 4))) return null;

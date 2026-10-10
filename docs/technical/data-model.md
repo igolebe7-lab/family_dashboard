@@ -147,6 +147,15 @@ retaining the first record's notes, and leaves unlinked legacy birthdays' age un
 Age is visible-year minus birth-year; dates before birth are omitted. February 29 appears
 only in leap years. No occurrences, completion status or additional polling are added.
 
+`birthday.reminder` notifications reference optional `annotation` (cascade delete)
+and `annotation_date` (the YYYY-MM-DD celebration date). A partial unique index on
+`(annotation, annotation_date, recipient_member)` makes annual reminder creation
+idempotent. The server schedules it three civil days ahead at 10:00 in the recipient's
+account timezone, with same-day daytime catch-up only. Calendar and notification
+rules enforce active family membership and private/adults/linked-person visibility;
+push delivery also rechecks the current date and local delivery window. These records
+never invent item occurrences. See `reminders.md` for timing and queue policy.
+
 Non-birthday yearly annotations optionally store `origin_date`, the actual start
 date (calendar date, year 1000–9999, including future dates). It determines month/day;
 the visible year minus origin year supplies the anniversary label. The origin year

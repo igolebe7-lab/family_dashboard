@@ -5,6 +5,18 @@ import { createRealtimeStore } from './realtime.store';
 describe('realtime store lifecycle', () => {
   afterEach(() => vi.useRealTimers());
   const context = { familyId: 'family_1', memberId: 'member_mom' };
+  it('coalesces birthday edits and releases the annotation channel on navigation', async () => {
+    vi.useFakeTimers();
+    let notify!: () => void;
+    const release = vi.fn(), changed = vi.fn();
+    const store = createRealtimeStore({ subscribeDayAnnotations: async (_context, callback) => { notify = callback; return release; } });
+    await store.syncDayAnnotations(context, changed);
+    notify(); notify(); await vi.advanceTimersByTimeAsync(150);
+    expect(changed).toHaveBeenCalledTimes(1);
+    store.stopAll(); notify(); await vi.advanceTimersByTimeAsync(150);
+    expect(release).toHaveBeenCalledTimes(1);
+    expect(changed).toHaveBeenCalledTimes(1);
+  });
   it('batches neutral family invalidation and releases recovery listeners', async () => {
     vi.useFakeTimers();
     let invalidate!: () => void, reconnect!: () => void;

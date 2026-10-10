@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { pushAvailability, safePushPath, pushErrorMessage } from './push-state';
 
 describe('push availability', () => {
+  it('allows only a validated birthday day route, with no extra parameters', () => {
+    const path = '/app/today?date=2027-01-01&view=day';
+    expect(safePushPath(path)).toBe(path);
+    for (const invalid of ['/app/today?date=2027-02-29&view=day', `${path}&redirect=https://evil.test`, '/app/today?date=2027-01-01&view=month']) {
+      expect(safePushPath(invalid)).toBe('/app/notifications');
+    }
+  });
   it('explains browser registration denial without claiming it is enabled', () => {
     expect(pushErrorMessage(new DOMException('Registration failed - permission denied', 'NotAllowedError'))).toContain('обычном окне');
     expect(pushErrorMessage(new Error('Failed to fetch'))).toContain('подключение');

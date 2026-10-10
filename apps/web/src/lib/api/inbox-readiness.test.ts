@@ -8,6 +8,11 @@ const context = { familyId: 'family_1', memberId: 'member_1' };
 afterEach(resetPocketBaseClient);
 
 describe('inbox production readiness', () => {
+  it('opens the birthday civil date rather than an item or current day', () => {
+    expect(notificationDestination({ family: 'f', type: 'birthday.reminder', annotation_date: '2027-01-01' }))
+      .toEqual({ href: '/app/today?date=2027-01-01&view=day', label: 'Открыть день рождения' });
+    expect(notificationDestination({ type: 'birthday.reminder', annotation_date: 'invalid' })).toBeNull();
+  });
   it('bounds activity pages and disables cross-consumer request cancellation', async () => {
     const getList = vi.fn().mockResolvedValue({ items: [] });
     setPocketBaseClient({ authStore: { clear() {}, isValid: true, token: '', record: {} }, collection: () => ({ getList }) });
