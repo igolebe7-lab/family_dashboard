@@ -2,10 +2,11 @@ import type { ItemCategory } from '$lib/constants/categories';
 import { getDateTimeFormatter } from '$lib/utils/date-format';
 import type { AccentColor } from '$lib/constants/colors';
 import type { IconName } from '$lib/design/icon-registry';
-import type { ItemKind } from '$lib/types/domain';
+import type { FamilyMember, ItemKind } from '$lib/types/domain';
 import { createCalendarTimeLabels } from './week-calendar';
 
 export type TodayFamilyMember = {
+  profile?: FamilyMember;
   id: string;
   name: string;
   roleLabel: string;
@@ -42,6 +43,7 @@ export type TodayAllDayItem = Omit<TodayTimelineItem, 'time'> & {
 };
 
 export type TodayAttentionItem = {
+  member?: FamilyMember;
   id: string;
   itemId?: string;
   occurrenceId?: string;
@@ -81,6 +83,7 @@ export type TodayWeekDay = {
 };
 
 export type TodayWeekEvent = {
+  member?: FamilyMember;
   memberColors?: AccentColor[];
   id: string;
   itemId?: string;

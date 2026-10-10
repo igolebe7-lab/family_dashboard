@@ -19,6 +19,7 @@ export type AssignmentAction =
 export type WorkStatusGroup = 'open' | 'review' | 'completed' | 'cancelled';
 
 export type AssignmentCardModel = {
+  member?: FamilyMember;
   priority?: ItemPriority;
   id: string;
   itemId: string;
@@ -243,6 +244,7 @@ function mapAssignmentOccurrence(
     priority: item?.priority ?? 'normal',
     group,
     assigneeIds,
+    member: assignees[0]?.active ? assignees[0] : undefined,
     memberTone: ['green', 'lavender', 'blue', 'peach', 'yellow'].includes(assignees[0]?.colorKey ?? '') ? assignees[0].colorKey! : 'green',
     rejectionReason: occurrence.status === 'rejected' ? occurrence.rejectionReason : undefined,
     title: occurrence.titleSnapshot,

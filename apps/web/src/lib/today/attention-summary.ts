@@ -32,11 +32,12 @@ export function buildAttentionSummary(occurrences: ItemOccurrence[], members: Fa
     const due = Date.parse(occurrence.dueAt || occurrence.startAt || '');
     const overdue = occurrence.kind !== 'event' && Number.isFinite(due) && due < now.getTime();
     const important = ['urgent', 'high'].includes(item.priority) && due >= now.getTime() && due <= horizon;
-    const person = members.find(member => member.id === (item.assignees[0] || item.participants[0] || item.owner || item.createdBy));
+    const person = members.find(member => member.active && member.family === occurrence.family && member.id === (item.assignees[0] || item.participants[0] || item.owner || item.createdBy));
     const recordZone = occurrence.allDay ? item.timezone || timezone : timezone;
     const time = Number.isFinite(due) ? getDateTimeFormatter('ru', { timeZone: recordZone, day: 'numeric', month: 'short', ...(occurrence.allDay ? {} : { hour: '2-digit', minute: '2-digit' }) }).format(new Date(due)) : 'Без срока';
     const prefix = approval ? 'На подтверждение' : overdue ? 'Просрочено' : item.priority === 'urgent' ? 'Срочно' : 'Важно';
     const row: TodayAttentionItem = {
+      member: person,
       id: `${approval ? 'attention-approval' : 'focus'}-${occurrence.id}`, itemId: item.id, occurrenceId: occurrence.id,
       body: `${prefix}: ${item.title} · ${time}${person ? ` · ${person.displayName}` : ''}`,
       memberInitial: person?.displayName.slice(0, 1) || 'С', memberName: person?.displayName || 'Семья',

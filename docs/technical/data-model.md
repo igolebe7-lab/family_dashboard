@@ -36,6 +36,7 @@ paginated on the server; it does not download all family items to the browser.
 - `family_members` — family profile linked to `users` or managed child profile.
 - `items` — logical object: event, task, assignment, routine.
 - `item_occurrences` — materialized calendar/status instances.
+- `work_media` — защищённые фото и ссылки конкретного выполнения дела.
 - `member_points_ledger` — закрытая неизменяемая история детских начислений.
 - `day_annotations` — all-day informational dates: birthdays, public holidays, special family dates, observances and memorial dates.
 - `item_comments` — comments and reactions.
@@ -51,6 +52,51 @@ paginated on the server; it does not download all family items to the browser.
 ## Required invariant
 
 Every family-scoped collection has `family`. API rules and hooks must prevent cross-family access.
+
+## Profile Photos And Work Media
+
+`family_members.avatar` содержит один защищённый JPEG/PNG/WebP до 2 МБ.
+Клиент сохраняет только выбранный квадратный кадр 512px, отображаемый внутри
+круга цвета профиля. Замена удаляет предыдущий файл и его thumbnails штатным
+PocketBase lifecycle после успешного commit. Менять фото может пользователь
+своего профиля либо owner/управляющий parent для child/teen; выбранный на экране
+профиль не даёт прав на аватар другого взрослого. Avatar-only self update не
+позволяет менять role/family/user/managed_by.
+
+`work_media` имеет обязательные `family`, `item`, `occurrence`, уникальный
+индекс по occurrence, защищённое multiple-file поле `photos` (до 10, по 2 МБ)
+и `links_json` с `{id,title,url}` (до 10 ссылок, только HTTP/HTTPS без credentials).
+Сервер проверяет формат и размеры изображения по содержимому без полного
+декодирования. Клиент уменьшает фото до 1600px последовательно, до загрузки.
+Ссылки открывает браузер; сервер не загружает URL и не строит внешние previews.
+
+Стандартные create/update/delete work_media закрыты. Multipart endpoint
+`POST /api/familytime/work/{occurrence}/media` проверяет актуальные статус,
+членство, item visibility и права исполнителя/создателя/управляющего родителя
+в транзакции. Фото добавляются к выбранной дате, а не к шаблону повторяющейся
+серии. Чтение через `GET /api/familytime/work/{occurrence}/media` проверяет
+тот же семейный контекст и видимость; новую коллекцию не требуется открывать
+в allowlist reverse proxy. Изменения приходят через существующий realtime/SSE.
+Изменение ссылок передаёт `expected_links_json`: при несовпадении с текущей
+версией сервер возвращает 409 без частичного сохранения фото или ссылок.
+Запрос только с фото не перезаписывает ссылки. Устаревшая параллельная замена
+аватара также отклоняется до загрузки файла, чтобы не оставлять orphan-фото.
+Создание с вложениями использует существующий items CRUD: Go hooks
+переносят incoming attachments и work_links_json в первое активное выполнение
+в одной транзакции с существующими JS hooks. Невалидная ссылка или фото не
+оставляют частично созданного дела.
+
+При done без approval либо approved сервер очищает photos этой occurrence,
+физически удаляя файлы и thumbnails после успешной транзакции. До родительского
+подтверждения фото остаются; rejected сохраняет их. Ссылки и другие даты серии
+не удаляются. Каскадное удаление item/occurrence удаляет media. Очистка касается
+живого хранилища: прежние backup сохраняются до обычного срока retention.
+
+Protected file URLs используют короткоживущий PocketBase file token и текущий
+viewRule, не только случайное имя. Token cache ограничен минутой и конкретной
+auth session; logout/account change не принимают поздние URL/upload ответы.
+Service worker не кеширует /api/files. Фото черновика не сериализуются в
+sessionStorage; SSE обновляет открытые вложения без polling.
 
 Push subscriptions относятся к auth user, не к переключаемому семейному профилю.
 Обе push-коллекции полностью закрыты для стандартного клиентского REST CRUD.

@@ -4,6 +4,7 @@
   import type { FamilyMember } from '$lib/types/domain';
   import ReminderPicker from './ReminderPicker.svelte';
   import RepeatRuleEditor from './RepeatRuleEditor.svelte';
+  import ProfileAvatar from '$lib/components/media/ProfileAvatar.svelte';
 
   export let values: ComposerFormValues;
   export let members: FamilyMember[] = [];
@@ -32,7 +33,7 @@
       {#each targets as member (member.id)}
         <label class:work-target--selected={values.owner === member.id} class:work-target--long={member.displayName.length > 20} class="work-target" style={`--target-tone: var(--color-${member.colorKey || 'green'})`}>
           <input type="radio" name="work-target" value={member.id} bind:group={values.owner} />
-          <span class="work-target__avatar" aria-hidden="true">{member.displayName.charAt(0)}</span>
+          <span class="work-target__avatar" aria-hidden="true"><ProfileAvatar {member} size={28} /></span>
           <span>{member.displayName}{#if member.id === activeMember?.id}<small>Я</small>{/if}</span>
         </label>
       {/each}
@@ -117,7 +118,7 @@
   .work-target:focus-within { outline: 2px solid var(--color-green); outline-offset: 2px; }
   .work-target > span:last-child { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
   .work-target input { width: 18px; height: 18px; flex: 0 0 18px; accent-color: var(--color-green); }
-  .work-target__avatar { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; background: color-mix(in srgb, var(--target-tone) 16%, var(--color-surface)); color: var(--target-tone); font-weight: 600; }
+  .work-target__avatar { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; }
   small { display: block; margin-top: 3px; font-size: 12px; color: var(--color-text-muted); }
   .work-target--family, .work-target--long { grid-column: 1 / -1; }
 </style>

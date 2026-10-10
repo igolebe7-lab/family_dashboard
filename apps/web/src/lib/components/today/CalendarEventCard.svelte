@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getIcon } from '$lib/design/icon-registry';
   import type { TodayWeekEvent } from '$lib/today/today-view-model';
+  import ProfileAvatar from '$lib/components/media/ProfileAvatar.svelte';
 
   export let event: TodayWeekEvent;
   export let positionStyle = '';
@@ -28,8 +29,8 @@
     {#if !compact}<span>{event.memberName}</span>{/if}
   </span>
 
-  {#if !compact}<span class={`calendar-event-card__avatar portrait portrait--${event.memberPortrait}`} aria-hidden="true">
-    <span class="portrait__face">{event.memberInitial}</span>
+  {#if !compact}<span class={`calendar-event-card__avatar${event.member ? ' calendar-event-card__avatar--profile' : ` portrait portrait--${event.memberPortrait}`}`} aria-hidden="true">
+    {#if event.member}<ProfileAvatar member={event.member} size={24} />{:else}<span class="portrait__face">{event.memberInitial}</span>{/if}
   </span>{/if}
 </svelte:element>
 
@@ -41,6 +42,7 @@
   .calendar-event-card__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 0 0 auto; margin: 0; }
   .calendar-event-card__meta time, .calendar-event-card__meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; line-height: 14px; }
   .calendar-event-card__avatar { position: relative; flex: 0 0 24px; width: 24px; height: 24px; margin: 0; }
+  .calendar-event-card__avatar--profile { display: grid; place-items: center; border: 0; background: transparent; box-shadow: none; }
   .calendar-event-card--compact { gap: 3px; padding: 6px; }
   .calendar-event-card--tiny strong { -webkit-line-clamp: 1; line-clamp: 1; }
 </style>

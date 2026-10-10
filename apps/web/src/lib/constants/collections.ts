@@ -4,6 +4,7 @@ export const COLLECTIONS = {
   familyMembers: 'family_members',
   items: 'items',
   itemOccurrences: 'item_occurrences',
+  workMedia: 'work_media',
   dayAnnotations: 'day_annotations',
   itemComments: 'item_comments',
   itemActivity: 'item_activity',

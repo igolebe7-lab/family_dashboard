@@ -3,6 +3,7 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import { sessionStore } from '$lib/stores/session.store';
   import { getSelectableProfiles } from '$lib/utils/profile-access';
+  import ProfileAvatar from '$lib/components/media/ProfileAvatar.svelte';
 
   export let members: FamilyMember[] = [];
   export let activeMember: FamilyMember | null = null;
@@ -24,7 +25,7 @@
     <span>Активный профиль</span>
     {#if glass}
       <span class="family-glass-select">
-        <span class="family-glass-select__avatar" style={`--member-tone: var(--color-${activeMember?.colorKey ?? 'blue'})`} aria-hidden="true">{activeMember?.displayName.charAt(0).toUpperCase()}</span>
+        <span class="family-glass-select__avatar" style="background: transparent; box-shadow: none" aria-hidden="true">{#if activeMember}<ProfileAvatar member={activeMember} size={34} />{/if}</span>
         <select value={activeMember?.id} on:change={(event) => changeActiveMember(event.currentTarget.value)}>
           {#each selectable as member (member.id)}<option value={member.id}>{member.displayName}</option>{/each}
         </select>

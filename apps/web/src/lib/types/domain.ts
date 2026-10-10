@@ -67,6 +67,7 @@ export type FamilyMember = {
   family: string;
   user?: string;
   displayName: string;
+  avatar?: string;
   role: MemberRole;
   colorKey?: string;
   colorHex?: string;
